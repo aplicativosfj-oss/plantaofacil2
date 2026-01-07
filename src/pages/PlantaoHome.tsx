@@ -4,6 +4,7 @@ import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { usePlantaoTheme } from '@/contexts/PlantaoThemeContext';
 import { useBiometricAuth } from '@/hooks/useBiometricAuth';
 import { useAgentCpfValidation, useAgentRegistrationValidation } from '@/hooks/useAgentValidation';
+import { usePlantaoEffects } from '@/hooks/usePlantaoEffects';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar, Flame, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, KeyRound, ShieldAlert, Car, Route, CircleAlert, Radar, ScanEye, Cctv, Building2, UserRoundCheck, BadgeCheck, RotateCcw, Settings, icons as LucideIcons, LucideIcon } from 'lucide-react';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar, Flame, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, KeyRound, ShieldAlert, Car, Route, CircleAlert, Radar, ScanEye, Cctv, Building2, UserRoundCheck, BadgeCheck, RotateCcw, Settings, Volume2, VolumeX, Sparkles, icons as LucideIcons, LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
@@ -108,26 +109,33 @@ interface TeamButtonProps {
   isAutoLogging: boolean;
   themeConfig: any;
   onTeamClick: (value: 'alfa' | 'bravo' | 'charlie' | 'delta') => void;
+  onPlaySound?: () => void;
+  effectsEnabled?: boolean;
 }
 
-const TeamButton = ({ team, index, isUserTeam, isBlocked, isBlockedClicked, isAutoLogging, themeConfig, onTeamClick }: TeamButtonProps) => {
+const TeamButton = ({ team, index, isUserTeam, isBlocked, isBlockedClicked, isAutoLogging, themeConfig, onTeamClick, onPlaySound, effectsEnabled = true }: TeamButtonProps) => {
   const [isPressed, setIsPressed] = useState(false);
   const [ripples, setRipples] = useState<{x: number, y: number, id: number}[]>([]);
   const TeamIcon = getTeamIcon(team.value, themeConfig);
   
   const handlePress = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const newRipple = { x, y, id: Date.now() };
-    setRipples(prev => [...prev, newRipple]);
-    setIsPressed(true);
+    // Play sound effect
+    onPlaySound?.();
     
-    setTimeout(() => {
-      setRipples(prev => prev.filter(r => r.id !== newRipple.id));
-    }, 800);
-    
-    setTimeout(() => setIsPressed(false), 150);
+    if (effectsEnabled) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const newRipple = { x, y, id: Date.now() };
+      setRipples(prev => [...prev, newRipple]);
+      setIsPressed(true);
+      
+      setTimeout(() => {
+        setRipples(prev => prev.filter(r => r.id !== newRipple.id));
+      }, 800);
+      
+      setTimeout(() => setIsPressed(false), 150);
+    }
     onTeamClick(team.value);
   };
   
@@ -307,6 +315,7 @@ const AlertPulse = () => (
 const PlantaoHome = () => {
   const { signIn, signInMaster, signUp, isLoading, agent } = usePlantaoAuth();
   const { themeConfig } = usePlantaoTheme();
+  const { effectsEnabled, toggleEffects, playClickSound } = usePlantaoEffects();
   const { isSupported: biometricSupported, isRegistered: biometricRegistered, authenticateWithBiometric, registerBiometric } = useBiometricAuth();
   const navigate = useNavigate();
   const [showSplash, setShowSplash] = useState(() => {
@@ -710,12 +719,38 @@ const PlantaoHome = () => {
 
       {/* About Button */}
       <button
-        onClick={() => setShowAbout(true)}
+        onClick={() => {
+          playClickSound();
+          setShowAbout(true);
+        }}
         className="fixed bottom-4 left-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/60 hover:bg-muted/80 text-muted-foreground hover:text-foreground text-xs transition-all duration-300 backdrop-blur-sm"
         title="Sobre o aplicativo"
       >
         <Info className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">Sobre</span>
+      </button>
+
+      {/* Effects Toggle Button */}
+      <button
+        onClick={toggleEffects}
+        className={`fixed bottom-4 right-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 backdrop-blur-sm ${
+          effectsEnabled 
+            ? 'bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30' 
+            : 'bg-muted/60 hover:bg-muted/80 text-muted-foreground'
+        }`}
+        title={effectsEnabled ? 'Desativar efeitos' : 'Ativar efeitos'}
+      >
+        {effectsEnabled ? (
+          <>
+            <Sparkles className="w-3.5 h-3.5" />
+            <Volume2 className="w-3.5 h-3.5" />
+          </>
+        ) : (
+          <>
+            <Sparkles className="w-3.5 h-3.5 opacity-50" />
+            <VolumeX className="w-3.5 h-3.5 opacity-50" />
+          </>
+        )}
       </button>
 
       {/* Background Effects */}
@@ -760,7 +795,10 @@ const PlantaoHome = () => {
                 <div className="flex items-center gap-2">
                   <ThemeSelector 
                     trigger={
-                      <button className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 hover:bg-muted transition-colors">
+                      <button 
+                        onClick={playClickSound}
+                        className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 hover:bg-muted transition-colors hover:scale-105 active:scale-95 duration-200"
+                      >
                         <Palette className="w-4 h-4 text-primary" />
                         <span className="text-xs font-mono">Tema</span>
                       </button>
@@ -771,10 +809,11 @@ const PlantaoHome = () => {
                   {savedCredentials && (
                     <motion.button
                       onClick={() => {
+                        playClickSound();
                         handleResetCredentials();
                       }}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
+                      whileHover={{ scale: effectsEnabled ? 1.1 : 1 }}
+                      whileTap={{ scale: effectsEnabled ? 0.9 : 1 }}
                       className="p-2 rounded-lg bg-muted/50 hover:bg-red-500/20 border border-transparent hover:border-red-500/40 transition-all duration-200 group"
                       title="Limpar acesso salvo para trocar de equipe"
                     >
@@ -785,12 +824,13 @@ const PlantaoHome = () => {
                   {/* Admin Access Button */}
                   <motion.button
                     onClick={() => {
+                      playClickSound();
                       setShowMasterLogin(true);
                       setSelectedTeam(null);
                       setShowAuthPanel(true);
                     }}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: effectsEnabled ? 1.1 : 1 }}
+                    whileTap={{ scale: effectsEnabled ? 0.9 : 1 }}
                     className="p-2 rounded-lg bg-amber-500/20 border border-amber-500/40 hover:bg-amber-500/30 hover:border-amber-400 transition-all duration-200"
                   >
                     <Crown className="w-4 h-4 text-amber-400" />
@@ -855,6 +895,8 @@ const PlantaoHome = () => {
                       isAutoLogging={isAutoLogging}
                       themeConfig={themeConfig}
                       onTeamClick={handleTeamClick}
+                      onPlaySound={playClickSound}
+                      effectsEnabled={effectsEnabled}
                     />
                   ))}
                 </div>
