@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, forwardRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { useAudio } from '@/contexts/AudioContext';
@@ -104,7 +104,7 @@ const getTeamColor = (team: string | null) => {
   }
 };
 
-const PlantaoMasterDashboard = () => {
+const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
   const { master, signOut, isLoading } = usePlantaoAuth();
   const { stopMusicImmediately } = useAudio();
   const navigate = useNavigate();
@@ -552,7 +552,7 @@ const PlantaoMasterDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-dark">
+    <div ref={ref} className="min-h-screen bg-gradient-dark">
       {/* Password Change Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
         <DialogContent className="sm:max-w-md">
@@ -1649,6 +1649,8 @@ const PlantaoMasterDashboard = () => {
       </main>
     </div>
   );
-};
+});
+
+PlantaoMasterDashboard.displayName = 'PlantaoMasterDashboard';
 
 export default PlantaoMasterDashboard;
