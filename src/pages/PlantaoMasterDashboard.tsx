@@ -15,7 +15,7 @@ import {
   Shield, LogOut, Users, DollarSign, Calendar, User, Search, 
   Clock, TrendingUp, Key, Eye, EyeOff, Save, AlertTriangle,
   CheckCircle, XCircle, ChevronDown, ChevronUp, Receipt, CreditCard, ArrowLeft,
-  Trash2, Edit, Ban, UserCheck, Building2
+  Trash2, Edit, Ban, UserCheck, Building2, Crown, Phone, Mail, UserCog
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, parseISO, differenceInDays, startOfMonth, endOfMonth } from 'date-fns';
@@ -83,6 +83,17 @@ interface MonthlyRevenue {
   count: number;
 }
 
+interface UnitLeadership {
+  id: string;
+  unit_name: string;
+  position_type: string;
+  full_name: string | null;
+  phone: string | null;
+  email: string | null;
+  notes: string | null;
+  is_active: boolean;
+}
+
 const getTeamColor = (team: string | null) => {
   switch (team) {
     case 'alfa': return 'bg-team-alfa text-white';
@@ -112,6 +123,10 @@ const PlantaoMasterDashboard = () => {
   const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
   const [licensePayments, setLicensePayments] = useState<LicensePaymentRecord[]>([]);
   const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenue[]>([]);
+  const [unitLeadership, setUnitLeadership] = useState<UnitLeadership[]>([]);
+  const [editingLeadership, setEditingLeadership] = useState<UnitLeadership | null>(null);
+  const [leadershipForm, setLeadershipForm] = useState({ full_name: '', phone: '', email: '', notes: '' });
+  const [savingLeadership, setSavingLeadership] = useState(false);
   
   // Password change dialog
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
@@ -201,6 +216,14 @@ const PlantaoMasterDashboard = () => {
 
       const sortedRevenue = Object.values(revenueByMonth).sort((a, b) => b.month.localeCompare(a.month));
       setMonthlyRevenue(sortedRevenue);
+
+      // Fetch unit leadership
+      const { data: leadershipData } = await supabase
+        .from('unit_leadership')
+        .select('*')
+        .order('unit_name');
+
+      setUnitLeadership((leadershipData || []) as UnitLeadership[]);
 
       // Fetch shifts count
       const { data: shiftsData } = await supabase
@@ -439,6 +462,61 @@ const PlantaoMasterDashboard = () => {
     }
   };
 
+  // Leadership management functions
+  const handleEditLeadership = (leadership: UnitLeadership) => {
+    setEditingLeadership(leadership);
+    setLeadershipForm({
+      full_name: leadership.full_name || '',
+      phone: leadership.phone || '',
+      email: leadership.email || '',
+      notes: leadership.notes || '',
+    });
+  };
+
+  const handleSaveLeadership = async () => {
+    if (!editingLeadership) return;
+    setSavingLeadership(true);
+    try {
+      const { error } = await supabase
+        .from('unit_leadership')
+        .update({
+          full_name: leadershipForm.full_name || null,
+          phone: leadershipForm.phone || null,
+          email: leadershipForm.email || null,
+          notes: leadershipForm.notes || null,
+        })
+        .eq('id', editingLeadership.id);
+
+      if (error) throw error;
+      toast.success('Liderança atualizada com sucesso!');
+      setEditingLeadership(null);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao atualizar liderança');
+    } finally {
+      setSavingLeadership(false);
+    }
+  };
+
+  const getPositionLabel = (positionType: string) => {
+    switch (positionType) {
+      case 'diretor': return 'Diretor(a)';
+      case 'coordenador_seguranca': return 'Coordenador(a) de Segurança';
+      case 'presidente': return 'Presidente';
+      default: return positionType;
+    }
+  };
+
+  const getPositionIcon = (positionType: string) => {
+    switch (positionType) {
+      case 'diretor': return <Building2 className="w-5 h-5" />;
+      case 'coordenador_seguranca': return <Shield className="w-5 h-5" />;
+      case 'presidente': return <Crown className="w-5 h-5" />;
+      default: return <User className="w-5 h-5" />;
+    }
+  };
+
   if (isLoading || !master) {
     return (
       <div className="min-h-screen bg-gradient-dark flex items-center justify-center">
@@ -608,6 +686,73 @@ const PlantaoMasterDashboard = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Leadership Dialog */}
+      <Dialog open={!!editingLeadership} onOpenChange={(open) => !open && setEditingLeadership(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCog className="w-5 h-5 text-primary" />
+              Editar Liderança
+            </DialogTitle>
+          </DialogHeader>
+          {editingLeadership && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                {getPositionIcon(editingLeadership.position_type)}
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase">{getPositionLabel(editingLeadership.position_type)}</p>
+                  <p className="font-medium">{editingLeadership.unit_name}</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Nome Completo</Label>
+                <Input
+                  value={leadershipForm.full_name}
+                  onChange={(e) => setLeadershipForm({ ...leadershipForm, full_name: e.target.value.toUpperCase() })}
+                  placeholder="Nome do ocupante do cargo"
+                  className="uppercase"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Telefone</Label>
+                  <Input
+                    value={leadershipForm.phone}
+                    onChange={(e) => setLeadershipForm({ ...leadershipForm, phone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>E-mail</Label>
+                  <Input
+                    value={leadershipForm.email}
+                    onChange={(e) => setLeadershipForm({ ...leadershipForm, email: e.target.value })}
+                    placeholder="email@exemplo.com"
+                    type="email"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Observações</Label>
+                <Input
+                  value={leadershipForm.notes}
+                  onChange={(e) => setLeadershipForm({ ...leadershipForm, notes: e.target.value })}
+                  placeholder="Observações adicionais"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingLeadership(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveLeadership} disabled={savingLeadership}>
+              {savingLeadership ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur">
         <div className="container mx-auto px-4 py-3">
@@ -670,7 +815,7 @@ const PlantaoMasterDashboard = () => {
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5 lg:grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6 lg:grid-cols-6">
               <TabsTrigger value="overview" className="gap-2">
                 <TrendingUp className="w-4 h-4" />
                 <span className="hidden sm:inline">Visão Geral</span>
@@ -682,6 +827,10 @@ const PlantaoMasterDashboard = () => {
               <TabsTrigger value="agents" className="gap-2">
                 <Users className="w-4 h-4" />
                 <span className="hidden sm:inline">Agentes</span>
+              </TabsTrigger>
+              <TabsTrigger value="leadership" className="gap-2">
+                <Crown className="w-4 h-4" />
+                <span className="hidden sm:inline">Lideranças</span>
               </TabsTrigger>
               <TabsTrigger value="overtime" className="gap-2">
                 <Clock className="w-4 h-4" />
@@ -1079,6 +1228,115 @@ const PlantaoMasterDashboard = () => {
                   </ScrollArea>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Leadership Tab */}
+            <TabsContent value="leadership" className="space-y-6">
+              {/* President Card */}
+              <Card className="bg-gradient-to-br from-amber-500/10 to-yellow-500/10 border-amber-500/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-amber-500">
+                    <Crown className="w-6 h-6" />
+                    Presidente do Sistema Socioeducativo
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {unitLeadership
+                    .filter(l => l.position_type === 'presidente')
+                    .map(leadership => (
+                      <div key={leadership.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center">
+                            <Crown className="w-7 h-7 text-amber-500" />
+                          </div>
+                          <div>
+                            <p className="text-lg font-bold">
+                              {leadership.full_name || <span className="text-muted-foreground italic">Não informado</span>}
+                            </p>
+                            {leadership.phone && (
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Phone className="w-3 h-3" />
+                                {leadership.phone}
+                              </div>
+                            )}
+                            {leadership.email && (
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Mail className="w-3 h-3" />
+                                {leadership.email}
+                              </div>
+                            )}
+                            {leadership.notes && (
+                              <p className="text-sm text-muted-foreground mt-1">{leadership.notes}</p>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditLeadership(leadership)}
+                          className="border-amber-500/50 text-amber-500 hover:bg-amber-500/10"
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Editar
+                        </Button>
+                      </div>
+                    ))}
+                </CardContent>
+              </Card>
+
+              {/* Units Leadership */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {['CS Feijó', 'CS Juruá', 'CS Rio Branco', 'CS Purus', 'CS Alto Acre'].map(unitName => (
+                  <Card key={unitName}>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2">
+                        <Building2 className="w-5 h-5 text-primary" />
+                        {unitName}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {unitLeadership
+                        .filter(l => l.unit_name === unitName)
+                        .sort((a, b) => (a.position_type === 'diretor' ? -1 : 1))
+                        .map(leadership => (
+                          <div key={leadership.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                leadership.position_type === 'diretor' 
+                                  ? 'bg-blue-500/20' 
+                                  : 'bg-green-500/20'
+                              }`}>
+                                {getPositionIcon(leadership.position_type)}
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold uppercase text-muted-foreground">
+                                  {getPositionLabel(leadership.position_type)}
+                                </p>
+                                <p className="font-medium">
+                                  {leadership.full_name || <span className="text-muted-foreground italic text-sm">Não informado</span>}
+                                </p>
+                                {leadership.phone && (
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <Phone className="w-3 h-3" />
+                                    {leadership.phone}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditLeadership(leadership)}
+                              className="h-8 w-8"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </TabsContent>
 
             {/* Billing Tab */}
