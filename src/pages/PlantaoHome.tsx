@@ -374,10 +374,13 @@ const PlantaoHome = () => {
           navigate('/dashboard');
         }
       } else {
-        // Different team - show warning message
+        // Different team - show panel but with warning
+        setSelectedTeam(teamValue);
+        setSignupTeam(teamValue);
+        setShowAuthPanel(true);
         toast.warning(
-          `Você pertence à equipe ${savedCredentials.team.toUpperCase()}. Para alterar sua equipe, acesse seu painel e vá em "Alterar Equipe".`,
-          { duration: 5000 }
+          `Você pertence à equipe ${savedCredentials.team.toUpperCase()}. Apenas visualização permitida.`,
+          { duration: 4000 }
         );
       }
     } else {
@@ -663,7 +666,7 @@ const PlantaoHome = () => {
                       team={team}
                       index={index}
                       isUserTeam={savedCredentials?.team === team.value}
-                      isBlocked={!!(savedCredentials && savedCredentials.team !== team.value)}
+                      isBlocked={false}
                       isBlockedClicked={blockedTeamClicked === team.value}
                       isAutoLogging={isAutoLogging}
                       themeConfig={themeConfig}
@@ -784,6 +787,24 @@ const PlantaoHome = () => {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="w-full max-w-md"
               >
+
+                {/* Warning banner if viewing different team */}
+                {savedCredentials && selectedTeam && savedCredentials.team !== selectedTeam && !showMasterLogin && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center gap-3"
+                  >
+                    <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                    <div className="text-xs">
+                      <p className="font-semibold text-amber-500">Apenas visualização</p>
+                      <p className="text-muted-foreground">
+                        Você pertence à equipe <span className="font-bold text-foreground">{savedCredentials.team.toUpperCase()}</span>. 
+                        Para trocar de equipe, acesse seu painel.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
 
                 <Card className={`border-primary/20 bg-card/90 backdrop-blur-md shadow-2xl shadow-primary/10 ${showMasterLogin ? 'border-amber-500/30' : ''}`}>
                   <CardHeader className="text-center pb-3">
@@ -1000,16 +1021,25 @@ const PlantaoHome = () => {
                             </div>
                           )}
 
-                          <Button
-                            type="submit"
-                            className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 h-9"
-                            disabled={isLoading}
-                          >
-                            {isLoading ? (
-                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                            ) : null}
-                            Entrar
-                          </Button>
+                          {/* Disable login if viewing different team */}
+                          {savedCredentials && selectedTeam && savedCredentials.team !== selectedTeam ? (
+                            <div className="p-3 rounded-lg bg-muted/50 text-center">
+                              <p className="text-xs text-muted-foreground">
+                                Entre na sua equipe ({savedCredentials.team.toUpperCase()}) para fazer login
+                              </p>
+                            </div>
+                          ) : (
+                            <Button
+                              type="submit"
+                              className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 h-9"
+                              disabled={isLoading}
+                            >
+                              {isLoading ? (
+                                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                              ) : null}
+                              Entrar
+                            </Button>
+                          )}
 
                           <div className="relative my-3">
                             <div className="absolute inset-0 flex items-center">
