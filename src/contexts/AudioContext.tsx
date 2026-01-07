@@ -1,15 +1,8 @@
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react';
 
 // Playlist de músicas - todas as músicas disponíveis
-const MUSIC_TRACKS: { path: string; name: string }[] = [
-  { path: '/audio/background-80.mp3', name: 'Background 80s' },
-  { path: '/audio/background-lento.mp3', name: 'Background Lento' },
-  { path: '/audio/gym-pro-funk1.mp3', name: 'Gym Pro Funk 1' },
-  { path: '/audio/gym-pro-funk2.mp3', name: 'Gym Pro Funk 2' },
-  { path: '/audio/peso-neon.mp3', name: 'Peso Neon' },
-  { path: '/audio/peso-do-ritmo.mp3', name: 'Peso do Ritmo' },
-  { path: '/audio/peso-do-ritmo-1.mp3', name: 'Peso do Ritmo 2' },
-];
+// Background music permanently disabled - only SFX enabled
+const MUSIC_TRACKS: { path: string; name: string }[] = [];
 
 const DEFAULT_MUSIC_VOLUME = 0.18;
 const MAX_MUSIC_VOLUME = 0.5;
