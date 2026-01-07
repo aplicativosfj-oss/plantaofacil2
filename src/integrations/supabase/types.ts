@@ -1387,6 +1387,7 @@ export type Database = {
       overtime_bank: {
         Row: {
           agent_id: string
+          alert_sent: boolean | null
           created_at: string | null
           created_by: string | null
           date: string
@@ -1395,10 +1396,13 @@ export type Database = {
           hours_worked: number
           id: string
           month_year: string
+          scheduled_time: string | null
+          shift_type: string
           total_value: number | null
         }
         Insert: {
           agent_id: string
+          alert_sent?: boolean | null
           created_at?: string | null
           created_by?: string | null
           date: string
@@ -1407,10 +1411,13 @@ export type Database = {
           hours_worked: number
           id?: string
           month_year: string
+          scheduled_time?: string | null
+          shift_type?: string
           total_value?: number | null
         }
         Update: {
           agent_id?: string
+          alert_sent?: boolean | null
           created_at?: string | null
           created_by?: string | null
           date?: string
@@ -1419,6 +1426,8 @@ export type Database = {
           hours_worked?: number
           id?: string
           month_year?: string
+          scheduled_time?: string | null
+          shift_type?: string
           total_value?: number | null
         }
         Relationships: [

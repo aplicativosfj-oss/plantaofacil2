@@ -33,6 +33,7 @@ import LicenseExpiredOverlay from '@/components/plantao/LicenseExpiredOverlay';
 import TeamBanner from '@/components/plantao/TeamBanner';
 import SoundButton from '@/components/plantao/SoundButton';
 import useClickSound from '@/hooks/useClickSound';
+import { useOvertimeAlerts } from '@/hooks/useOvertimeAlerts';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 
 interface Shift {
@@ -73,6 +74,9 @@ const AgentDashboard = () => {
   const { agent, signOut, isLoading, refreshAgent } = usePlantaoAuth();
   const navigate = useNavigate();
   const { playClick } = useClickSound();
+  
+  // Initialize overtime alerts hook
+  useOvertimeAlerts(agent?.id);
   
   const [nextShift, setNextShift] = useState<Shift | null>(null);
   const [overtimeSummary, setOvertimeSummary] = useState<OvertimeSummary | null>(null);
