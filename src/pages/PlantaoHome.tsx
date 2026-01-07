@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar, Flame, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, KeyRound, ShieldAlert, Car, Route, CircleAlert, Radar, ScanEye, Cctv, Building2, UserRoundCheck, BadgeCheck, icons as LucideIcons, LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import plantaoLogo from '@/assets/plantao-pro-logo.png';
+import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 import plantaoBg from '@/assets/plantao-bg.png';
 import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
 import ThemeSelector from '@/components/plantao/ThemeSelector';

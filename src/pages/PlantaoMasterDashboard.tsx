@@ -21,7 +21,7 @@ import { format, parseISO, differenceInDays, startOfMonth, endOfMonth } from 'da
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import OnlineIndicator from '@/components/plantao/OnlineIndicator';
-import plantaoLogo from '@/assets/plantao-pro-logo.png';
+import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 
 interface AgentWithDetails {
   id: string;
