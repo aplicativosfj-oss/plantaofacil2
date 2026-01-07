@@ -225,6 +225,7 @@ const ShiftCalendar = () => {
           const dayNotes = getNotesForDate(day);
           const isShift = isShiftDay(day);
           const today = isToday(day);
+          const isShiftToday = isShift && today;
 
           return (
             <motion.button
@@ -233,35 +234,53 @@ const ShiftCalendar = () => {
               whileTap={{ scale: 0.98 }}
               onClick={() => handleDateClick(day)}
               className={`
-                h-20 p-1 rounded-lg border transition-all relative overflow-hidden
-                ${today ? 'border-primary bg-primary/10' : 'border-border/50 bg-card/50'}
-                ${isShift ? 'ring-2 ring-amber-500/50' : ''}
+                h-24 p-1 rounded-lg border-2 transition-all relative overflow-hidden
+                ${isShiftToday 
+                  ? 'border-amber-500 bg-gradient-to-br from-amber-500/20 to-amber-600/10 ring-2 ring-amber-500/30 shadow-lg shadow-amber-500/20' 
+                  : isShift 
+                    ? 'border-amber-500/50 bg-amber-500/10' 
+                    : today 
+                      ? 'border-primary bg-primary/10' 
+                      : 'border-border/50 bg-card/50'
+                }
                 hover:border-primary/50 hover:bg-card
               `}
             >
               <div className="flex flex-col h-full">
-                <div className={`text-sm font-medium ${today ? 'text-primary' : ''}`}>
-                  {format(day, 'd')}
+                {/* Date number */}
+                <div className="flex items-center justify-between">
+                  <div className={`text-sm font-bold ${isShiftToday ? 'text-amber-500' : today ? 'text-primary' : ''}`}>
+                    {format(day, 'd')}
+                  </div>
+                  
+                  {isShift && (
+                    <div className={`flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-semibold ${isShiftToday ? 'bg-amber-500 text-white animate-pulse' : 'bg-amber-500/20 text-amber-500'}`}>
+                      <Clock className="w-2.5 h-2.5" />
+                      {isShiftToday ? '24H' : 'P'}
+                    </div>
+                  )}
                 </div>
-                
+
+                {/* Shift indicator for shift days */}
                 {isShift && (
-                  <div className="absolute top-1 right-1">
-                    <Clock className="w-3 h-3 text-amber-500" />
+                  <div className={`text-[9px] text-center mt-0.5 px-1 py-0.5 rounded ${isShiftToday ? 'bg-amber-500/30 text-amber-200 font-medium' : 'text-amber-500/80'}`}>
+                    {isShiftToday ? '🔥 PLANTÃO' : 'Plantão'}
                   </div>
                 )}
 
+                {/* Notes */}
                 <div className="flex-1 overflow-hidden space-y-0.5 mt-1">
-                  {dayNotes.slice(0, 2).map(note => (
+                  {dayNotes.slice(0, 1).map(note => (
                     <div
                       key={note.id}
-                      className={`text-[10px] px-1 py-0.5 rounded truncate text-white ${getColorClass(note.color)}`}
+                      className={`text-[9px] px-1 py-0.5 rounded truncate text-white ${getColorClass(note.color)}`}
                     >
                       {note.title}
                     </div>
                   ))}
-                  {dayNotes.length > 2 && (
-                    <div className="text-[10px] text-muted-foreground">
-                      +{dayNotes.length - 2} mais
+                  {dayNotes.length > 1 && (
+                    <div className="text-[9px] text-muted-foreground">
+                      +{dayNotes.length - 1}
                     </div>
                   )}
                 </div>
