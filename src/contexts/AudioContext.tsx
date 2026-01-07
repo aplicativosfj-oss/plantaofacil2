@@ -268,32 +268,11 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
   const isInitializedRef = useRef(false);
 
-// Inicializar áudio e embaralhar playlist
+// Música de fundo completamente desabilitada - não inicializa áudio
   useEffect(() => {
     if (isInitializedRef.current) return;
     isInitializedRef.current = true;
-
-    const shuffled = shuffleArray(MUSIC_TRACKS);
-    setShuffledPlaylist(shuffled);
-
-    const audio = new Audio();
-    audio.crossOrigin = 'anonymous';
-    audio.preload = 'auto';
-    // Só define src se houver músicas na playlist
-    if (shuffled.length > 0) {
-      audio.src = shuffled[0].path;
-    }
-    audio.loop = false;
-    audio.volume = 0;
-    audioRef.current = audio;
-
-    return () => {
-      if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
+    // Não carrega nenhuma música - sistema de background music removido
   }, []);
 
   // Configurar analyser após interação do usuário
@@ -416,78 +395,13 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [currentTrackIndex, shuffledPlaylist, isMusicEnabled, isOnHomeScreen, musicVolume]);
 
   // Tentar autoplay após interação
+  // Música de fundo completamente desabilitada - tryAutoPlay não faz nada
   const tryAutoPlay = useCallback(() => {
-    console.log('tryAutoPlay called', { 
-      hasUserInteracted, 
-      isMusicEnabled, 
-      isOnHomeScreen, 
-      isSplashComplete, 
-      isMusicPlaying,
-      shuffledPlaylistLength: shuffledPlaylist.length,
-      audioRef: !!audioRef.current
-    });
+    // Música de fundo removida do sistema - não executa nada
+    return;
+  }, []);
 
-    if (!hasUserInteracted) {
-      setHasUserInteracted(true);
-    }
-
-    const audio = audioRef.current;
-    const wasStoppedThisSession = sessionStorage.getItem(MUSIC_STOPPED_SESSION_KEY) === 'true';
-    
-    if (!audio || !isMusicEnabled || !isOnHomeScreen || !isSplashComplete || wasStoppedThisSession || isMusicPlaying) {
-      console.log('tryAutoPlay blocked', { audio: !!audio, wasStoppedThisSession });
-      return;
-    }
-
-    setupAnalyser();
-    
-    if (audioContextRef.current?.state === 'suspended') {
-      audioContextRef.current.resume();
-    }
-
-    if (shuffledPlaylist.length > 0) {
-      console.log('Playing track:', shuffledPlaylist[currentTrackIndex]?.path);
-      audio.src = shuffledPlaylist[currentTrackIndex].path;
-      audio.load();
-      audio.volume = 0;
-      audio.play().then(() => {
-        console.log('Music started playing');
-        setIsMusicPlaying(true);
-        fadeIn();
-      }).catch((e) => {
-        console.log('Autoplay blocked:', e.message);
-      });
-    } else {
-      console.log('Playlist empty, cannot play');
-    }
-  }, [hasUserInteracted, isMusicEnabled, isOnHomeScreen, isSplashComplete, isMusicPlaying, shuffledPlaylist, currentTrackIndex, setupAnalyser, fadeIn]);
-
-  // Agendar autoplay com delay de 20 segundos após splash complete
-  useEffect(() => {
-    if (isOnHomeScreen && isSplashComplete && isMusicEnabled && hasUserInteracted && !autoplayScheduled) {
-      const wasStoppedThisSession = sessionStorage.getItem(MUSIC_STOPPED_SESSION_KEY) === 'true';
-      if (!wasStoppedThisSession && !isMusicPlaying) {
-        setAutoplayScheduled(true);
-        
-        // Clear any existing timer
-        if (autoplayTimerRef.current) {
-          clearTimeout(autoplayTimerRef.current);
-        }
-        
-        // Agendar reprodução após 20 segundos
-        autoplayTimerRef.current = window.setTimeout(() => {
-          tryAutoPlay();
-        }, AUTOPLAY_DELAY_MS);
-      }
-    }
-    
-    // Cleanup timer when leaving home screen
-    return () => {
-      if (autoplayTimerRef.current) {
-        clearTimeout(autoplayTimerRef.current);
-      }
-    };
-  }, [isOnHomeScreen, isSplashComplete, isMusicEnabled, hasUserInteracted, isMusicPlaying, autoplayScheduled, tryAutoPlay]);
+  // Autoplay desabilitado - não agenda nenhuma reprodução automática
 
   // Reset autoplay scheduled when leaving home
   useEffect(() => {
