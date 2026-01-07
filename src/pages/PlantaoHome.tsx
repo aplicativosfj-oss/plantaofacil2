@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { usePlantaoTheme } from '@/contexts/PlantaoThemeContext';
@@ -19,6 +19,7 @@ import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 import plantaoBg from '@/assets/plantao-bg.png';
 import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
 import ThemeSelector from '@/components/plantao/ThemeSelector';
+import SplashScreen from '@/components/SplashScreen';
 
 // Saved credentials type
 interface SavedCredentials {
@@ -307,6 +308,10 @@ const PlantaoHome = () => {
   const { themeConfig, playSound } = usePlantaoTheme();
   const { isSupported: biometricSupported, isRegistered: biometricRegistered, authenticateWithBiometric, registerBiometric } = useBiometricAuth();
   const navigate = useNavigate();
+  const [showSplash, setShowSplash] = useState(() => {
+    // Mostra intro apenas 1x por sessão (não ao voltar/navegar)
+    return sessionStorage.getItem('plantao_splash_shown') !== '1';
+  });
   const [showAbout, setShowAbout] = useState(false);
   const [showAuthPanel, setShowAuthPanel] = useState(false);
   const [showMasterLogin, setShowMasterLogin] = useState(false);
@@ -317,6 +322,12 @@ const PlantaoHome = () => {
   const [rememberPassword, setRememberPassword] = useState(true);
   const [selectedUnit, setSelectedUnit] = useState('CS Feijó');
   const [showUnitSelector, setShowUnitSelector] = useState(false);
+
+  // Marca que splash já foi exibido nesta sessão
+  const handleSplashComplete = () => {
+    sessionStorage.setItem('plantao_splash_shown', '1');
+    setShowSplash(false);
+  };
 
   // Login state
   const [loginCpf, setLoginCpf] = useState('');
@@ -669,6 +680,11 @@ const PlantaoHome = () => {
       navigate('/master');
     }
   };
+
+  // Mostra splash intro apenas na primeira abertura da sessão
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
