@@ -664,12 +664,16 @@ const PlantaoHome = () => {
                       setSelectedTeam(null);
                       setShowAuthPanel(true);
                     }}
-                    whileHover={{ scale: 1.05 }}
+                    whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(245, 158, 11, 0.4)' }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-600/20 to-amber-500/10 border border-amber-500/30 hover:border-amber-500/60 transition-all duration-300 group"
+                    animate={{ 
+                      boxShadow: ['0 0 10px rgba(245, 158, 11, 0.2)', '0 0 20px rgba(245, 158, 11, 0.4)', '0 0 10px rgba(245, 158, 11, 0.2)'],
+                    }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600/30 to-amber-500/20 border-2 border-amber-500/50 hover:border-amber-400 transition-all duration-300 group shadow-lg shadow-amber-500/20"
                   >
-                    <Crown className="w-4 h-4 text-amber-500" />
-                    <span className="text-xs font-semibold text-amber-400 group-hover:text-amber-300 hidden sm:inline">
+                    <Crown className="w-5 h-5 text-amber-400" />
+                    <span className="text-sm font-bold text-amber-300 group-hover:text-amber-200">
                       Admin
                     </span>
                   </motion.button>
