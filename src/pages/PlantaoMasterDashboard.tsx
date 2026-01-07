@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
+import { useAudio } from '@/contexts/AudioContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,10 +14,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { 
   Shield, LogOut, Users, DollarSign, Calendar, User, Search, 
   Clock, TrendingUp, Key, Eye, EyeOff, Save, AlertTriangle,
-  CheckCircle, XCircle, ChevronDown, ChevronUp
+  CheckCircle, XCircle, ChevronDown, ChevronUp, Receipt, CreditCard
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format, parseISO, differenceInDays } from 'date-fns';
+import { format, parseISO, differenceInDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import OnlineIndicator from '@/components/plantao/OnlineIndicator';
@@ -60,6 +61,27 @@ interface TeamStats {
   delta: { count: number; overtime: number };
 }
 
+interface LicensePaymentRecord {
+  id: string;
+  agent_id: string;
+  payment_month: string;
+  amount: number;
+  status: string;
+  payment_date: string | null;
+  payment_method: string | null;
+  confirmed_at: string | null;
+  created_at: string;
+  agent?: { full_name: string };
+}
+
+interface MonthlyRevenue {
+  month: string;
+  total: number;
+  confirmed: number;
+  pending: number;
+  count: number;
+}
+
 const getTeamColor = (team: string | null) => {
   switch (team) {
     case 'alfa': return 'bg-team-alfa text-white';
@@ -72,6 +94,7 @@ const getTeamColor = (team: string | null) => {
 
 const PlantaoMasterDashboard = () => {
   const { master, signOut, isLoading } = usePlantaoAuth();
+  const { stopMusicImmediately } = useAudio();
   const navigate = useNavigate();
   
   const [agents, setAgents] = useState<AgentWithDetails[]>([]);
@@ -86,6 +109,8 @@ const PlantaoMasterDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
+  const [licensePayments, setLicensePayments] = useState<LicensePaymentRecord[]>([]);
+  const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenue[]>([]);
   
   // Password change dialog
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
@@ -100,6 +125,11 @@ const PlantaoMasterDashboard = () => {
       navigate('/');
     }
   }, [isLoading, master, navigate]);
+
+  // Stop music when entering admin panel
+  useEffect(() => {
+    stopMusicImmediately();
+  }, [stopMusicImmediately]);
 
   useEffect(() => {
     if (master) {
@@ -137,6 +167,33 @@ const PlantaoMasterDashboard = () => {
       const { data: presenceData } = await supabase
         .from('agent_presence')
         .select('agent_id, last_seen');
+
+      // Fetch license payments
+      const { data: paymentsData } = await supabase
+        .from('license_payments')
+        .select('*, agent:agents!license_payments_agent_id_fkey(full_name)')
+        .order('created_at', { ascending: false });
+
+      setLicensePayments(paymentsData || []);
+
+      // Calculate monthly revenue
+      const revenueByMonth: Record<string, MonthlyRevenue> = {};
+      (paymentsData || []).forEach(payment => {
+        const month = payment.payment_month;
+        if (!revenueByMonth[month]) {
+          revenueByMonth[month] = { month, total: 0, confirmed: 0, pending: 0, count: 0 };
+        }
+        revenueByMonth[month].total += payment.amount || 0;
+        revenueByMonth[month].count++;
+        if (payment.status === 'confirmed') {
+          revenueByMonth[month].confirmed += payment.amount || 0;
+        } else if (payment.status === 'pending') {
+          revenueByMonth[month].pending += payment.amount || 0;
+        }
+      });
+
+      const sortedRevenue = Object.values(revenueByMonth).sort((a, b) => b.month.localeCompare(a.month));
+      setMonthlyRevenue(sortedRevenue);
 
       // Fetch shifts count
       const { data: shiftsData } = await supabase
@@ -250,7 +307,47 @@ const PlantaoMasterDashboard = () => {
   const totalAgents = agents.length;
   const activeAgents = agents.filter(a => a.is_active).length;
   const totalOvertimeHours = agents.reduce((sum, a) => sum + (a.totalOvertime || 0), 0);
-  const totalOvertimeValue = agents.reduce((sum, a) => sum + (a.totalOvertimeValue || 0), 0);
+  
+  // Calculate billing totals
+  const currentMonth = format(new Date(), 'yyyy-MM');
+  const currentMonthRevenue = monthlyRevenue.find(r => r.month === currentMonth);
+  const totalConfirmedRevenue = monthlyRevenue.reduce((sum, r) => sum + r.confirmed, 0);
+  const pendingPayments = licensePayments.filter(p => p.status === 'pending').length;
+
+  const handleConfirmPayment = async (paymentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('license_payments')
+        .update({ 
+          status: 'confirmed',
+          confirmed_at: new Date().toISOString()
+        })
+        .eq('id', paymentId);
+
+      if (error) throw error;
+      toast.success('Pagamento confirmado!');
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao confirmar pagamento');
+    }
+  };
+
+  const handleRejectPayment = async (paymentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('license_payments')
+        .update({ status: 'rejected' })
+        .eq('id', paymentId);
+
+      if (error) throw error;
+      toast.success('Pagamento rejeitado');
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao rejeitar pagamento');
+    }
+  };
 
   if (isLoading || !master) {
     return (
@@ -375,18 +472,22 @@ const PlantaoMasterDashboard = () => {
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5 lg:grid-cols-5">
               <TabsTrigger value="overview" className="gap-2">
                 <TrendingUp className="w-4 h-4" />
                 <span className="hidden sm:inline">Visão Geral</span>
+              </TabsTrigger>
+              <TabsTrigger value="billing" className="gap-2">
+                <Receipt className="w-4 h-4" />
+                <span className="hidden sm:inline">Faturamento</span>
               </TabsTrigger>
               <TabsTrigger value="agents" className="gap-2">
                 <Users className="w-4 h-4" />
                 <span className="hidden sm:inline">Agentes</span>
               </TabsTrigger>
               <TabsTrigger value="overtime" className="gap-2">
-                <DollarSign className="w-4 h-4" />
-                <span className="hidden sm:inline">Banco de Horas</span>
+                <Clock className="w-4 h-4" />
+                <span className="hidden sm:inline">BH</span>
               </TabsTrigger>
               <TabsTrigger value="shifts" className="gap-2">
                 <Calendar className="w-4 h-4" />
@@ -437,12 +538,12 @@ const PlantaoMasterDashboard = () => {
                 <Card className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/30">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <DollarSign className="w-8 h-8 text-purple-500" />
+                      <Receipt className="w-8 h-8 text-purple-500" />
                       <div>
                         <p className="text-2xl font-bold text-purple-500">
-                          R$ {totalOvertimeValue.toFixed(2)}
+                          R$ {totalConfirmedRevenue.toFixed(2)}
                         </p>
-                        <p className="text-xs text-muted-foreground">Valor BH</p>
+                        <p className="text-xs text-muted-foreground">Faturamento Total</p>
                       </div>
                     </div>
                   </CardContent>
@@ -734,6 +835,214 @@ const PlantaoMasterDashboard = () => {
                       {agents.every(a => (a.shiftsCount || 0) === 0) && (
                         <p className="text-muted-foreground text-center py-8">
                           Nenhum plantão programado ainda
+                        </p>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Billing Tab */}
+            <TabsContent value="billing" className="space-y-6">
+              {/* Billing Stats */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-500/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-8 h-8 text-green-500" />
+                      <div>
+                        <p className="text-2xl font-bold text-green-500">
+                          R$ {totalConfirmedRevenue.toFixed(2)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Total Confirmado</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 border-amber-500/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-8 h-8 text-amber-500" />
+                      <div>
+                        <p className="text-2xl font-bold text-amber-500">{pendingPayments}</p>
+                        <p className="text-xs text-muted-foreground">Pendentes</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-blue-500/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="w-8 h-8 text-blue-500" />
+                      <div>
+                        <p className="text-2xl font-bold text-blue-500">
+                          R$ {(currentMonthRevenue?.confirmed || 0).toFixed(2)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Mês Atual</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Receipt className="w-8 h-8 text-purple-500" />
+                      <div>
+                        <p className="text-2xl font-bold text-purple-500">R$ 20,00</p>
+                        <p className="text-xs text-muted-foreground">Mensalidade</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Monthly Revenue */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    Faturamento Mensal
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {monthlyRevenue.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">
+                      Nenhum pagamento registrado ainda
+                    </p>
+                  ) : (
+                    <ScrollArea className="h-[200px]">
+                      <div className="space-y-2">
+                        {monthlyRevenue.map(rev => (
+                          <div key={rev.month} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                            <div>
+                              <p className="font-medium">
+                                {format(parseISO(`${rev.month}-01`), "MMMM 'de' yyyy", { locale: ptBR })}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {rev.count} pagamento(s)
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-green-500">R$ {rev.confirmed.toFixed(2)}</p>
+                              {rev.pending > 0 && (
+                                <p className="text-sm text-amber-500">+ R$ {rev.pending.toFixed(2)} pendente</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Pending Payments */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+                    Pagamentos Pendentes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {licensePayments.filter(p => p.status === 'pending').length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">
+                      Nenhum pagamento pendente
+                    </p>
+                  ) : (
+                    <ScrollArea className="h-[300px]">
+                      <div className="space-y-3">
+                        {licensePayments
+                          .filter(p => p.status === 'pending')
+                          .map(payment => (
+                            <div key={payment.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-amber-500/30">
+                              <div>
+                                <p className="font-medium">{payment.agent?.full_name || 'Agente'}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  Ref: {format(parseISO(`${payment.payment_month}-01`), "MMM/yyyy", { locale: ptBR })}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  Enviado em: {format(parseISO(payment.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                                </p>
+                              </div>
+                              <div className="flex flex-col items-end gap-2">
+                                <p className="font-bold text-primary">R$ {payment.amount.toFixed(2)}</p>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-green-500 text-green-500 hover:bg-green-500/20"
+                                    onClick={() => handleConfirmPayment(payment.id)}
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-1" />
+                                    Confirmar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-red-500 text-red-500 hover:bg-red-500/20"
+                                    onClick={() => handleRejectPayment(payment.id)}
+                                  >
+                                    <XCircle className="w-4 h-4 mr-1" />
+                                    Rejeitar
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </ScrollArea>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Recent Payments History */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Receipt className="w-5 h-5 text-primary" />
+                    Histórico de Pagamentos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-2">
+                      {licensePayments.slice(0, 50).map(payment => (
+                        <div key={payment.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-2 h-2 rounded-full ${
+                              payment.status === 'confirmed' ? 'bg-green-500' :
+                              payment.status === 'pending' ? 'bg-amber-500' :
+                              'bg-red-500'
+                            }`} />
+                            <div>
+                              <p className="font-medium">{payment.agent?.full_name || 'Agente'}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {format(parseISO(`${payment.payment_month}-01`), "MMM/yyyy", { locale: ptBR })}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold">R$ {payment.amount.toFixed(2)}</p>
+                            <Badge variant={
+                              payment.status === 'confirmed' ? 'default' :
+                              payment.status === 'pending' ? 'secondary' :
+                              'destructive'
+                            }>
+                              {payment.status === 'confirmed' ? 'Confirmado' :
+                               payment.status === 'pending' ? 'Pendente' : 'Rejeitado'}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                      {licensePayments.length === 0 && (
+                        <p className="text-muted-foreground text-center py-8">
+                          Nenhum pagamento registrado
                         </p>
                       )}
                     </div>
