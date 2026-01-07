@@ -656,7 +656,7 @@ const PlantaoHome = () => {
                       </button>
                     }
                   />
-                  {/* Admin Access Button - Prominent Position */}
+                  {/* Admin Access Button */}
                   <motion.button
                     onClick={() => {
                       playSound('click');
@@ -664,18 +664,11 @@ const PlantaoHome = () => {
                       setSelectedTeam(null);
                       setShowAuthPanel(true);
                     }}
-                    whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(245, 158, 11, 0.4)' }}
-                    whileTap={{ scale: 0.95 }}
-                    animate={{ 
-                      boxShadow: ['0 0 10px rgba(245, 158, 11, 0.2)', '0 0 20px rgba(245, 158, 11, 0.4)', '0 0 10px rgba(245, 158, 11, 0.2)'],
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600/30 to-amber-500/20 border-2 border-amber-500/50 hover:border-amber-400 transition-all duration-300 group shadow-lg shadow-amber-500/20"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="p-2 rounded-lg bg-amber-500/20 border border-amber-500/40 hover:bg-amber-500/30 hover:border-amber-400 transition-all duration-200"
                   >
-                    <Crown className="w-5 h-5 text-amber-400" />
-                    <span className="text-sm font-bold text-amber-300 group-hover:text-amber-200">
-                      Admin
-                    </span>
+                    <Crown className="w-4 h-4 text-amber-400" />
                   </motion.button>
                   <div className="flex items-center gap-2">
                     <AlertPulse />
