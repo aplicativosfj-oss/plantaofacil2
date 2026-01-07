@@ -408,140 +408,87 @@ const AgentDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-2 sm:px-4 py-3 sm:py-4 max-w-lg">
         {activePanel === 'overview' && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
+            className="space-y-3"
           >
             {/* Today's Shift Card */}
             <ShiftDayCard />
 
-            {/* Next Shift Card */}
-            <Card className={`border-2 ${isShiftSoon ? 'border-warning/50 bg-warning/5' : 'border-primary/30'}`}>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Clock className="w-5 h-5 text-primary" />
-                  Próximo Plantão
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+            {/* Next Shift Card - Compact */}
+            <Card className={`border ${isShiftSoon ? 'border-warning/50 bg-warning/5' : 'border-primary/20'}`}>
+              <CardContent className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Próximo Plantão</span>
+                </div>
                 {nextShift ? (
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-2xl font-bold">
-                          {format(new Date(nextShift.shift_start), "dd 'de' MMMM", { locale: ptBR })}
+                        <p className="text-lg font-bold">
+                          {format(new Date(nextShift.shift_start), "dd/MM", { locale: ptBR })}
                         </p>
-                        <p className="text-muted-foreground">
-                          {format(new Date(nextShift.shift_start), 'EEEE', { locale: ptBR })} às{' '}
-                          {format(new Date(nextShift.shift_start), 'HH:mm')}
+                        <p className="text-xs text-muted-foreground capitalize">
+                          {format(new Date(nextShift.shift_start), 'EEEE', { locale: ptBR })} • {format(new Date(nextShift.shift_start), 'HH:mm')}
                         </p>
                       </div>
-                      <div className={`text-right ${isShiftSoon ? 'animate-countdown' : ''}`}>
-                        <p className="text-sm text-muted-foreground">Contagem Regressiva</p>
-                        <p className={`text-2xl font-mono font-bold ${isShiftSoon ? 'text-warning' : 'text-primary'}`}>
+                      <div className={`text-right ${isShiftSoon ? 'animate-pulse' : ''}`}>
+                        <p className={`text-lg font-mono font-bold ${isShiftSoon ? 'text-warning' : 'text-primary'}`}>
                           {countdown}
                         </p>
+                        <p className="text-[10px] text-muted-foreground">restantes</p>
                       </div>
                     </div>
 
                     {isShiftSoon && (
-                      <div className="flex items-center gap-2 text-warning text-sm bg-warning/10 p-3 rounded-lg">
-                        <AlertTriangle className="w-4 h-4" />
-                        <span>Plantão em menos de 24 horas!</span>
+                      <div className="flex items-center gap-1.5 text-warning text-xs bg-warning/10 px-2 py-1.5 rounded">
+                        <AlertTriangle className="w-3 h-3" />
+                        <span>Menos de 24h!</span>
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-4 pt-2">
-                      <div className="text-center p-3 bg-muted/30 rounded-lg">
-                        <Timer className="w-5 h-5 mx-auto mb-1 text-primary" />
-                        <p className="text-sm text-muted-foreground">Duração</p>
-                        <p className="font-bold">24 horas</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="text-center p-2 bg-muted/30 rounded">
+                        <p className="text-[10px] text-muted-foreground">Duração</p>
+                        <p className="text-sm font-semibold">24h</p>
                       </div>
-                      <div className="text-center p-3 bg-muted/30 rounded-lg">
-                        <Calendar className="w-5 h-5 mx-auto mb-1 text-accent" />
-                        <p className="text-sm text-muted-foreground">Folga até</p>
-                        <p className="font-bold">
-                          {format(new Date(nextShift.rest_end), 'dd/MM HH:mm')}
+                      <div className="text-center p-2 bg-muted/30 rounded">
+                        <p className="text-[10px] text-muted-foreground">Folga até</p>
+                        <p className="text-sm font-semibold">
+                          {format(new Date(nextShift.rest_end), 'dd/MM')}
                         </p>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>Nenhum plantão agendado</p>
-                    <p className="text-sm">Entre em contato com a administração</p>
+                  <div 
+                    className="flex items-center gap-3 p-2 bg-muted/20 rounded cursor-pointer hover:bg-muted/30 transition-colors"
+                    onClick={() => setActivePanel('calendar')}
+                  >
+                    <Calendar className="w-8 h-8 text-muted-foreground/50" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Configure seu plantão</p>
+                      <p className="text-xs text-muted-foreground">Toque para acessar o calendário</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-4">
-              {/* Overtime Card */}
-              <Card 
-                className="cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => setActivePanel('overtime')}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <DollarSign className="w-5 h-5 text-accent" />
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">Banco de Horas</p>
-                  <p className="text-xl font-bold">
-                    {overtimeSummary?.total_hours.toFixed(1) || '0'}h
-                  </p>
-                  <p className="text-sm text-accent">
-                    R$ {overtimeSummary?.total_value.toFixed(2) || '0,00'}
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Swaps Card */}
-              <Card 
-                className="cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => setActivePanel('swaps')}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <ArrowLeftRight className="w-5 h-5 text-primary" />
-                    <div className="flex items-center gap-2">
-                      {pendingSwaps > 0 && (
-                        <Badge variant="destructive" className="text-xs">
-                          {pendingSwaps}
-                        </Badge>
-                      )}
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Permutas</p>
-                  <p className="text-xl font-bold">
-                    {pendingSwaps > 0 ? `${pendingSwaps} pendente${pendingSwaps > 1 ? 's' : ''}` : 'Nenhuma'}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Quick Actions - Compact Grid */}
+            <div className="grid grid-cols-4 gap-2">
               <Card 
                 className="cursor-pointer hover:border-primary/50 transition-colors"
                 onClick={() => setActivePanel('calendar')}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/20">
-                      <Calendar className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">Calendário</p>
-                      <p className="text-xs text-muted-foreground">Meus plantões</p>
-                    </div>
-                  </div>
+                <CardContent className="p-2 text-center">
+                  <Calendar className="w-5 h-5 mx-auto text-primary mb-1" />
+                  <p className="text-[10px] font-medium">Calendário</p>
                 </CardContent>
               </Card>
 
@@ -549,105 +496,107 @@ const AgentDashboard = () => {
                 className="cursor-pointer hover:border-accent/50 transition-colors"
                 onClick={() => setActivePanel('monitoring')}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-accent/20">
-                      <Users className="w-5 h-5 text-accent" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">Rondas</p>
-                      <p className="text-xs text-muted-foreground">Divisão de turnos</p>
-                    </div>
-                  </div>
+                <CardContent className="p-2 text-center">
+                  <Shield className="w-5 h-5 mx-auto text-accent mb-1" />
+                  <p className="text-[10px] font-medium">Rondas</p>
+                </CardContent>
+              </Card>
+
+              <Card 
+                className="cursor-pointer hover:border-primary/50 transition-colors relative"
+                onClick={() => setActivePanel('swaps')}
+              >
+                <CardContent className="p-2 text-center">
+                  <ArrowLeftRight className="w-5 h-5 mx-auto text-primary mb-1" />
+                  <p className="text-[10px] font-medium">Permutas</p>
+                  {pendingSwaps > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-white text-[10px] rounded-full flex items-center justify-center">
+                      {pendingSwaps}
+                    </span>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card 
+                className="cursor-pointer hover:border-accent/50 transition-colors"
+                onClick={() => setActivePanel('overtime')}
+              >
+                <CardContent className="p-2 text-center">
+                  <DollarSign className="w-5 h-5 mx-auto text-accent mb-1" />
+                  <p className="text-[10px] font-medium">Horas</p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Team Members Card */}
-            <TeamMembersCard />
-
-            {/* Team Management */}
-            <Card 
-              className={`cursor-pointer transition-colors border-2 ${
-                agent.current_team 
-                  ? `border-${agent.current_team === 'alfa' ? 'blue' : agent.current_team === 'bravo' ? 'amber' : agent.current_team === 'charlie' ? 'emerald' : 'red'}-500/30 hover:border-primary/50`
-                  : 'border-warning/50 hover:border-warning'
-              }`}
-              onClick={() => setActivePanel('team')}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${agent.current_team ? getTeamColor(agent.current_team) : 'bg-warning/20'}`}>
-                      {agent.current_team ? (
-                        <Users className="w-6 h-6 text-white" />
-                      ) : (
-                        <AlertTriangle className="w-6 h-6 text-warning" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium">
-                        {agent.current_team 
-                          ? `Equipe ${agent.current_team.charAt(0).toUpperCase() + agent.current_team.slice(1)}`
-                          : 'Selecionar Equipe'}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {agent.current_team 
-                          ? 'Transferir ou desvincular'
-                          : 'Vincule-se a uma equipe'}
-                      </p>
-                    </div>
+            {/* Stats Summary - Compact */}
+            <Card>
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-muted-foreground">Resumo do Mês</span>
+                  <span className="text-[10px] text-muted-foreground capitalize">
+                    {format(new Date(), "MMM/yy", { locale: ptBR })}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-center p-2 bg-primary/10 rounded">
+                    <p className="text-lg font-bold text-primary">
+                      {overtimeSummary?.total_hours.toFixed(0) || '0'}h
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Horas</p>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <div className="text-center p-2 bg-accent/10 rounded">
+                    <p className="text-lg font-bold text-accent">
+                      R${overtimeSummary?.total_value.toFixed(0) || '0'}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Valor</p>
+                  </div>
+                  <div className="text-center p-2 bg-muted/30 rounded">
+                    <p className="text-lg font-bold text-muted-foreground">
+                      {overtimeSummary?.remaining_hours.toFixed(0) || '70'}h
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Disponível</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Monthly Progress */}
-            {overtimeSummary && (
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <TrendingUp className="w-5 h-5 text-accent" />
-                    Resumo do Mês
-                  </CardTitle>
-                  <CardDescription>
-                    {format(new Date(), "MMMM 'de' yyyy", { locale: ptBR })}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Horas utilizadas</span>
-                        <span className="font-medium">{overtimeSummary.total_hours.toFixed(1)}h / 70h</span>
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary transition-all"
-                          style={{ width: `${Math.min((overtimeSummary.total_hours / 70) * 100, 100)}%` }}
-                        />
-                      </div>
+            {/* Team Management - Compact */}
+            <Card 
+              className={`cursor-pointer transition-colors ${
+                agent.current_team 
+                  ? 'border-border/50 hover:border-primary/50'
+                  : 'border-warning/50'
+              }`}
+              onClick={() => setActivePanel('team')}
+            >
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-1.5 rounded ${agent.current_team ? getTeamColor(agent.current_team) : 'bg-warning/20'}`}>
+                      {agent.current_team ? (
+                        <Users className="w-4 h-4 text-white" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-warning" />
+                      )}
                     </div>
-
-                    <div className="grid grid-cols-3 gap-4 pt-2">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-primary">{overtimeSummary.total_hours.toFixed(0)}h</p>
-                        <p className="text-xs text-muted-foreground">Trabalhadas</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-accent">R$ {overtimeSummary.total_value.toFixed(0)}</p>
-                        <p className="text-xs text-muted-foreground">A receber</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-muted-foreground">{overtimeSummary.remaining_hours.toFixed(0)}h</p>
-                        <p className="text-xs text-muted-foreground">Disponíveis</p>
-                      </div>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {agent.current_team 
+                          ? `Equipe ${agent.current_team.charAt(0).toUpperCase() + agent.current_team.slice(1)}`
+                          : 'Selecionar Equipe'}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {agent.current_team ? 'Gerenciar equipe' : 'Vincule-se a uma equipe'}
+                      </p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Team Members Card */}
+            <TeamMembersCard />
           </motion.div>
         )}
 
