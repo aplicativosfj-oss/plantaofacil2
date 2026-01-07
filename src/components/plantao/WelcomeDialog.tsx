@@ -22,18 +22,25 @@ const WelcomeDialog: React.FC<WelcomeDialogProps> = ({
   const firstName = agentName.split(' ')[0];
   const [isClosing, setIsClosing] = useState(false);
 
-  // Auto-close after 5 seconds (only if not first login)
+  // Force close after 5 seconds (only if not first login)
   useEffect(() => {
-    if (isOpen && !isFirstLogin) {
-      const timer = setTimeout(() => {
-        setIsClosing(true);
-        setTimeout(() => {
-          onClose();
-          setIsClosing(false);
-        }, 500); // Wait for exit animation
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
+    if (!isOpen || isFirstLogin) return;
+    
+    // Force close after exactly 5 seconds
+    const forceCloseTimer = setTimeout(() => {
+      setIsClosing(true);
+    }, 5000);
+    
+    // Complete the close after animation
+    const cleanupTimer = setTimeout(() => {
+      onClose();
+      setIsClosing(false);
+    }, 5500);
+    
+    return () => {
+      clearTimeout(forceCloseTimer);
+      clearTimeout(cleanupTimer);
+    };
   }, [isOpen, isFirstLogin, onClose]);
 
   const shouldShow = isOpen && !isClosing;
