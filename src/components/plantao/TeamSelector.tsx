@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Users, Check, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import teamsBg from '@/assets/teams-bg.png';
+import plantaoLogo from '@/assets/plantao-logo.png';
 
 const teams = [
   { 
@@ -80,9 +81,12 @@ const TeamSelector = ({ onBack, onTeamChanged }: Props) => {
 
   return (
     <div className="space-y-4">
-      <Button variant="ghost" onClick={onBack} className="mb-2">
-        <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
-      </Button>
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={onBack} className="mb-2">
+          <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
+        </Button>
+        <img src={plantaoLogo} alt="PlantãoPro" className="h-8 w-auto object-contain opacity-70" />
+      </div>
 
       {/* Team Banner */}
       <div className="relative rounded-xl overflow-hidden h-48 mb-6">
@@ -148,6 +152,8 @@ const TeamSelector = ({ onBack, onTeamChanged }: Props) => {
           Você está atualmente na <strong className="text-primary">Equipe {agent.current_team.charAt(0).toUpperCase() + agent.current_team.slice(1)}</strong>
         </p>
       )}
+
+      <p className="text-center text-xs text-muted-foreground pt-4">Developed by Franc Denis</p>
     </div>
   );
 };

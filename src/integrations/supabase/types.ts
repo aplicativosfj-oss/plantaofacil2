@@ -161,6 +161,7 @@ export type Database = {
       agents: {
         Row: {
           avatar_url: string | null
+          city: string | null
           cpf: string
           created_at: string | null
           current_team: Database["public"]["Enums"]["team_type"] | null
@@ -171,11 +172,13 @@ export type Database = {
           phone: string | null
           registration_number: string | null
           team_joined_at: string | null
+          unit: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
           avatar_url?: string | null
+          city?: string | null
           cpf: string
           created_at?: string | null
           current_team?: Database["public"]["Enums"]["team_type"] | null
@@ -186,11 +189,13 @@ export type Database = {
           phone?: string | null
           registration_number?: string | null
           team_joined_at?: string | null
+          unit?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           avatar_url?: string | null
+          city?: string | null
           cpf?: string
           created_at?: string | null
           current_team?: Database["public"]["Enums"]["team_type"] | null
@@ -201,6 +206,7 @@ export type Database = {
           phone?: string | null
           registration_number?: string | null
           team_joined_at?: string | null
+          unit?: string | null
           updated_at?: string | null
           user_id?: string | null
         }

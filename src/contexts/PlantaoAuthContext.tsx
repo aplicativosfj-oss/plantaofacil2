@@ -17,6 +17,8 @@ interface AgentProfile {
   team_joined_at: string | null;
   avatar_url: string | null;
   is_active: boolean;
+  city: string | null;
+  unit: string | null;
 }
 
 interface PlantaoAuthContextType {
@@ -35,7 +37,9 @@ interface SignUpData {
   cpf: string;
   password: string;
   full_name: string;
-  registration_number?: string;
+  registration_number: string;
+  city: string;
+  unit: string;
   phone?: string;
   email?: string;
 }
@@ -246,7 +250,9 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
         user_id: authData.user.id,
         cpf: cleanCpf,
         full_name: data.full_name,
-        registration_number: data.registration_number || null,
+        registration_number: data.registration_number,
+        city: data.city,
+        unit: data.unit,
         phone: data.phone || null,
         email: data.email || null,
       });
