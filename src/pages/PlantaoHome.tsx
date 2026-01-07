@@ -374,12 +374,11 @@ const PlantaoHome = () => {
           navigate('/dashboard');
         }
       } else {
-        // Different team - show blocked effect
-        setBlockedTeamClicked(teamValue);
-        toast.error(`Acesso negado! Você pertence à equipe ${savedCredentials.team.toUpperCase()}`);
-        
-        // Reset blocked state after animation
-        setTimeout(() => setBlockedTeamClicked(null), 1500);
+        // Different team - show warning message
+        toast.warning(
+          `Você pertence à equipe ${savedCredentials.team.toUpperCase()}. Para alterar sua equipe, acesse seu painel e vá em "Alterar Equipe".`,
+          { duration: 5000 }
+        );
       }
     } else {
       // No saved credentials - show login for this team
