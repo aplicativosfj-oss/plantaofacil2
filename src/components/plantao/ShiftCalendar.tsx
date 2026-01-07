@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday, differenceInHours, addHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Clock, AlertCircle, Users } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Clock, Calendar, AlertTriangle } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -26,12 +28,6 @@ interface CalendarNote {
 interface ShiftDate {
   shift_date: string;
   is_working: boolean;
-}
-
-interface TeamMemberShift {
-  agent_id: string;
-  agent_name: string;
-  shift_date: string;
 }
 
 const COLORS = [
@@ -52,11 +48,12 @@ const ShiftCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [notes, setNotes] = useState<CalendarNote[]>([]);
   const [shiftDates, setShiftDates] = useState<ShiftDate[]>([]);
-  const [teamShifts, setTeamShifts] = useState<TeamMemberShift[]>([]);
+  const [shiftSchedule, setShiftSchedule] = useState<{ first_shift_date: string; id: string } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditShiftDialogOpen, setIsEditShiftDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<CalendarNote | null>(null);
   const [formData, setFormData] = useState({ title: '', content: '', color: 'blue', is_reminder: false });
-  const [showTeamShifts, setShowTeamShifts] = useState(true);
+  const [newFirstShiftDate, setNewFirstShiftDate] = useState<string>('');
 
   // Fetch notes
   useEffect(() => {
@@ -66,7 +63,8 @@ const ShiftCalendar = () => {
       const { data } = await supabase
         .from('calendar_notes')
         .select('*')
-        .eq('agent_id', agent.id);
+        .eq('agent_id', agent.id)
+        .order('note_date', { ascending: true });
 
       if (data) setNotes(data);
     };
@@ -79,7 +77,6 @@ const ShiftCalendar = () => {
     if (!agent?.id) return;
 
     const fetchShiftDates = async () => {
-      // First check if agent has a schedule
       const { data: schedule } = await supabase
         .from('shift_schedules')
         .select('*')
@@ -87,6 +84,8 @@ const ShiftCalendar = () => {
         .single();
 
       if (schedule) {
+        setShiftSchedule({ first_shift_date: schedule.first_shift_date, id: schedule.id });
+        
         const { data } = await supabase.rpc('generate_shift_dates', {
           p_first_date: schedule.first_shift_date,
           p_pattern: schedule.shift_pattern,
@@ -99,55 +98,6 @@ const ShiftCalendar = () => {
 
     fetchShiftDates();
   }, [agent?.id]);
-
-  // Fetch team members' shift dates
-  useEffect(() => {
-    if (!agent?.current_team) return;
-
-    const fetchTeamShifts = async () => {
-      // Get all team members with schedules
-      const { data: teamMembers } = await supabase
-        .from('agents')
-        .select('id, full_name')
-        .eq('current_team', agent.current_team)
-        .eq('is_active', true)
-        .neq('id', agent.id);
-
-      if (!teamMembers) return;
-
-      const allTeamShifts: TeamMemberShift[] = [];
-
-      for (const member of teamMembers) {
-        const { data: schedule } = await supabase
-          .from('shift_schedules')
-          .select('first_shift_date, shift_pattern')
-          .eq('agent_id', member.id)
-          .single();
-
-        if (schedule) {
-          const { data: shifts } = await supabase.rpc('generate_shift_dates', {
-            p_first_date: schedule.first_shift_date,
-            p_pattern: schedule.shift_pattern,
-            p_months_ahead: 3
-          });
-
-          if (shifts) {
-            shifts.forEach((shift: ShiftDate) => {
-              allTeamShifts.push({
-                agent_id: member.id,
-                agent_name: member.full_name,
-                shift_date: shift.shift_date
-              });
-            });
-          }
-        }
-      }
-
-      setTeamShifts(allTeamShifts);
-    };
-
-    fetchTeamShifts();
-  }, [agent?.current_team, agent?.id]);
 
   const days = eachDayOfInterval({
     start: startOfMonth(currentMonth),
@@ -164,8 +114,13 @@ const ShiftCalendar = () => {
     return shiftDates.some(shift => isSameDay(new Date(shift.shift_date), date));
   };
 
-  const getTeamShiftsForDate = (date: Date) => {
-    return teamShifts.filter(shift => isSameDay(new Date(shift.shift_date), date));
+  // Check if shift can be edited (within 24 hours before first shift date)
+  const canEditShift = () => {
+    if (!shiftSchedule) return false;
+    const firstShiftDate = new Date(shiftSchedule.first_shift_date);
+    firstShiftDate.setHours(6, 0, 0, 0); // Shift starts at 06:00
+    const hoursUntilShift = differenceInHours(firstShiftDate, new Date());
+    return hoursUntilShift > 24;
   };
 
   const handleDateClick = (date: Date) => {
@@ -177,7 +132,7 @@ const ShiftCalendar = () => {
 
   const handleSaveNote = async () => {
     if (!agent?.id || !selectedDate || !formData.title.trim()) {
-      toast.error('Preencha o título da anotação');
+      toast.error('Preencha o título do agendamento');
       return;
     }
 
@@ -197,12 +152,12 @@ const ShiftCalendar = () => {
         .eq('id', editingNote.id);
 
       if (error) {
-        toast.error('Erro ao atualizar anotação');
+        toast.error('Erro ao atualizar agendamento');
         return;
       }
 
       setNotes(prev => prev.map(n => n.id === editingNote.id ? { ...n, ...noteData } : n));
-      toast.success('Anotação atualizada!');
+      toast.success('Agendamento atualizado!');
     } else {
       const { data, error } = await supabase
         .from('calendar_notes')
@@ -211,12 +166,12 @@ const ShiftCalendar = () => {
         .single();
 
       if (error) {
-        toast.error('Erro ao criar anotação');
+        toast.error('Erro ao criar agendamento');
         return;
       }
 
       setNotes(prev => [...prev, data]);
-      toast.success('Anotação criada!');
+      toast.success('Agendamento criado!');
     }
 
     setIsDialogOpen(false);
@@ -229,12 +184,12 @@ const ShiftCalendar = () => {
       .eq('id', noteId);
 
     if (error) {
-      toast.error('Erro ao excluir anotação');
+      toast.error('Erro ao excluir agendamento');
       return;
     }
 
     setNotes(prev => prev.filter(n => n.id !== noteId));
-    toast.success('Anotação excluída!');
+    toast.success('Agendamento excluído!');
   };
 
   const handleEditNote = (note: CalendarNote) => {
@@ -249,12 +204,89 @@ const ShiftCalendar = () => {
     setIsDialogOpen(true);
   };
 
+  const handleOpenEditShift = () => {
+    if (!canEditShift()) {
+      toast.error('Não é possível editar a escala. O prazo de 24 horas já passou.');
+      return;
+    }
+    setNewFirstShiftDate(shiftSchedule?.first_shift_date || '');
+    setIsEditShiftDialogOpen(true);
+  };
+
+  const handleSaveShiftEdit = async () => {
+    if (!shiftSchedule || !newFirstShiftDate) {
+      toast.error('Selecione uma data válida');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('shift_schedules')
+      .update({ first_shift_date: newFirstShiftDate })
+      .eq('id', shiftSchedule.id);
+
+    if (error) {
+      toast.error('Erro ao atualizar escala');
+      return;
+    }
+
+    // Regenerate shift dates
+    const { data } = await supabase.rpc('generate_shift_dates', {
+      p_first_date: newFirstShiftDate,
+      p_pattern: '24x72',
+      p_months_ahead: 3
+    });
+
+    if (data) {
+      setShiftDates(data);
+      setShiftSchedule(prev => prev ? { ...prev, first_shift_date: newFirstShiftDate } : null);
+    }
+
+    toast.success('Escala atualizada com sucesso!');
+    setIsEditShiftDialogOpen(false);
+  };
+
   // First day of month padding
   const firstDayOfMonth = startOfMonth(currentMonth).getDay();
   const paddingDays = Array(firstDayOfMonth).fill(null);
 
+  // Get upcoming scheduled items
+  const upcomingNotes = notes
+    .filter(note => new Date(note.note_date) >= new Date(new Date().setHours(0, 0, 0, 0)))
+    .sort((a, b) => new Date(a.note_date).getTime() - new Date(b.note_date).getTime());
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Edit Shift Button */}
+      {shiftSchedule && (
+        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-amber-500" />
+            <span className="text-sm">
+              Primeiro plantão: <strong>{format(new Date(shiftSchedule.first_shift_date), "dd/MM/yyyy")}</strong>
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleOpenEditShift}
+            disabled={!canEditShift()}
+            className={!canEditShift() ? 'opacity-50' : ''}
+          >
+            <Edit2 className="w-4 h-4 mr-1" />
+            Editar
+          </Button>
+        </div>
+      )}
+
+      {shiftSchedule && !canEditShift() && (
+        <Alert className="border-amber-500/50 bg-amber-500/10">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="text-amber-200 text-sm">
+            O prazo de 24 horas para edição da escala expirou. A configuração está bloqueada.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Calendar Header */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
@@ -268,23 +300,6 @@ const ShiftCalendar = () => {
         </Button>
       </div>
 
-      {/* Team shifts toggle */}
-      {agent?.current_team && (
-        <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
-          <div className="flex items-center gap-2 text-sm">
-            <Users className="w-4 h-4 text-primary" />
-            <span>Mostrar plantões da equipe</span>
-          </div>
-          <Button
-            variant={showTeamShifts ? "default" : "outline"}
-            size="sm"
-            onClick={() => setShowTeamShifts(!showTeamShifts)}
-          >
-            {showTeamShifts ? 'Sim' : 'Não'}
-          </Button>
-        </div>
-      )}
-
       {/* Week Days */}
       <div className="grid grid-cols-7 gap-1 text-center">
         {weekDays.map(day => (
@@ -297,15 +312,14 @@ const ShiftCalendar = () => {
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-1">
         {paddingDays.map((_, i) => (
-          <div key={`pad-${i}`} className="h-24 bg-muted/20 rounded-lg" />
+          <div key={`pad-${i}`} className="h-16 bg-muted/10 rounded-lg" />
         ))}
         
         {days.map(day => {
           const dayNotes = getNotesForDate(day);
           const isShift = isShiftDay(day);
           const today = isToday(day);
-          const isShiftToday = isShift && today;
-          const teamShiftsToday = showTeamShifts ? getTeamShiftsForDate(day) : [];
+          const dayOfWeek = format(day, 'EEE', { locale: ptBR });
 
           return (
             <motion.button
@@ -314,76 +328,45 @@ const ShiftCalendar = () => {
               whileTap={{ scale: 0.98 }}
               onClick={() => handleDateClick(day)}
               className={`
-                h-28 p-1 rounded-lg border-2 transition-all relative overflow-hidden
-                ${isShiftToday 
-                  ? 'border-amber-500 bg-gradient-to-br from-amber-500/20 to-amber-600/10 ring-2 ring-amber-500/30 shadow-lg shadow-amber-500/20' 
-                  : isShift 
-                    ? 'border-amber-500/50 bg-amber-500/10' 
-                    : today 
-                      ? 'border-primary bg-primary/10' 
-                      : 'border-border/50 bg-card/50'
+                h-16 p-1 rounded-lg transition-all relative
+                ${isShift 
+                  ? 'border-2 border-amber-500 bg-gradient-to-br from-amber-500/30 to-amber-600/20 shadow-md shadow-amber-500/20' 
+                  : 'border border-transparent hover:border-muted-foreground/20 hover:bg-muted/20'
                 }
-                hover:border-primary/50 hover:bg-card
               `}
             >
-              <div className="flex flex-col h-full">
+              <div className="flex flex-col h-full items-center justify-center">
+                {/* Day of week (small) */}
+                <div className={`text-[9px] uppercase ${isShift ? 'text-amber-400' : 'text-muted-foreground'}`}>
+                  {dayOfWeek}
+                </div>
+                
                 {/* Date number */}
-                <div className="flex items-center justify-between">
-                  <div className={`text-sm font-bold ${isShiftToday ? 'text-amber-500' : today ? 'text-primary' : ''}`}>
-                    {format(day, 'd')}
-                  </div>
-                  
-                  {isShift && (
-                    <div className={`flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-semibold ${isShiftToday ? 'bg-amber-500 text-white animate-pulse' : 'bg-amber-500/20 text-amber-500'}`}>
-                      <Clock className="w-2.5 h-2.5" />
-                      {isShiftToday ? '24H' : 'P'}
-                    </div>
-                  )}
+                <div className={`text-lg font-bold ${
+                  isShift 
+                    ? 'text-amber-500' 
+                    : today 
+                      ? 'text-primary' 
+                      : 'text-foreground'
+                }`}>
+                  {format(day, 'd')}
                 </div>
-
-                {/* Shift indicator for shift days */}
+                
+                {/* Shift indicator */}
                 {isShift && (
-                  <div className={`text-[9px] text-center mt-0.5 px-1 py-0.5 rounded ${isShiftToday ? 'bg-amber-500/30 text-amber-200 font-medium' : 'text-amber-500/80'}`}>
-                    {isShiftToday ? '🔥 PLANTÃO' : 'Plantão'}
+                  <div className="text-[8px] font-bold text-amber-400 mt-0.5">
+                    PLANTÃO
                   </div>
                 )}
 
-                {/* Team shifts */}
-                {teamShiftsToday.length > 0 && (
-                  <div className="mt-0.5 flex flex-wrap gap-0.5">
-                    {teamShiftsToday.slice(0, 2).map((shift, idx) => (
-                      <div
-                        key={idx}
-                        className="text-[8px] px-1 py-0.5 rounded bg-blue-500/20 text-blue-400 truncate max-w-full"
-                        title={shift.agent_name}
-                      >
-                        {shift.agent_name.split(' ')[0]}
-                      </div>
+                {/* Note indicator dot */}
+                {dayNotes.length > 0 && !isShift && (
+                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
+                    {dayNotes.slice(0, 3).map((note, idx) => (
+                      <div key={idx} className={`w-1.5 h-1.5 rounded-full ${getColorClass(note.color)}`} />
                     ))}
-                    {teamShiftsToday.length > 2 && (
-                      <div className="text-[8px] text-muted-foreground">
-                        +{teamShiftsToday.length - 2}
-                      </div>
-                    )}
                   </div>
                 )}
-
-                {/* Notes */}
-                <div className="flex-1 overflow-hidden space-y-0.5 mt-1">
-                  {dayNotes.slice(0, 1).map(note => (
-                    <div
-                      key={note.id}
-                      className={`text-[9px] px-1 py-0.5 rounded truncate text-white ${getColorClass(note.color)}`}
-                    >
-                      {note.title}
-                    </div>
-                  ))}
-                  {dayNotes.length > 1 && (
-                    <div className="text-[9px] text-muted-foreground">
-                      +{dayNotes.length - 1}
-                    </div>
-                  )}
-                </div>
               </div>
             </motion.button>
           );
@@ -391,29 +374,88 @@ const ShiftCalendar = () => {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+      <div className="flex items-center gap-4 text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
-          <Clock className="w-3 h-3 text-amber-500" />
+          <div className="w-4 h-4 rounded border-2 border-amber-500 bg-amber-500/30" />
           <span>Meu Plantão</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded border-2 border-primary bg-primary/10" />
-          <span>Hoje</span>
+          <div className="w-2 h-2 rounded-full bg-blue-500" />
+          <span>Agendamento</span>
         </div>
-        {showTeamShifts && (
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-blue-500/20" />
-            <span>Equipe</span>
-          </div>
-        )}
       </div>
 
-      {/* Note Dialog */}
+      {/* My Schedule Panel */}
+      <Card className="border-primary/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-primary" />
+            Minha Agenda
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {upcomingNotes.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground text-sm">
+              <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p>Nenhum agendamento encontrado</p>
+              <p className="text-xs mt-1">Clique em uma data para adicionar</p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {upcomingNotes.map(note => {
+                const noteDate = new Date(note.note_date);
+                const isNoteToday = isToday(noteDate);
+                
+                return (
+                  <div
+                    key={note.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border ${
+                      isNoteToday ? 'border-primary/50 bg-primary/5' : 'border-border/50 bg-muted/20'
+                    }`}
+                  >
+                    <div className={`w-2 h-full min-h-8 rounded-full ${getColorClass(note.color)}`} />
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm truncate">{note.title}</span>
+                        {isNoteToday && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            Hoje
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {format(noteDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                      </div>
+                      {note.content && (
+                        <p className="text-xs text-muted-foreground mt-1 truncate">
+                          {note.content}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditNote(note)}>
+                        <Edit2 className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteNote(note.id)}>
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Schedule Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {editingNote ? 'Editar Anotação' : 'Nova Anotação'}
+              {editingNote ? 'Editar Agendamento' : 'Novo Agendamento'}
               {selectedDate && (
                 <span className="text-muted-foreground font-normal ml-2">
                   {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
@@ -426,7 +468,7 @@ const ShiftCalendar = () => {
             {/* Existing notes for this date */}
             {selectedDate && !editingNote && getNotesForDate(selectedDate).length > 0 && (
               <div className="space-y-2 pb-4 border-b">
-                <Label className="text-sm text-muted-foreground">Anotações existentes:</Label>
+                <Label className="text-sm text-muted-foreground">Agendamentos existentes:</Label>
                 {getNotesForDate(selectedDate).map(note => (
                   <div key={note.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
                     <div className={`w-2 h-2 rounded-full ${getColorClass(note.color)}`} />
@@ -487,6 +529,46 @@ const ShiftCalendar = () => {
               <Button className="flex-1" onClick={handleSaveNote}>
                 <Plus className="w-4 h-4 mr-2" />
                 {editingNote ? 'Salvar' : 'Adicionar'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Shift Dialog */}
+      <Dialog open={isEditShiftDialogOpen} onOpenChange={setIsEditShiftDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-amber-500" />
+              Editar Data do Primeiro Plantão
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <Alert className="border-amber-500/50 bg-amber-500/10">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <AlertDescription className="text-amber-200 text-sm">
+                Você só pode editar a escala até 24 horas antes do primeiro plantão.
+              </AlertDescription>
+            </Alert>
+
+            <div className="space-y-2">
+              <Label>Nova data do primeiro plantão</Label>
+              <Input
+                type="date"
+                value={newFirstShiftDate}
+                onChange={e => setNewFirstShiftDate(e.target.value)}
+                min={format(new Date(), 'yyyy-MM-dd')}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setIsEditShiftDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button className="flex-1" onClick={handleSaveShiftEdit}>
+                Confirmar Alteração
               </Button>
             </div>
           </div>
