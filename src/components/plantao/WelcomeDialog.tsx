@@ -36,9 +36,11 @@ const WelcomeDialog: React.FC<WelcomeDialogProps> = ({
     }
   }, [isOpen, isFirstLogin, onClose]);
 
+  const shouldShow = isOpen && !isClosing;
+
   return (
     <AnimatePresence>
-      {isOpen && (
+      {shouldShow && (
         <>
           {/* Overlay */}
           <motion.div

@@ -292,17 +292,16 @@ const AgentDashboard = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowGlobalChat(true)}
-                className="gap-1"
+                className="gap-1 h-8 px-2"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span className="hidden sm:inline text-xs">Chat</span>
               </Button>
-              <LicenseCounter onExpired={() => setIsLicenseExpired(true)} />
               <OnlineIndicator compact />
               <Button
                 variant="ghost"
@@ -327,9 +326,10 @@ const AgentDashboard = () => {
                 )}
               </Button>
 
-              <Button variant="ghost" size="icon" onClick={handleSignOut}>
-                <LogOut className="w-5 h-5" />
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSignOut}>
+                <LogOut className="w-4 h-4" />
               </Button>
+              <LicenseCounter onExpired={() => setIsLicenseExpired(true)} />
             </div>
           </div>
         </div>
