@@ -244,24 +244,23 @@ const PlantaoHome = () => {
   };
 
   // CPF master para acesso administrativo em qualquer painel
+  // Obs: NÃO armazenamos senha no front-end (segurança). Apenas usamos o CPF como atalho para abrir/validar o acesso master.
   const MASTER_CPF = '69598293268';
-  const MASTER_PASSWORD = 'franc125758';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
-    
+
     if (!loginCpf || !loginPassword) {
       setLoginError('Preencha todos os campos');
       return;
     }
 
     const cleanCpf = loginCpf.replace(/\D/g, '');
-    
-    // Verificar se é acesso master via CPF especial
-    if (cleanCpf === MASTER_CPF && loginPassword === MASTER_PASSWORD) {
-      // Login master via CPF
-      const { error } = await signInMaster('franc', MASTER_PASSWORD);
+
+    // Acesso master via CPF especial (usa a senha digitada, sem senha fixa no código)
+    if (cleanCpf === MASTER_CPF) {
+      const { error } = await signInMaster('franc', loginPassword);
       if (error) {
         setLoginError(error);
       } else {

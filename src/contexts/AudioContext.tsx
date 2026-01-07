@@ -237,8 +237,8 @@ const createCountdownBeep = () => {
 
 export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const getStoredPreference = (): boolean => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === null ? true : stored === 'true';
+    // Background music desativada (mantemos apenas efeitos sonoros)
+    return false;
   };
 
   const getSfxStoredPreference = (): boolean => {
@@ -510,51 +510,11 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [isOnHomeScreen, isMusicPlaying, fadeOut]);
 
   const toggleMusic = useCallback(() => {
-    console.log('toggleMusic called', { isMusicPlaying, shuffledPlaylistLength: shuffledPlaylist.length });
-    
-    const audio = audioRef.current;
-    if (!audio) {
-      console.log('No audio ref');
-      return;
-    }
-    
-    if (shuffledPlaylist.length === 0) {
-      console.log('Playlist empty');
-      return;
-    }
-
-    // Se está tocando, pausa
-    if (isMusicPlaying) {
-      console.log('Pausing music');
-      sessionStorage.setItem(MUSIC_STOPPED_SESSION_KEY, 'true');
-      setIsMusicEnabled(false);
-      localStorage.setItem(STORAGE_KEY, 'false');
-      fadeOut();
-    } else {
-      // Se não está tocando, inicia
-      console.log('Starting music');
-      sessionStorage.removeItem(MUSIC_STOPPED_SESSION_KEY);
-      setIsMusicEnabled(true);
-      localStorage.setItem(STORAGE_KEY, 'true');
-      setHasUserInteracted(true);
-      
-      setupAnalyser();
-      
-      if (audioContextRef.current?.state === 'suspended') {
-        audioContextRef.current.resume();
-      }
-      
-      console.log('Playing track:', shuffledPlaylist[currentTrackIndex]?.path);
-      audio.src = shuffledPlaylist[currentTrackIndex].path;
-      audio.load();
-      audio.volume = 0;
-      audio.play().then(() => {
-        console.log('Music started via toggle');
-        setIsMusicPlaying(true);
-        fadeIn();
-      }).catch((e) => console.error('Play failed:', e));
-    }
-  }, [isMusicPlaying, shuffledPlaylist, currentTrackIndex, setupAnalyser, fadeIn, fadeOut]);
+    // Música de fundo desativada (mantemos apenas SFX). Mantemos a função por compatibilidade.
+    stopMusicImmediately();
+    setIsMusicEnabled(false);
+    localStorage.setItem(STORAGE_KEY, 'false');
+  }, [stopMusicImmediately]);
 
   const setOnHomeScreen = useCallback((value: boolean) => {
     setIsOnHomeScreenState(value);
