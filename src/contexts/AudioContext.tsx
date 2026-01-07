@@ -234,9 +234,9 @@ const createCountdownBeep = () => {
 };
 
 export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Música de fundo desabilitada permanentemente
   const getStoredPreference = (): boolean => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored !== 'false';
+    return false; // Sempre desabilitado
   };
 
   const getSfxStoredPreference = (): boolean => {
@@ -250,7 +250,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [isMusicEnabled, setIsMusicEnabled] = useState(getStoredPreference);
+  const [isMusicEnabled, setIsMusicEnabled] = useState(false); // Sempre desabilitado
   const [isSfxEnabled, setIsSfxEnabled] = useState(getSfxStoredPreference);
   const [isOnHomeScreen, setIsOnHomeScreenState] = useState(false);
   const [isSplashComplete, setIsSplashCompleteState] = useState(false);
