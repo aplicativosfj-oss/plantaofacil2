@@ -20,7 +20,7 @@ import { format, parseISO, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import OnlineIndicator from '@/components/plantao/OnlineIndicator';
-import plantaoLogo from '@/assets/plantao-logo.png';
+import plantaoLogo from '@/assets/plantao-pro-logo.png';
 
 interface AgentWithDetails {
   id: string;
