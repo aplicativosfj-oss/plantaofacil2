@@ -14,7 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { 
   Shield, LogOut, Users, DollarSign, Calendar, User, Search, 
   Clock, TrendingUp, Key, Eye, EyeOff, Save, AlertTriangle,
-  CheckCircle, XCircle, ChevronDown, ChevronUp, Receipt, CreditCard, ArrowLeft
+  CheckCircle, XCircle, ChevronDown, ChevronUp, Receipt, CreditCard, ArrowLeft,
+  Trash2, Edit, Ban, UserCheck, Building2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, parseISO, differenceInDays, startOfMonth, endOfMonth } from 'date-fns';
@@ -119,6 +120,12 @@ const PlantaoMasterDashboard = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPasswords, setShowPasswords] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  
+  // Agent management dialogs
+  const [editingAgent, setEditingAgent] = useState<AgentWithDetails | null>(null);
+  const [deletingAgent, setDeletingAgent] = useState<AgentWithDetails | null>(null);
+  const [editForm, setEditForm] = useState({ full_name: '', phone: '', email: '', unit: '', city: '' });
+  const [savingAgent, setSavingAgent] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !master) {
@@ -349,6 +356,89 @@ const PlantaoMasterDashboard = () => {
     }
   };
 
+  // Agent management functions
+  const handleToggleAgentStatus = async (agent: AgentWithDetails) => {
+    try {
+      const { error } = await supabase
+        .from('agents')
+        .update({ is_active: !agent.is_active })
+        .eq('id', agent.id);
+
+      if (error) throw error;
+      toast.success(agent.is_active ? 'Agente bloqueado!' : 'Agente desbloqueado!');
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao alterar status do agente');
+    }
+  };
+
+  const handleEditAgent = (agent: AgentWithDetails) => {
+    setEditingAgent(agent);
+    setEditForm({
+      full_name: agent.full_name,
+      phone: agent.phone || '',
+      email: agent.email || '',
+      unit: agent.unit || '',
+      city: agent.city || '',
+    });
+  };
+
+  const handleSaveAgent = async () => {
+    if (!editingAgent) return;
+    setSavingAgent(true);
+    try {
+      const { error } = await supabase
+        .from('agents')
+        .update({
+          full_name: editForm.full_name.toUpperCase(),
+          phone: editForm.phone || null,
+          email: editForm.email || null,
+          unit: editForm.unit || null,
+          city: editForm.city || null,
+        })
+        .eq('id', editingAgent.id);
+
+      if (error) throw error;
+      toast.success('Agente atualizado com sucesso!');
+      setEditingAgent(null);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao atualizar agente');
+    } finally {
+      setSavingAgent(false);
+    }
+  };
+
+  const handleDeleteAgent = async () => {
+    if (!deletingAgent) return;
+    try {
+      // Delete related data first
+      await supabase.from('agent_presence').delete().eq('agent_id', deletingAgent.id);
+      await supabase.from('agent_licenses').delete().eq('agent_id', deletingAgent.id);
+      await supabase.from('shifts').delete().eq('agent_id', deletingAgent.id);
+      await supabase.from('overtime_bank').delete().eq('agent_id', deletingAgent.id);
+      await supabase.from('agent_alerts').delete().eq('agent_id', deletingAgent.id);
+      await supabase.from('chat_messages').delete().eq('sender_id', deletingAgent.id);
+      await supabase.from('calendar_notes').delete().eq('agent_id', deletingAgent.id);
+      
+      // Delete the agent
+      const { error } = await supabase
+        .from('agents')
+        .delete()
+        .eq('id', deletingAgent.id);
+
+      if (error) throw error;
+      toast.success('Agente excluído com sucesso!');
+      setDeletingAgent(null);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao excluir agente');
+    }
+  };
+
   if (isLoading || !master) {
     return (
       <div className="min-h-screen bg-gradient-dark flex items-center justify-center">
@@ -414,6 +504,105 @@ const PlantaoMasterDashboard = () => {
             </Button>
             <Button onClick={handleChangePassword} disabled={changingPassword}>
               {changingPassword ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Agent Dialog */}
+      <Dialog open={!!editingAgent} onOpenChange={(open) => !open && setEditingAgent(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5 text-primary" />
+              Editar Agente
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome Completo</Label>
+              <Input
+                value={editForm.full_name}
+                onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                placeholder="Nome do agente"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Telefone</Label>
+                <Input
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Cidade</Label>
+                <Input
+                  value={editForm.city}
+                  onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+                  placeholder="Cidade"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Unidade</Label>
+                <Input
+                  value={editForm.unit}
+                  onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
+                  placeholder="CS Feijó"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingAgent(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveAgent} disabled={savingAgent}>
+              {savingAgent ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Agent Confirmation Dialog */}
+      <Dialog open={!!deletingAgent} onOpenChange={(open) => !open && setDeletingAgent(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Excluir Agente
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-muted-foreground">
+              Tem certeza que deseja excluir o agente <span className="font-bold text-foreground">{deletingAgent?.full_name}</span>?
+            </p>
+            <div className="mt-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-destructive">
+                  Esta ação é irreversível. Todos os dados relacionados ao agente (plantões, BH, mensagens) serão excluídos permanentemente.
+                </p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletingAgent(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteAgent}>
+              Excluir Agente
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -738,6 +927,46 @@ const PlantaoMasterDashboard = () => {
                                       {(agent.totalOvertime || 0).toFixed(1)}h (R$ {(agent.totalOvertimeValue || 0).toFixed(2)})
                                     </p>
                                   </div>
+                                </div>
+                                
+                                {/* Agent Management Buttons */}
+                                <div className="p-4 pt-0 flex flex-wrap gap-2 border-t border-border/30 mt-4 pt-4">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="gap-2"
+                                    onClick={(e) => { e.stopPropagation(); handleEditAgent(agent); }}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                    Editar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant={agent.is_active ? "destructive" : "default"}
+                                    className="gap-2"
+                                    onClick={(e) => { e.stopPropagation(); handleToggleAgentStatus(agent); }}
+                                  >
+                                    {agent.is_active ? (
+                                      <>
+                                        <Ban className="w-4 h-4" />
+                                        Bloquear
+                                      </>
+                                    ) : (
+                                      <>
+                                        <UserCheck className="w-4 h-4" />
+                                        Desbloquear
+                                      </>
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={(e) => { e.stopPropagation(); setDeletingAgent(agent); }}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    Excluir
+                                  </Button>
                                 </div>
                               </motion.div>
                             )}
