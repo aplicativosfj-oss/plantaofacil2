@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar, Flame, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, KeyRound, ShieldAlert, Car, Route, CircleAlert, Radar, ScanEye, Cctv, Building2, UserRoundCheck, BadgeCheck, RotateCcw, icons as LucideIcons, LucideIcon } from 'lucide-react';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar, Flame, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, KeyRound, ShieldAlert, Car, Route, CircleAlert, Radar, ScanEye, Cctv, Building2, UserRoundCheck, BadgeCheck, RotateCcw, Settings, icons as LucideIcons, LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
@@ -707,7 +707,7 @@ const PlantaoHome = () => {
                     {themeConfig.icon} {themeConfig.name}
                   </span>
                 </HUDElement>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <ThemeSelector 
                     trigger={
                       <button className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 hover:bg-muted transition-colors">
@@ -716,6 +716,23 @@ const PlantaoHome = () => {
                       </button>
                     }
                   />
+                  
+                  {/* Settings/Clear Access - Only show if has saved credentials */}
+                  {savedCredentials && (
+                    <motion.button
+                      onClick={() => {
+                        playSound('click');
+                        handleResetCredentials();
+                      }}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="p-2 rounded-lg bg-muted/50 hover:bg-red-500/20 border border-transparent hover:border-red-500/40 transition-all duration-200 group"
+                      title="Limpar acesso salvo para trocar de equipe"
+                    >
+                      <RotateCcw className="w-4 h-4 text-muted-foreground group-hover:text-red-400 transition-colors" />
+                    </motion.button>
+                  )}
+                  
                   {/* Admin Access Button */}
                   <motion.button
                     onClick={() => {
