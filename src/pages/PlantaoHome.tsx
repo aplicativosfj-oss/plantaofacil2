@@ -1340,16 +1340,49 @@ const PlantaoHome = () => {
                             <Label htmlFor="signup-unit" className="flex items-center gap-2 text-xs">
                               <Building className="w-3.5 h-3.5" /> Unidade *
                             </Label>
-                            <Select value={signupUnit} onValueChange={setSignupUnit}>
+                            <Select 
+                              value={signupUnit} 
+                              onValueChange={(value) => {
+                                if (value !== 'CS Feijó') {
+                                  toast.error(
+                                    <div className="space-y-1">
+                                      <p className="font-bold">🚫 Funcionalidade Indisponível</p>
+                                      <p>O cadastro para <span className="font-semibold">{value}</span> ainda não está disponível.</p>
+                                      <p className="text-xs opacity-80">Entre em contato com o administrador para mais informações.</p>
+                                    </div>,
+                                    { duration: 5000 }
+                                  );
+                                  setSignupUnit('');
+                                } else {
+                                  setSignupUnit(value);
+                                }
+                              }}
+                            >
                               <SelectTrigger className="bg-background/50 border-border/50 h-9">
                                 <SelectValue placeholder="Selecione" />
                               </SelectTrigger>
                               <SelectContent>
                                 {UNITS.map((unit) => (
-                                  <SelectItem key={unit.id} value={unit.name}>{unit.name}</SelectItem>
+                                  <SelectItem 
+                                    key={unit.id} 
+                                    value={unit.name}
+                                    className={!unit.active ? 'opacity-60' : ''}
+                                  >
+                                    <span className="flex items-center gap-2">
+                                      {unit.name}
+                                      {!unit.active && (
+                                        <span className="text-[10px] text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                                          Em breve
+                                        </span>
+                                      )}
+                                    </span>
+                                  </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
+                            {signupUnit === '' && (
+                              <p className="text-[10px] text-muted-foreground">Apenas CS Feijó disponível no momento</p>
+                            )}
                           </div>
 
                           {/* Team Selection - show pre-selected team or selector */}
