@@ -417,78 +417,17 @@ const PlantaoHome = () => {
                 transition={{ duration: 0.5 }}
                 className="relative mb-3 text-center"
               >
-                {/* Efeito de brilho pulsante ao redor da logo */}
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-primary/40 via-primary/60 to-primary/40 blur-3xl rounded-full"
-                  animate={{ 
-                    scale: [1, 1.3, 1],
-                    opacity: [0.3, 0.6, 0.3],
-                  }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                
-                {/* Anel rotativo decorativo */}
-                <motion.div
-                  className="absolute -inset-4 border-2 border-dashed border-primary/30 rounded-full pointer-events-none"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                />
-                
-                {/* Partículas brilhantes */}
-                {[...Array(6)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-2 h-2 rounded-full bg-primary/80"
-                    style={{
-                      top: '50%',
-                      left: '50%',
-                    }}
-                    animate={{
-                      x: [0, Math.cos(i * 60 * Math.PI / 180) * 60, 0],
-                      y: [0, Math.sin(i * 60 * Math.PI / 180) * 60, 0],
-                      opacity: [0, 1, 0],
-                      scale: [0, 1.5, 0],
-                    }}
-                    transition={{ 
-                      duration: 3, 
-                      repeat: Infinity, 
-                      delay: i * 0.5,
-                      ease: 'easeInOut'
-                    }}
-                  />
-                ))}
-                
-                {/* Efeito de brilho piscante */}
-                <motion.div
-                  className="absolute -inset-2 bg-gradient-to-t from-transparent via-primary/20 to-transparent rounded-full pointer-events-none"
-                  animate={{ 
-                    opacity: [0, 0.8, 0],
-                  }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                />
+                {/* Efeito de brilho suave */}
+                <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
                 
                 <img 
                   src={plantaoLogo} 
                   alt="PlantãoPro" 
                   className="relative h-24 md:h-32 w-auto object-contain drop-shadow-2xl mx-auto"
                 />
-                <motion.h1 
-                  className="text-xl md:text-2xl font-display font-bold text-foreground tracking-wider mt-2"
-                  animate={{ 
-                    textShadow: [
-                      '0 0 10px hsl(var(--primary)/0.3)',
-                      '0 0 20px hsl(var(--primary)/0.6)',
-                      '0 0 10px hsl(var(--primary)/0.3)',
-                    ]
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  PLANTÃO<motion.span 
-                    className="text-primary"
-                    animate={{ opacity: [1, 0.6, 1] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                  >PRO</motion.span>
-                </motion.h1>
+                <h1 className="text-xl md:text-2xl font-display font-bold text-foreground tracking-wider mt-2">
+                  PLANTÃO<span className="text-primary">PRO</span>
+                </h1>
                 <p className="text-muted-foreground text-[10px] font-mono uppercase tracking-widest mt-0.5">
                   Gestão de Plantões • Segurança
                 </p>
@@ -1080,7 +1019,20 @@ const PlantaoHome = () => {
 
             {/* Footer */}
             <footer className="py-3 text-center text-muted-foreground text-xs space-y-1">
-              <p>© 2025 PlantãoPro v1.0 • Developed by Franc Denis</p>
+              <p>
+                © <motion.span
+                  className="inline-block text-primary font-bold"
+                  animate={{ 
+                    scale: [1, 1.1, 1],
+                    textShadow: [
+                      '0 0 5px hsl(var(--primary)/0.5)',
+                      '0 0 15px hsl(var(--primary)/0.9)',
+                      '0 0 5px hsl(var(--primary)/0.5)',
+                    ]
+                  }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >2026</motion.span> PlantãoPro v1.0 • Developed by Franc Denis
+              </p>
               <button 
                 onClick={() => setShowAbout(true)}
                 className="hover:text-primary transition-colors underline"
