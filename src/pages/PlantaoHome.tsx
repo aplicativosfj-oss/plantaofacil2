@@ -912,16 +912,17 @@ const PlantaoHome = () => {
                         <form onSubmit={handleLogin} className="space-y-3">
                           <div className="space-y-1">
                             <Label htmlFor="login-cpf" className="flex items-center gap-2 text-xs">
-                              <IdCard className="w-3.5 h-3.5" /> CPF *
+                              <IdCard className="w-3.5 h-3.5" /> CPF (Login) *
                             </Label>
                             <Input
                               id="login-cpf"
                               type="text"
-                              placeholder="000.000.000-00"
+                              placeholder="Seu CPF é seu login"
                               value={loginCpf}
                               onChange={(e) => handleCpfChange(e.target.value, false)}
                               className="bg-background/50 border-border/50 h-9"
                             />
+                            <p className="text-[10px] text-muted-foreground">Use seu CPF cadastrado para entrar</p>
                           </div>
                           
                           <div className="space-y-1">
@@ -1081,7 +1082,7 @@ const PlantaoHome = () => {
 
                           <div className="space-y-1">
                             <Label htmlFor="signup-cpf" className="flex items-center gap-2 text-xs">
-                              <IdCard className="w-3.5 h-3.5" /> CPF *
+                              <IdCard className="w-3.5 h-3.5" /> CPF (Será seu login) *
                             </Label>
                             <Input
                               id="signup-cpf"
@@ -1091,8 +1092,10 @@ const PlantaoHome = () => {
                               onChange={(e) => handleCpfChange(e.target.value, true)}
                               className={`bg-background/50 border-border/50 h-9 ${cpfError ? 'border-destructive' : ''}`}
                             />
-                            {cpfError && (
+                            {cpfError ? (
                               <p className="text-destructive text-xs">{cpfError}</p>
+                            ) : (
+                              <p className="text-[10px] text-muted-foreground">Seu CPF será usado para fazer login</p>
                             )}
                           </div>
 
