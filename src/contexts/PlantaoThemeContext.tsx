@@ -256,8 +256,9 @@ export const PlantaoThemeProvider = ({ children }: { children: ReactNode }) => {
   });
   
   const [soundEnabled, setSoundEnabled] = useState(() => {
+    // Som desativado por padrão
     const saved = localStorage.getItem('plantao_sound_enabled');
-    return saved !== 'false';
+    return saved === 'true'; // Só ativa se explicitamente salvo como 'true'
   });
 
   const themeConfig = PLANTAO_THEMES[currentTheme];

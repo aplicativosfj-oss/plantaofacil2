@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar, Flame, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, KeyRound, ShieldAlert, Car, Route, CircleAlert, Radar, ScanEye, Cctv, Building2, UserRoundCheck, BadgeCheck, RotateCcw, Settings, icons as LucideIcons, LucideIcon, Volume2, VolumeX } from 'lucide-react';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar, Flame, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, KeyRound, ShieldAlert, Car, Route, CircleAlert, Radar, ScanEye, Cctv, Building2, UserRoundCheck, BadgeCheck, RotateCcw, Settings, icons as LucideIcons, LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
@@ -305,7 +305,7 @@ const AlertPulse = () => (
 
 const PlantaoHome = () => {
   const { signIn, signInMaster, signUp, isLoading, agent } = usePlantaoAuth();
-  const { themeConfig, playSound, soundEnabled, setSoundEnabled } = usePlantaoTheme();
+  const { themeConfig } = usePlantaoTheme();
   const { isSupported: biometricSupported, isRegistered: biometricRegistered, authenticateWithBiometric, registerBiometric } = useBiometricAuth();
   const navigate = useNavigate();
   const [showSplash, setShowSplash] = useState(() => {
@@ -763,7 +763,6 @@ const PlantaoHome = () => {
                   {savedCredentials && (
                     <motion.button
                       onClick={() => {
-                        playSound('click');
                         handleResetCredentials();
                       }}
                       whileHover={{ scale: 1.1 }}
@@ -778,7 +777,6 @@ const PlantaoHome = () => {
                   {/* Admin Access Button */}
                   <motion.button
                     onClick={() => {
-                      playSound('click');
                       setShowMasterLogin(true);
                       setSelectedTeam(null);
                       setShowAuthPanel(true);
@@ -1059,24 +1057,6 @@ const PlantaoHome = () => {
                     {showMasterLogin ? (
                       /* Master Login Form */
                       <div className="space-y-4">
-                        {/* Sound Toggle */}
-                        <div className="flex items-center justify-between p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                          <Label className="flex items-center gap-2 text-xs text-amber-500 cursor-pointer">
-                            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                            Som do sistema
-                          </Label>
-                          <Switch
-                            checked={soundEnabled}
-                            onCheckedChange={(checked) => {
-                              setSoundEnabled(checked);
-                              if (checked) {
-                                playSound('click');
-                              }
-                            }}
-                            className="data-[state=checked]:bg-amber-500"
-                          />
-                        </div>
-
                         <form onSubmit={handleMasterLogin} className="space-y-3">
                           <div className="space-y-1">
                             <Label htmlFor="master-username" className="flex items-center gap-2 text-xs text-amber-500">
@@ -1229,7 +1209,6 @@ const PlantaoHome = () => {
                                           if (parsed.cpf.replace(/\D/g, '') === result.cpf.replace(/\D/g, '')) {
                                             const { error } = await signIn(parsed.cpf, parsed.password);
                                             if (!error) {
-                                              playSound('notification');
                                               navigate('/dashboard');
                                             }
                                           }
