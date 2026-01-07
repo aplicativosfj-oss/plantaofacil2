@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Send, Users, MessageSquare, Globe, Shield, Star, Target, Crosshair, User, Mic, MicOff, Image, X } from 'lucide-react';
+import { Send, Users, MessageSquare, Globe, Shield, Star, Target, Crosshair, User, Play, Pause, FileText, Image as ImageIcon, Volume2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,17 @@ import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import useChatSounds from '@/hooks/useChatSounds';
+import useChatMedia from '@/hooks/useChatMedia';
 import EmojiPicker from './EmojiPicker';
+import ChatMediaAttachment from './ChatMediaAttachment';
+import ChatMediaPreview from './ChatMediaPreview';
+
+interface MediaItem {
+  type: 'audio' | 'image' | 'document';
+  url: string;
+  duration?: number;
+  fileName?: string;
+}
 
 interface ChatMessage {
   id: string;
@@ -54,16 +64,136 @@ const getTeamColor = (team: string | null) => {
   }
 };
 
+// Audio message component
+const AudioMessage: React.FC<{ content: string }> = ({ content }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  // Extract audio URL from message content
+  const audioData = content.match(/\[AUDIO:([^\]]+)\]/);
+  if (!audioData) return <span>{content}</span>;
+
+  const audioUrl = audioData[1];
+  const textContent = content.replace(/\[AUDIO:[^\]]+\]/, '').trim();
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2 bg-background/30 rounded-full px-2 py-1">
+        <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} className="hidden" />
+        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={togglePlay}>
+          {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+        </Button>
+        <Volume2 className="w-3 h-3" />
+        <span className="text-xs">Áudio</span>
+      </div>
+      {textContent && <p>{textContent}</p>}
+    </div>
+  );
+};
+
+// Image message component
+const ImageMessage: React.FC<{ content: string }> = ({ content }) => {
+  const imageData = content.match(/\[IMAGE:([^\]]+)\]/);
+  if (!imageData) return <span>{content}</span>;
+
+  const imageUrl = imageData[1];
+  const textContent = content.replace(/\[IMAGE:[^\]]+\]/, '').trim();
+
+  return (
+    <div className="space-y-1">
+      <img src={imageUrl} alt="Imagem" className="max-w-full rounded-lg max-h-48 object-cover" />
+      {textContent && <p>{textContent}</p>}
+    </div>
+  );
+};
+
+// Document message component
+const DocumentMessage: React.FC<{ content: string }> = ({ content }) => {
+  const docData = content.match(/\[DOC:([^|]+)\|([^\]]+)\]/);
+  if (!docData) return <span>{content}</span>;
+
+  const docUrl = docData[1];
+  const fileName = docData[2];
+  const textContent = content.replace(/\[DOC:[^\]]+\]/, '').trim();
+
+  return (
+    <div className="space-y-1">
+      <a 
+        href={docUrl} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 bg-blue-500/20 rounded-lg px-3 py-2 hover:bg-blue-500/30 transition-colors"
+      >
+        <FileText className="w-4 h-4 text-blue-400" />
+        <span className="text-xs truncate max-w-[150px]">{fileName}</span>
+      </a>
+      {textContent && <p>{textContent}</p>}
+    </div>
+  );
+};
+
+// Message content renderer
+const MessageContent: React.FC<{ content: string }> = ({ content }) => {
+  if (content.includes('[AUDIO:')) return <AudioMessage content={content} />;
+  if (content.includes('[IMAGE:')) return <ImageMessage content={content} />;
+  if (content.includes('[DOC:')) return <DocumentMessage content={content} />;
+  return <span>{content}</span>;
+};
+
 const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
   const { agent } = usePlantaoAuth();
   const [activeTab, setActiveTab] = useState<'general' | 'team'>('general');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { playMessageSent, playMessageReceived, playEmojiSound, playErrorSound } = useChatSounds();
+  
+  const { 
+    playMessageSent, 
+    playMessageReceived, 
+    playEmojiSound, 
+    playErrorSound,
+    playNotification,
+    playTypingSound 
+  } = useChatSounds();
+
+  const {
+    isRecording,
+    formattedDuration,
+    startRecording,
+    stopRecording,
+    cancelRecording,
+    pickImage,
+    pickDocument
+  } = useChatMedia({
+    onAudioReady: (audioUrl, duration) => {
+      setMediaItems(prev => [...prev, { type: 'audio', url: audioUrl, duration }]);
+      playNotification();
+    },
+    onImageReady: (imageUrl) => {
+      setMediaItems(prev => [...prev, { type: 'image', url: imageUrl }]);
+      playNotification();
+    },
+    onDocumentReady: (docUrl, fileName) => {
+      setMediaItems(prev => [...prev, { type: 'document', url: docUrl, fileName }]);
+      playNotification();
+    },
+    playRecordingSound: playTypingSound,
+    playStopSound: playNotification
+  });
 
   // Fetch messages
   useEffect(() => {
@@ -82,7 +212,6 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
       }
 
       if (data) {
-        // Fetch sender info for each message
         const senderIds = [...new Set(data.map(m => m.sender_id))];
         const { data: senders } = await supabase
           .from('agents')
@@ -102,7 +231,6 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
 
     fetchMessages();
 
-    // Subscribe to new messages with improved handling
     const channel = supabase
       .channel(`chat-messages-global-${agent.id}`)
       .on('postgres_changes', {
@@ -113,7 +241,6 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
         console.log('New chat message received:', payload);
         const newMsg = payload.new as ChatMessage;
         
-        // Fetch sender info
         const { data: sender } = await supabase
           .from('agents')
           .select('id, full_name, avatar_url, current_team')
@@ -123,12 +250,10 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
         const messageWithSender = { ...newMsg, sender };
         
         setMessages(prev => {
-          // Avoid duplicates
           if (prev.some(m => m.id === newMsg.id)) return prev;
           return [...prev, messageWithSender];
         });
 
-        // Play sound for messages from others
         if (newMsg.sender_id !== agent?.id) {
           playMessageReceived();
         }
@@ -150,16 +275,37 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
     }
   }, [messages]);
 
+  const handleRemoveMedia = (index: number) => {
+    setMediaItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleClearMedia = () => {
+    setMediaItems([]);
+  };
+
   const handleSendMessage = async () => {
-    if (!agent?.id || !newMessage.trim()) return;
+    if (!agent?.id || (!newMessage.trim() && mediaItems.length === 0)) return;
 
     setIsLoading(true);
     
+    // Build content with media
+    let content = newMessage.trim();
+    
+    for (const item of mediaItems) {
+      if (item.type === 'audio') {
+        content += ` [AUDIO:${item.url}]`;
+      } else if (item.type === 'image') {
+        content += ` [IMAGE:${item.url}]`;
+      } else if (item.type === 'document') {
+        content += ` [DOC:${item.url}|${item.fileName}]`;
+      }
+    }
+
     const messageData = {
       sender_id: agent.id,
       channel_type: activeTab,
       team_channel: activeTab === 'team' ? agent.current_team : null,
-      content: newMessage.trim()
+      content: content.trim()
     };
 
     const { error } = await supabase.from('chat_messages').insert(messageData);
@@ -170,6 +316,7 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
       playErrorSound();
     } else {
       setNewMessage('');
+      setMediaItems([]);
       playMessageSent();
     }
 
@@ -179,14 +326,6 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
   const handleEmojiSelect = (emoji: string) => {
     setNewMessage(prev => prev + emoji);
     inputRef.current?.focus();
-  };
-
-  const handleVoiceRecord = () => {
-    // Toggle recording state (placeholder for voice recording feature)
-    setIsRecording(!isRecording);
-    if (!isRecording) {
-      toast.info('🎤 Gravação de voz em breve!', { duration: 2000 });
-    }
   };
 
   const filteredMessages = messages.filter(m => {
@@ -265,7 +404,7 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
                               `}
                               whileHover={{ scale: 1.02 }}
                             >
-                              {message.content}
+                              <MessageContent content={message.content} />
                             </motion.div>
                           </div>
                         </motion.div>
@@ -278,6 +417,13 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
 
             {/* Message Input */}
             <div className="p-4 border-t bg-background">
+              {/* Media Preview */}
+              <ChatMediaPreview 
+                items={mediaItems}
+                onRemove={handleRemoveMedia}
+                onClear={handleClearMedia}
+              />
+              
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -287,26 +433,31 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
               >
                 <EmojiPicker onEmojiSelect={handleEmojiSelect} onPlaySound={playEmojiSound} />
                 
+                <ChatMediaAttachment
+                  isRecording={isRecording}
+                  recordingDuration={formattedDuration}
+                  onStartRecording={startRecording}
+                  onStopRecording={stopRecording}
+                  onCancelRecording={cancelRecording}
+                  onPickImage={pickImage}
+                  onPickDocument={pickDocument}
+                  disabled={isLoading}
+                />
+                
                 <Input
                   ref={inputRef}
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder={`Mensagem para ${activeTab === 'general' ? 'todos' : 'sua equipe'}...`}
-                  disabled={isLoading}
+                  disabled={isLoading || isRecording}
                   className="flex-1"
                 />
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleVoiceRecord}
-                  className={`h-9 w-9 ${isRecording ? 'text-destructive animate-pulse' : 'text-muted-foreground'}`}
+                <Button 
+                  type="submit" 
+                  size="icon" 
+                  disabled={isLoading || isRecording || (!newMessage.trim() && mediaItems.length === 0)}
                 >
-                  {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                </Button>
-
-                <Button type="submit" size="icon" disabled={isLoading || !newMessage.trim()}>
                   <Send className="w-4 h-4" />
                 </Button>
               </form>
