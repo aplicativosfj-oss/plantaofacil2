@@ -454,7 +454,7 @@ const MonitoringRotation = () => {
                         className={`
                           p-3 rounded-lg border-2 transition-all cursor-pointer
                           ${isMySlot 
-                            ? 'border-primary bg-primary/10 ring-2 ring-primary/30'
+                            ? 'border-amber-500 bg-amber-500/20 ring-2 ring-amber-400/50 shadow-lg shadow-amber-500/20'
                             : slot.isActive 
                               ? 'border-green-500 bg-green-500/10' 
                               : slot.isPast 
@@ -468,7 +468,7 @@ const MonitoringRotation = () => {
                             <div className={`
                               w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg
                               ${isMySlot
-                                ? 'bg-primary text-white'
+                                ? 'bg-amber-500 text-white animate-pulse'
                                 : slot.isActive 
                                   ? 'bg-green-500 text-white' 
                                   : slot.isPast
@@ -481,9 +481,11 @@ const MonitoringRotation = () => {
                             
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="font-semibold">Agente {slot.agent}</span>
+                                <span className={`font-semibold ${isMySlot ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                                  Agente {slot.agent}
+                                </span>
                                 {isMySlot && (
-                                  <Badge className="bg-primary text-xs">
+                                  <Badge className="bg-amber-500 text-white text-xs shadow-md">
                                     <UserCheck className="w-3 h-3 mr-1" />
                                     Meu Turno
                                   </Badge>
@@ -494,7 +496,7 @@ const MonitoringRotation = () => {
                                     Ativo
                                   </Badge>
                                 )}
-                                {slot.isPast && (
+                                {slot.isPast && !isMySlot && (
                                   <Badge variant="secondary" className="text-xs">
                                     Concluído
                                   </Badge>
