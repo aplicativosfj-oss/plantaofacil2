@@ -433,37 +433,43 @@ const ShiftCalendar = () => {
 
     const monthYear = format(selectedDate, 'yyyy-MM');
     const hourValue = parseFloat(overtimeForm.hourValue) || 15.75;
-    const overtimeData = {
+    const computedTotalValue = hours * hourValue;
+
+    // NOTE: total_value is a generated column in the database, so we must NOT send it on INSERT/UPDATE.
+    const overtimeDataForDb = {
       agent_id: agent.id,
       date: format(selectedDate, 'yyyy-MM-dd'),
       hours_worked: hours,
       description: overtimeForm.description || null,
       month_year: monthYear,
       hour_value: hourValue,
-      total_value: hours * hourValue,
       shift_type: overtimeForm.shiftType,
       scheduled_time: overtimeForm.scheduledTime || null,
-      alert_sent: false
+      alert_sent: false,
     };
 
     if (selectedOvertime) {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('overtime_bank')
-        .update(overtimeData)
-        .eq('id', selectedOvertime.id);
+        .update(overtimeDataForDb)
+        .eq('id', selectedOvertime.id)
+        .select('*')
+        .single();
 
       if (error) {
         toast.error('Erro ao atualizar BH');
         return;
       }
 
-      setOvertimeEntries(prev => prev.map(o => o.id === selectedOvertime.id ? { ...o, ...overtimeData } : o));
+      setOvertimeEntries(prev =>
+        prev.map(o => (o.id === selectedOvertime.id ? (data ?? { ...o, ...overtimeDataForDb, total_value: computedTotalValue }) : o))
+      );
       toast.success('BH atualizado!');
     } else {
       const { data, error } = await supabase
         .from('overtime_bank')
-        .insert(overtimeData)
-        .select()
+        .insert(overtimeDataForDb)
+        .select('*')
         .single();
 
       if (error) {
