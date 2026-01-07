@@ -911,23 +911,6 @@ const PlantaoHome = () => {
                   © 2026 Franc Denis
                 </motion.span>
                 
-                {/* Reset Button - Subtle, only show if there are saved credentials */}
-                {savedCredentials && (
-                  <motion.button
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.5 }}
-                    whileHover={{ opacity: 1, scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      playSound('click');
-                      handleResetCredentials();
-                    }}
-                    className="flex items-center gap-1 px-1.5 py-0.5 rounded text-muted-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                    title="Limpar dados de acesso salvos"
-                  >
-                    <RotateCcw className="w-2.5 h-2.5" />
-                  </motion.button>
-                )}
                 
                 <div className="flex items-center gap-4">
                   <span className="text-primary/60">SYS::READY</span>
