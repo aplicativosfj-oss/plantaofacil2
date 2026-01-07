@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,12 +7,20 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair } from 'lucide-react';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoLogo from '@/assets/plantao-logo.png';
 import plantaoBg from '@/assets/plantao-bg.png';
 import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
+
+// Saved credentials type
+interface SavedCredentials {
+  cpf: string;
+  password: string;
+  team: 'alfa' | 'bravo' | 'charlie' | 'delta';
+  name?: string;
+}
 
 const formatCPF = (value: string) => {
   const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -101,11 +109,15 @@ const AlertPulse = () => (
 );
 
 const PlantaoHome = () => {
-  const { signIn, signInMaster, signUp, isLoading } = usePlantaoAuth();
+  const { signIn, signInMaster, signUp, isLoading, agent } = usePlantaoAuth();
   const navigate = useNavigate();
   const [showAbout, setShowAbout] = useState(false);
   const [showAuthPanel, setShowAuthPanel] = useState(false);
   const [showMasterLogin, setShowMasterLogin] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<'alfa' | 'bravo' | 'charlie' | 'delta' | null>(null);
+  const [savedCredentials, setSavedCredentials] = useState<SavedCredentials | null>(null);
+  const [isAutoLogging, setIsAutoLogging] = useState(false);
+  const [blockedTeamClicked, setBlockedTeamClicked] = useState<string | null>(null);
   
   // Login state
   const [loginCpf, setLoginCpf] = useState('');
@@ -130,6 +142,77 @@ const PlantaoHome = () => {
   const [signupEmail, setSignupEmail] = useState('');
   const [signupError, setSignupError] = useState('');
   const [cpfError, setCpfError] = useState('');
+
+  // Load saved credentials on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('plantao_credentials');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as SavedCredentials;
+        setSavedCredentials(parsed);
+      } catch {
+        localStorage.removeItem('plantao_credentials');
+      }
+    }
+  }, []);
+
+  // Handle team click
+  const handleTeamClick = async (teamValue: 'alfa' | 'bravo' | 'charlie' | 'delta') => {
+    // If user has saved credentials
+    if (savedCredentials) {
+      if (savedCredentials.team === teamValue) {
+        // Same team - auto login
+        setIsAutoLogging(true);
+        setSelectedTeam(teamValue);
+        
+        const { error } = await signIn(savedCredentials.cpf, savedCredentials.password);
+        
+        if (error) {
+          // Credentials expired or invalid
+          localStorage.removeItem('plantao_credentials');
+          setSavedCredentials(null);
+          setIsAutoLogging(false);
+          setShowAuthPanel(true);
+          toast.error('Sessão expirada. Faça login novamente.');
+        } else {
+          toast.success(`Bem-vindo de volta!`);
+          navigate('/dashboard');
+        }
+      } else {
+        // Different team - show blocked effect
+        setBlockedTeamClicked(teamValue);
+        toast.error(`Acesso negado! Você pertence à equipe ${savedCredentials.team.toUpperCase()}`);
+        
+        // Reset blocked state after animation
+        setTimeout(() => setBlockedTeamClicked(null), 1500);
+      }
+    } else {
+      // No saved credentials - show login for this team
+      setSelectedTeam(teamValue);
+      setSignupTeam(teamValue);
+      setShowAuthPanel(true);
+    }
+  };
+
+  // Save credentials after successful login
+  const saveCredentialsAndLogin = async (cpf: string, password: string) => {
+    const { error } = await signIn(cpf, password);
+    
+    if (error) {
+      return { error };
+    }
+    
+    // Fetch the agent's team after login
+    // We'll save after navigation since agent context will be updated
+    const credentialsToSave: SavedCredentials = {
+      cpf,
+      password,
+      team: selectedTeam || signupTeam as 'alfa' | 'bravo' | 'charlie' | 'delta',
+    };
+    
+    localStorage.setItem('plantao_credentials', JSON.stringify(credentialsToSave));
+    return { error: null };
+  };
 
   const handleCpfChange = (value: string, isSignup: boolean) => {
     const formatted = formatCPF(value);
@@ -164,7 +247,7 @@ const PlantaoHome = () => {
       return;
     }
 
-    const { error } = await signIn(loginCpf, loginPassword);
+    const { error } = await saveCredentialsAndLogin(loginCpf, loginPassword);
     
     if (error) {
       setLoginError(error);
@@ -213,6 +296,15 @@ const PlantaoHome = () => {
     if (error) {
       setSignupError(error);
     } else {
+      // Save credentials for auto-login
+      const credentialsToSave: SavedCredentials = {
+        cpf: signupCpf,
+        password: signupPassword,
+        team: signupTeam as 'alfa' | 'bravo' | 'charlie' | 'delta',
+        name: signupName,
+      };
+      localStorage.setItem('plantao_credentials', JSON.stringify(credentialsToSave));
+      
       toast.success('Cadastro realizado com sucesso!');
       navigate('/dashboard');
     }
@@ -326,80 +418,155 @@ const PlantaoHome = () => {
                 </p>
               </motion.div>
 
-              {/* Teams Grid - Tactical Style */}
+              {/* Teams Grid - Interactive Tactical Style */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="w-full max-w-md mb-8"
+                className="w-full max-w-md mb-6"
               >
                 <div className="text-center mb-3">
                   <span className="text-[10px] font-mono text-primary/60 uppercase tracking-widest">
-                    [ Unidades Operacionais ]
+                    {savedCredentials 
+                      ? `[ Agente: ${savedCredentials.team.toUpperCase()} ]` 
+                      : '[ Selecione sua Equipe ]'}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {TEAMS.map((team, index) => (
-                    <motion.div
-                      key={team.value}
-                      initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.4 + index * 0.1 }}
-                      whileHover={{ scale: 1.02 }}
-                      className={`
-                        relative p-4 rounded-none border-l-4 ${team.borderColor}
-                        bg-gradient-to-r from-black/40 to-transparent
-                        backdrop-blur-sm cursor-default group
-                      `}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded ${team.bgColor}`}>
-                          <team.icon className={`w-5 h-5 ${team.textColor}`} />
+                  {TEAMS.map((team, index) => {
+                    const isUserTeam = savedCredentials?.team === team.value;
+                    const isBlocked = savedCredentials && !isUserTeam;
+                    const isBlockedClicked = blockedTeamClicked === team.value;
+                    
+                    return (
+                      <motion.button
+                        key={team.value}
+                        initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
+                        animate={{ 
+                          opacity: 1, 
+                          x: isBlockedClicked ? [0, -5, 5, -5, 5, 0] : 0,
+                          scale: isBlockedClicked ? [1, 0.98, 1] : 1,
+                        }}
+                        transition={{ 
+                          delay: 0.4 + index * 0.1,
+                          x: isBlockedClicked ? { duration: 0.4 } : undefined,
+                        }}
+                        whileHover={{ scale: isBlocked ? 1 : 1.03 }}
+                        whileTap={{ scale: isBlocked ? 0.98 : 0.97 }}
+                        onClick={() => handleTeamClick(team.value)}
+                        disabled={isAutoLogging}
+                        className={`
+                          relative p-4 rounded-none border-l-4 text-left
+                          ${isBlockedClicked ? 'border-red-500' : team.borderColor}
+                          ${isBlocked 
+                            ? 'bg-gradient-to-r from-red-900/20 to-transparent opacity-50 cursor-not-allowed' 
+                            : 'bg-gradient-to-r from-black/40 to-transparent cursor-pointer hover:from-black/60'}
+                          backdrop-blur-sm group transition-all duration-300
+                          ${isUserTeam ? 'ring-2 ring-primary/50 ring-offset-1 ring-offset-transparent' : ''}
+                        `}
+                      >
+                        {/* Blocked overlay effect */}
+                        {isBlockedClicked && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: [0, 0.5, 0] }}
+                            transition={{ duration: 0.5 }}
+                            className="absolute inset-0 bg-red-500/30 pointer-events-none"
+                          />
+                        )}
+                        
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded ${isBlocked ? 'bg-red-500/10' : team.bgColor} transition-colors`}>
+                            {isBlocked ? (
+                              <Ban className="w-5 h-5 text-red-400/60" />
+                            ) : isUserTeam ? (
+                              <Fingerprint className={`w-5 h-5 ${team.textColor}`} />
+                            ) : (
+                              <team.icon className={`w-5 h-5 ${team.textColor}`} />
+                            )}
+                          </div>
+                          <div>
+                            <span className={`font-bold text-sm block ${isBlocked ? 'text-muted-foreground/50' : team.textColor}`}>
+                              {team.label}
+                            </span>
+                            <span className={`text-[10px] font-mono uppercase ${isBlocked ? 'text-red-400/50' : 'text-muted-foreground'}`}>
+                              {isUserTeam ? 'Toque para entrar' : isBlocked ? 'Bloqueado' : team.subtitle}
+                            </span>
+                          </div>
                         </div>
-                        <div>
-                          <span className={`font-bold text-sm ${team.textColor} block`}>
-                            {team.label}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground font-mono uppercase">
-                            {team.subtitle}
-                          </span>
+                        
+                        {/* Status indicator */}
+                        <div className="absolute top-2 right-2 flex items-center gap-1">
+                          {isUserTeam ? (
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                          ) : isBlocked ? (
+                            <Lock className="w-3.5 h-3.5 text-red-400/60" />
+                          ) : (
+                            <div className={`w-1.5 h-1.5 rounded-full ${team.bgColor} animate-pulse`} />
+                          )}
                         </div>
-                      </div>
-                      {/* Status indicator */}
-                      <div className="absolute top-2 right-2 flex items-center gap-1">
-                        <div className={`w-1.5 h-1.5 rounded-full ${team.bgColor} animate-pulse`} />
-                      </div>
-                    </motion.div>
-                  ))}
+
+                        {/* Shimmer effect on user's team */}
+                        {isUserTeam && (
+                          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.05)_50%,transparent_75%)] bg-[length:200%_200%] animate-shimmer" />
+                          </div>
+                        )}
+                      </motion.button>
+                    );
+                  })}
                 </div>
               </motion.div>
 
-              {/* CTA Button - Tactical Style */}
+              {/* Loading indicator for auto-login */}
+              <AnimatePresence>
+                {isAutoLogging && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="flex flex-col items-center gap-3 mb-6"
+                  >
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
+                      <Loader2 className="w-10 h-10 text-primary animate-spin relative" />
+                    </div>
+                    <span className="text-sm text-primary font-mono">Autenticando...</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Info text when no saved credentials */}
+              {!savedCredentials && !isAutoLogging && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.9 }}
+                  className="text-center text-xs text-muted-foreground mb-4 max-w-xs"
+                >
+                  Clique na sua equipe para acessar o sistema
+                </motion.p>
+              )}
+
+              {/* Master access button */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-                className="w-full max-w-xs"
+                transition={{ delay: 1 }}
               >
-                <button
-                  onClick={() => setShowAuthPanel(true)}
-                  className="w-full relative group overflow-hidden"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedTeam(null);
+                    setShowAuthPanel(true);
+                    setShowMasterLogin(true);
+                  }}
+                  className="text-amber-500/60 hover:text-amber-500 hover:bg-amber-500/10 text-xs"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary group-hover:from-primary group-hover:to-primary/80 transition-all duration-300" />
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.1)_50%,transparent_75%)] bg-[length:200%_200%] animate-shimmer" />
-                  </div>
-                  <div className="relative px-8 py-4 flex items-center justify-center gap-3 text-primary-foreground font-bold uppercase tracking-wider">
-                    <Shield className="w-5 h-5" />
-                    <span>Acessar Sistema</span>
-                    <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                  {/* Corner accents */}
-                  <div className="absolute top-0 left-0 w-3 h-3 border-l-2 border-t-2 border-white/30" />
-                  <div className="absolute top-0 right-0 w-3 h-3 border-r-2 border-t-2 border-white/30" />
-                  <div className="absolute bottom-0 left-0 w-3 h-3 border-l-2 border-b-2 border-white/30" />
-                  <div className="absolute bottom-0 right-0 w-3 h-3 border-r-2 border-b-2 border-white/30" />
-                </button>
+                  <Crown className="w-3.5 h-3.5 mr-1.5" />
+                  Acesso Administrador
+                </Button>
               </motion.div>
             </main>
 
@@ -675,27 +842,48 @@ const PlantaoHome = () => {
                             </div>
                           </div>
 
-                          {/* Team Selection */}
+                          {/* Team Selection - show pre-selected team or selector */}
                           <div className="space-y-1">
                             <Label htmlFor="signup-team" className="flex items-center gap-2 text-xs">
                               <Users className="w-3.5 h-3.5" /> Equipe *
                             </Label>
-                            <Select value={signupTeam} onValueChange={(v) => setSignupTeam(v as typeof signupTeam)}>
-                              <SelectTrigger className={`bg-background/50 border-border/50 h-9 ${!signupTeam ? 'border-amber-500/50' : 'border-primary/50'}`}>
-                                <SelectValue placeholder="Selecione sua equipe" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {TEAMS.map((team) => (
-                                  <SelectItem key={team.value} value={team.value}>
-                                    <span className="flex items-center gap-2">
-                                      <team.icon className={`w-4 h-4 ${team.textColor}`} />
-                                      {team.label}
-                                    </span>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {!signupTeam && (
+                            {selectedTeam ? (
+                              // Show pre-selected team with visual indicator
+                              <div className="flex items-center gap-3 p-2 rounded bg-primary/10 border border-primary/30">
+                                {(() => {
+                                  const team = TEAMS.find(t => t.value === selectedTeam);
+                                  if (!team) return null;
+                                  return (
+                                    <>
+                                      <div className={`p-1.5 rounded ${team.bgColor}`}>
+                                        <team.icon className={`w-4 h-4 ${team.textColor}`} />
+                                      </div>
+                                      <span className={`font-bold text-sm ${team.textColor}`}>
+                                        {team.label}
+                                      </span>
+                                      <CheckCircle className="w-4 h-4 text-green-500 ml-auto" />
+                                    </>
+                                  );
+                                })()}
+                              </div>
+                            ) : (
+                              <Select value={signupTeam} onValueChange={(v) => setSignupTeam(v as typeof signupTeam)}>
+                                <SelectTrigger className={`bg-background/50 border-border/50 h-9 ${!signupTeam ? 'border-amber-500/50' : 'border-primary/50'}`}>
+                                  <SelectValue placeholder="Selecione sua equipe" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {TEAMS.map((team) => (
+                                    <SelectItem key={team.value} value={team.value}>
+                                      <span className="flex items-center gap-2">
+                                        <team.icon className={`w-4 h-4 ${team.textColor}`} />
+                                        {team.label}
+                                      </span>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                            {!signupTeam && !selectedTeam && (
                               <p className="text-amber-500 text-[10px] flex items-center gap-1">
                                 <AlertCircle className="w-3 h-3" /> Selecione sua equipe para continuar
                               </p>
