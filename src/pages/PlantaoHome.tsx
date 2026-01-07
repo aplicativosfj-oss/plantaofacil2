@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoLogo from '@/assets/plantao-logo.png';
 import plantaoBg from '@/assets/plantao-bg.png';
@@ -29,16 +29,11 @@ const formatPhone = (value: string) => {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 };
 
-// Validação de CPF usando algoritmo oficial
 const validateCPF = (cpf: string): boolean => {
   const cleanCpf = cpf.replace(/\D/g, '');
-  
   if (cleanCpf.length !== 11) return false;
-  
-  // Check for known invalid CPFs
   if (/^(\d)\1+$/.test(cleanCpf)) return false;
   
-  // Validate first digit
   let sum = 0;
   for (let i = 0; i < 9; i++) {
     sum += parseInt(cleanCpf.charAt(i)) * (10 - i);
@@ -47,7 +42,6 @@ const validateCPF = (cpf: string): boolean => {
   if (remainder === 10 || remainder === 11) remainder = 0;
   if (remainder !== parseInt(cleanCpf.charAt(9))) return false;
   
-  // Validate second digit
   sum = 0;
   for (let i = 0; i < 10; i++) {
     sum += parseInt(cleanCpf.charAt(i)) * (11 - i);
@@ -59,36 +53,65 @@ const validateCPF = (cpf: string): boolean => {
   return true;
 };
 
-// Lista de unidades socioeducativas
-const UNITS = [
-  'CS Feijó',
-  'CS Juruá',
-  'CS Rio Branco',
-  'CS Sena',
-  'CS Brasiléia',
-];
+const UNITS = ['CS Feijó', 'CS Juruá', 'CS Rio Branco', 'CS Sena', 'CS Brasiléia'];
+const CITIES = ['Feijó', 'Rio Branco', 'Cruzeiro do Sul', 'Tarauacá', 'Sena Madureira'];
 
-// Lista de cidades
-const CITIES = [
-  'Feijó',
-  'Rio Branco',
-  'Cruzeiro do Sul',
-  'Tarauacá',
-  'Sena Madureira',
-];
-
-// Equipes disponíveis
 const TEAMS = [
-  { value: 'alfa', label: 'Equipe Alfa' },
-  { value: 'bravo', label: 'Equipe Bravo' },
-  { value: 'charlie', label: 'Equipe Charlie' },
-  { value: 'delta', label: 'Equipe Delta' },
+  { value: 'alfa', label: 'Equipe Alfa', icon: '🐺', color: 'from-blue-600 to-blue-800', bgColor: 'bg-blue-500/20', borderColor: 'border-blue-500', textColor: 'text-blue-400' },
+  { value: 'bravo', label: 'Equipe Bravo', icon: '🦅', color: 'from-amber-500 to-orange-600', bgColor: 'bg-amber-500/20', borderColor: 'border-amber-500', textColor: 'text-amber-400' },
+  { value: 'charlie', label: 'Equipe Charlie', icon: '⭐', color: 'from-emerald-500 to-green-600', bgColor: 'bg-emerald-500/20', borderColor: 'border-emerald-500', textColor: 'text-emerald-400' },
+  { value: 'delta', label: 'Equipe Delta', icon: '💀', color: 'from-red-500 to-rose-600', bgColor: 'bg-red-500/20', borderColor: 'border-red-500', textColor: 'text-red-400' },
 ] as const;
+
+// Radar scan effect component
+const RadarScan = () => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-primary/20">
+      <motion.div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: 'conic-gradient(from 0deg, transparent 0deg, hsl(var(--primary) / 0.3) 30deg, transparent 60deg)',
+        }}
+        animate={{ rotate: 360 }}
+        transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+      />
+    </div>
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full border border-primary/10" />
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] rounded-full border border-primary/5" />
+  </div>
+);
+
+// Floating particles for security theme
+const SecurityParticles = () => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    {[...Array(15)].map((_, i) => (
+      <motion.div
+        key={i}
+        className="absolute w-1 h-1 bg-primary/40 rounded-full"
+        style={{
+          left: `${Math.random() * 100}%`,
+          top: `${Math.random() * 100}%`,
+        }}
+        animate={{
+          y: [0, -30, 0],
+          opacity: [0.2, 0.8, 0.2],
+          scale: [1, 1.5, 1],
+        }}
+        transition={{
+          duration: 3 + Math.random() * 2,
+          repeat: Infinity,
+          delay: Math.random() * 2,
+        }}
+      />
+    ))}
+  </div>
+);
 
 const PlantaoHome = () => {
   const { signIn, signInMaster, signUp, isLoading } = usePlantaoAuth();
   const navigate = useNavigate();
   const [showAbout, setShowAbout] = useState(false);
+  const [showAuthPanel, setShowAuthPanel] = useState(false);
   const [showMasterLogin, setShowMasterLogin] = useState(false);
   
   // Login state
@@ -119,7 +142,6 @@ const PlantaoHome = () => {
     const formatted = formatCPF(value);
     if (isSignup) {
       setSignupCpf(formatted);
-      // Validate when complete
       const clean = formatted.replace(/\D/g, '');
       if (clean.length === 11) {
         if (!validateCPF(clean)) {
@@ -163,13 +185,11 @@ const PlantaoHome = () => {
     e.preventDefault();
     setSignupError('');
     
-    // Validate required fields including team
     if (!signupCpf || !signupPassword || !signupName || !signupRegistration || !signupCity || !signupUnit || !signupTeam) {
       setSignupError('Preencha todos os campos obrigatórios');
       return;
     }
 
-    // Validate CPF
     if (!validateCPF(signupCpf)) {
       setSignupError('CPF inválido');
       return;
@@ -225,11 +245,10 @@ const PlantaoHome = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* About Dialog */}
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <PlantaoAboutDialog isOpen={showAbout} onClose={() => setShowAbout(false)} />
 
-      {/* About Button - Discrete */}
+      {/* About Button */}
       <button
         onClick={() => setShowAbout(true)}
         className="fixed bottom-4 left-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/60 hover:bg-muted/80 text-muted-foreground hover:text-foreground text-xs transition-all duration-300 backdrop-blur-sm"
@@ -239,390 +258,560 @@ const PlantaoHome = () => {
         <span className="hidden sm:inline">Sobre</span>
       </button>
 
-      {/* Background Image */}
+      {/* Background Effects */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
         style={{ backgroundImage: `url(${plantaoBg})` }}
       />
-      <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
+      <RadarScan />
+      <SecurityParticles />
+      
+      {/* Grid overlay */}
+      <div 
+        className="absolute inset-0 opacity-5"
+        style={{
+          backgroundImage: `linear-gradient(hsl(var(--primary) / 0.3) 1px, transparent 1px),
+                           linear-gradient(90deg, hsl(var(--primary) / 0.3) 1px, transparent 1px)`,
+          backgroundSize: '50px 50px'
+        }}
+      />
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Header with Logo */}
-        <header className="py-6 px-4">
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="container mx-auto flex flex-col items-center justify-center"
-          >
-            <img 
-              src={plantaoLogo} 
-              alt="PlantãoPro" 
-              className="h-28 md:h-36 w-auto object-contain drop-shadow-2xl"
-            />
-          </motion.div>
-        </header>
-
-        {/* Main Content */}
-        <main className="flex-1 flex items-center justify-center px-4 py-2">
+      <AnimatePresence mode="wait">
+        {!showAuthPanel ? (
+          /* Landing Screen */
           <motion.div
+            key="landing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="relative z-10 flex flex-col min-h-screen"
+          >
+            {/* Header */}
+            <header className="py-8 px-4">
+              <motion.div 
+                initial={{ opacity: 0, y: -30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="container mx-auto flex flex-col items-center justify-center"
+              >
+                <motion.div
+                  animate={{ 
+                    boxShadow: ['0 0 20px hsl(var(--primary) / 0.3)', '0 0 40px hsl(var(--primary) / 0.5)', '0 0 20px hsl(var(--primary) / 0.3)']
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="rounded-full p-2"
+                >
+                  <img 
+                    src={plantaoLogo} 
+                    alt="PlantãoPro" 
+                    className="h-32 md:h-40 w-auto object-contain drop-shadow-2xl"
+                  />
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="flex items-center gap-2 mt-4 text-primary/80"
+                >
+                  <Radio className="w-4 h-4 animate-pulse" />
+                  <span className="text-sm font-medium tracking-wider uppercase">Sistema Ativo</span>
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                </motion.div>
+              </motion.div>
+            </header>
+
+            {/* Teams Showcase */}
+            <main className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="text-center mb-8"
+              >
+                <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-2">
+                  Gestão de Plantões
+                </h1>
+                <p className="text-muted-foreground text-sm">
+                  Agentes Socioeducativos • Controle • Organização
+                </p>
+              </motion.div>
+
+              {/* Teams Grid */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5 }}
+                className="grid grid-cols-2 gap-4 max-w-md w-full mb-8"
+              >
+                {TEAMS.map((team, index) => (
+                  <motion.div
+                    key={team.value}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 + index * 0.1 }}
+                    whileHover={{ scale: 1.05, y: -5 }}
+                    className={`
+                      relative p-5 rounded-xl border-2 ${team.borderColor} ${team.bgColor}
+                      backdrop-blur-sm cursor-default overflow-hidden
+                    `}
+                  >
+                    <div className={`absolute inset-0 bg-gradient-to-br ${team.color} opacity-10`} />
+                    <div className="relative flex flex-col items-center gap-2">
+                      <span className="text-4xl">{team.icon}</span>
+                      <span className={`font-bold text-sm ${team.textColor}`}>
+                        {team.label}
+                      </span>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Users className="w-3 h-3" />
+                        <span>Equipe Operacional</span>
+                      </div>
+                    </div>
+                    
+                    {/* Decorative corner */}
+                    <div className={`absolute top-0 right-0 w-8 h-8 ${team.bgColor} rounded-bl-xl flex items-center justify-center`}>
+                      <Shield className={`w-3 h-3 ${team.textColor}`} />
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {/* CTA Button */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1 }}
+              >
+                <Button
+                  size="lg"
+                  onClick={() => setShowAuthPanel(true)}
+                  className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30 px-8 py-6 text-lg font-semibold group"
+                >
+                  <Siren className="w-5 h-5 mr-2 group-hover:animate-pulse" />
+                  Acessar Sistema
+                  <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </motion.div>
+
+              {/* Features */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.2 }}
+                className="flex flex-wrap justify-center gap-4 mt-8 text-xs text-muted-foreground"
+              >
+                <div className="flex items-center gap-1.5 bg-muted/30 px-3 py-1.5 rounded-full">
+                  <Zap className="w-3 h-3 text-yellow-500" />
+                  <span>Banco de Horas</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-muted/30 px-3 py-1.5 rounded-full">
+                  <Star className="w-3 h-3 text-primary" />
+                  <span>Trocas de Plantão</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-muted/30 px-3 py-1.5 rounded-full">
+                  <Users className="w-3 h-3 text-emerald-500" />
+                  <span>Chat de Equipe</span>
+                </div>
+              </motion.div>
+            </main>
+
+            {/* Footer */}
+            <footer className="py-4 text-center text-muted-foreground text-xs">
+              <p>PlantãoPro v1.0 • Developed by Franc Denis</p>
+            </footer>
+          </motion.div>
+        ) : (
+          /* Auth Panel */
+          <motion.div
+            key="auth"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="w-full max-w-md"
+            exit={{ opacity: 0, y: 20 }}
+            className="relative z-10 flex flex-col min-h-screen"
           >
-            <Card className="border-primary/20 bg-card/90 backdrop-blur-md shadow-2xl shadow-primary/10">
-              <CardHeader className="text-center pb-3">
-                <CardTitle className="text-lg font-display tracking-wide flex items-center justify-center gap-2">
-                  <Shield className="w-5 h-5 text-primary" />
-                  Acesso ao Sistema
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Gestão de Plantões - Agentes Socioeducativos
-                </CardDescription>
-              </CardHeader>
-              
-              <CardContent>
-                <Tabs defaultValue="login" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-3">
-                    <TabsTrigger value="login">Entrar</TabsTrigger>
-                    <TabsTrigger value="signup">Cadastrar</TabsTrigger>
-                  </TabsList>
+            {/* Header with Logo */}
+            <header className="py-4 px-4">
+              <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="container mx-auto flex flex-col items-center justify-center"
+              >
+                <img 
+                  src={plantaoLogo} 
+                  alt="PlantãoPro" 
+                  className="h-20 md:h-24 w-auto object-contain drop-shadow-2xl"
+                />
+              </motion.div>
+            </header>
+
+            {/* Main Content */}
+            <main className="flex-1 flex items-start justify-center px-4 py-2 overflow-y-auto">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="w-full max-w-md"
+              >
+                {/* Back Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAuthPanel(false)}
+                  className="mb-3 text-muted-foreground hover:text-foreground"
+                >
+                  ← Voltar
+                </Button>
+
+                <Card className="border-primary/20 bg-card/90 backdrop-blur-md shadow-2xl shadow-primary/10">
+                  <CardHeader className="text-center pb-3">
+                    <CardTitle className="text-lg font-display tracking-wide flex items-center justify-center gap-2">
+                      <Shield className="w-5 h-5 text-primary" />
+                      Acesso ao Sistema
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Gestão de Plantões - Agentes Socioeducativos
+                    </CardDescription>
+                  </CardHeader>
                   
-                  {/* Login Tab */}
-                  <TabsContent value="login">
-                    <form onSubmit={handleLogin} className="space-y-3">
-                      <div className="space-y-1">
-                        <Label htmlFor="login-cpf" className="flex items-center gap-2 text-xs">
-                          <IdCard className="w-3.5 h-3.5" /> CPF *
-                        </Label>
-                        <Input
-                          id="login-cpf"
-                          type="text"
-                          placeholder="000.000.000-00"
-                          value={loginCpf}
-                          onChange={(e) => handleCpfChange(e.target.value, false)}
-                          className="bg-background/50 border-border/50 h-9"
-                        />
-                      </div>
+                  <CardContent>
+                    <Tabs defaultValue="login" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2 mb-3">
+                        <TabsTrigger value="login">Entrar</TabsTrigger>
+                        <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+                      </TabsList>
                       
-                      <div className="space-y-1">
-                        <Label htmlFor="login-password" className="flex items-center gap-2 text-xs">
-                          <Lock className="w-3.5 h-3.5" /> Senha *
-                        </Label>
-                        <Input
-                          id="login-password"
-                          type="password"
-                          placeholder="••••••"
-                          value={loginPassword}
-                          onChange={(e) => setLoginPassword(e.target.value)}
-                          className="bg-background/50 border-border/50 h-9"
-                        />
-                      </div>
-
-                      {loginError && (
-                        <div className="flex items-center gap-2 text-destructive text-xs">
-                          <AlertCircle className="w-3.5 h-3.5" />
-                          {loginError}
-                        </div>
-                      )}
-
-                      <Button
-                        type="submit"
-                        className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 h-9"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        ) : null}
-                        Entrar
-                      </Button>
-
-                      <div className="relative my-3">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t border-border/50" />
-                        </div>
-                        <div className="relative flex justify-center text-xs">
-                          <span className="bg-card px-2 text-muted-foreground">ou</span>
-                        </div>
-                      </div>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full h-9 text-xs border-amber-500/50 text-amber-500 hover:bg-amber-500/10"
-                        onClick={() => setShowMasterLogin(!showMasterLogin)}
-                      >
-                        <Crown className="w-3.5 h-3.5 mr-2" />
-                        {showMasterLogin ? 'Voltar ao login normal' : 'Acesso Administrador'}
-                      </Button>
-
-                      {showMasterLogin && (
-                        <form onSubmit={handleMasterLogin} className="space-y-2 mt-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                      {/* Login Tab */}
+                      <TabsContent value="login">
+                        <form onSubmit={handleLogin} className="space-y-3">
                           <div className="space-y-1">
-                            <Label htmlFor="master-username" className="flex items-center gap-2 text-xs text-amber-500">
-                              <User className="w-3.5 h-3.5" /> Usuário Master
+                            <Label htmlFor="login-cpf" className="flex items-center gap-2 text-xs">
+                              <IdCard className="w-3.5 h-3.5" /> CPF *
                             </Label>
                             <Input
-                              id="master-username"
+                              id="login-cpf"
                               type="text"
-                              placeholder="Digite o usuário"
-                              value={masterUsername}
-                              onChange={(e) => setMasterUsername(e.target.value)}
-                              className="bg-background/50 border-amber-500/30 h-9"
+                              placeholder="000.000.000-00"
+                              value={loginCpf}
+                              onChange={(e) => handleCpfChange(e.target.value, false)}
+                              className="bg-background/50 border-border/50 h-9"
                             />
                           </div>
                           
                           <div className="space-y-1">
-                            <Label htmlFor="master-password" className="flex items-center gap-2 text-xs text-amber-500">
-                              <Lock className="w-3.5 h-3.5" /> Senha Master
+                            <Label htmlFor="login-password" className="flex items-center gap-2 text-xs">
+                              <Lock className="w-3.5 h-3.5" /> Senha *
                             </Label>
                             <Input
-                              id="master-password"
+                              id="login-password"
                               type="password"
                               placeholder="••••••"
-                              value={masterPassword}
-                              onChange={(e) => setMasterPassword(e.target.value)}
-                              className="bg-background/50 border-amber-500/30 h-9"
+                              value={loginPassword}
+                              onChange={(e) => setLoginPassword(e.target.value)}
+                              className="bg-background/50 border-border/50 h-9"
                             />
                           </div>
 
-                          {masterError && (
+                          {loginError && (
                             <div className="flex items-center gap-2 text-destructive text-xs">
                               <AlertCircle className="w-3.5 h-3.5" />
-                              {masterError}
+                              {loginError}
                             </div>
                           )}
 
                           <Button
                             type="submit"
-                            className="w-full bg-amber-500 hover:bg-amber-600 text-black h-9"
+                            className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 h-9"
                             disabled={isLoading}
                           >
                             {isLoading ? (
                               <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                            ) : (
-                              <Crown className="w-4 h-4 mr-2" />
-                            )}
-                            Entrar como Administrador
+                            ) : null}
+                            Entrar
                           </Button>
+
+                          <div className="relative my-3">
+                            <div className="absolute inset-0 flex items-center">
+                              <span className="w-full border-t border-border/50" />
+                            </div>
+                            <div className="relative flex justify-center text-xs">
+                              <span className="bg-card px-2 text-muted-foreground">ou</span>
+                            </div>
+                          </div>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full h-9 text-xs border-amber-500/50 text-amber-500 hover:bg-amber-500/10"
+                            onClick={() => setShowMasterLogin(!showMasterLogin)}
+                          >
+                            <Crown className="w-3.5 h-3.5 mr-2" />
+                            {showMasterLogin ? 'Voltar ao login normal' : 'Acesso Administrador'}
+                          </Button>
+
+                          {showMasterLogin && (
+                            <form onSubmit={handleMasterLogin} className="space-y-2 mt-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                              <div className="space-y-1">
+                                <Label htmlFor="master-username" className="flex items-center gap-2 text-xs text-amber-500">
+                                  <User className="w-3.5 h-3.5" /> Usuário Master
+                                </Label>
+                                <Input
+                                  id="master-username"
+                                  type="text"
+                                  placeholder="Digite o usuário"
+                                  value={masterUsername}
+                                  onChange={(e) => setMasterUsername(e.target.value)}
+                                  className="bg-background/50 border-amber-500/30 h-9"
+                                />
+                              </div>
+                              
+                              <div className="space-y-1">
+                                <Label htmlFor="master-password" className="flex items-center gap-2 text-xs text-amber-500">
+                                  <Lock className="w-3.5 h-3.5" /> Senha Master
+                                </Label>
+                                <Input
+                                  id="master-password"
+                                  type="password"
+                                  placeholder="••••••"
+                                  value={masterPassword}
+                                  onChange={(e) => setMasterPassword(e.target.value)}
+                                  className="bg-background/50 border-amber-500/30 h-9"
+                                />
+                              </div>
+
+                              {masterError && (
+                                <div className="flex items-center gap-2 text-destructive text-xs">
+                                  <AlertCircle className="w-3.5 h-3.5" />
+                                  {masterError}
+                                </div>
+                              )}
+
+                              <Button
+                                type="submit"
+                                className="w-full bg-amber-500 hover:bg-amber-600 text-black h-9"
+                                disabled={isLoading}
+                              >
+                                {isLoading ? (
+                                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                ) : (
+                                  <Crown className="w-4 h-4 mr-2" />
+                                )}
+                                Entrar como Administrador
+                              </Button>
+                            </form>
+                          )}
                         </form>
-                      )}
-                    </form>
-                  </TabsContent>
+                      </TabsContent>
 
-                  {/* Signup Tab */}
-                  <TabsContent value="signup">
-                    <form onSubmit={handleSignup} className="space-y-2">
-                      <div className="space-y-1">
-                        <Label htmlFor="signup-name" className="flex items-center gap-2 text-xs">
-                          <User className="w-3.5 h-3.5" /> Nome Completo *
-                        </Label>
-                        <Input
-                          id="signup-name"
-                          type="text"
-                          placeholder="Seu nome completo"
-                          value={signupName}
-                          onChange={(e) => setSignupName(e.target.value)}
-                          className="bg-background/50 border-border/50 h-9"
-                        />
-                      </div>
+                      {/* Signup Tab */}
+                      <TabsContent value="signup">
+                        <form onSubmit={handleSignup} className="space-y-2">
+                          <div className="space-y-1">
+                            <Label htmlFor="signup-name" className="flex items-center gap-2 text-xs">
+                              <User className="w-3.5 h-3.5" /> Nome Completo *
+                            </Label>
+                            <Input
+                              id="signup-name"
+                              type="text"
+                              placeholder="Seu nome completo"
+                              value={signupName}
+                              onChange={(e) => setSignupName(e.target.value)}
+                              className="bg-background/50 border-border/50 h-9"
+                            />
+                          </div>
 
-                      <div className="space-y-1">
-                        <Label htmlFor="signup-cpf" className="flex items-center gap-2 text-xs">
-                          <IdCard className="w-3.5 h-3.5" /> CPF *
-                        </Label>
-                        <Input
-                          id="signup-cpf"
-                          type="text"
-                          placeholder="000.000.000-00"
-                          value={signupCpf}
-                          onChange={(e) => handleCpfChange(e.target.value, true)}
-                          className={`bg-background/50 border-border/50 h-9 ${cpfError ? 'border-destructive' : ''}`}
-                        />
-                        {cpfError && (
-                          <p className="text-destructive text-xs">{cpfError}</p>
-                        )}
-                      </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="signup-cpf" className="flex items-center gap-2 text-xs">
+                              <IdCard className="w-3.5 h-3.5" /> CPF *
+                            </Label>
+                            <Input
+                              id="signup-cpf"
+                              type="text"
+                              placeholder="000.000.000-00"
+                              value={signupCpf}
+                              onChange={(e) => handleCpfChange(e.target.value, true)}
+                              className={`bg-background/50 border-border/50 h-9 ${cpfError ? 'border-destructive' : ''}`}
+                            />
+                            {cpfError && (
+                              <p className="text-destructive text-xs">{cpfError}</p>
+                            )}
+                          </div>
 
-                      <div className="space-y-1">
-                        <Label htmlFor="signup-registration" className="flex items-center gap-2 text-xs">
-                          <Shield className="w-3.5 h-3.5" /> Matrícula *
-                        </Label>
-                        <Input
-                          id="signup-registration"
-                          type="text"
-                          placeholder="Matrícula funcional"
-                          value={signupRegistration}
-                          onChange={(e) => setSignupRegistration(e.target.value)}
-                          className="bg-background/50 border-border/50 h-9"
-                        />
-                      </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="signup-registration" className="flex items-center gap-2 text-xs">
+                              <Shield className="w-3.5 h-3.5" /> Matrícula *
+                            </Label>
+                            <Input
+                              id="signup-registration"
+                              type="text"
+                              placeholder="Matrícula funcional"
+                              value={signupRegistration}
+                              onChange={(e) => setSignupRegistration(e.target.value)}
+                              className="bg-background/50 border-border/50 h-9"
+                            />
+                          </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <Label htmlFor="signup-city" className="flex items-center gap-2 text-xs">
-                            <MapPin className="w-3.5 h-3.5" /> Cidade *
-                          </Label>
-                          <Select value={signupCity} onValueChange={setSignupCity}>
-                            <SelectTrigger className="bg-background/50 border-border/50 h-9">
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {CITIES.map((city) => (
-                                <SelectItem key={city} value={city}>{city}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <Label htmlFor="signup-city" className="flex items-center gap-2 text-xs">
+                                <MapPin className="w-3.5 h-3.5" /> Cidade *
+                              </Label>
+                              <Select value={signupCity} onValueChange={setSignupCity}>
+                                <SelectTrigger className="bg-background/50 border-border/50 h-9">
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {CITIES.map((city) => (
+                                    <SelectItem key={city} value={city}>{city}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
 
-                        <div className="space-y-1">
-                          <Label htmlFor="signup-unit" className="flex items-center gap-2 text-xs">
-                            <Building className="w-3.5 h-3.5" /> Unidade *
-                          </Label>
-                          <Select value={signupUnit} onValueChange={setSignupUnit}>
-                            <SelectTrigger className="bg-background/50 border-border/50 h-9">
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {UNITS.map((unit) => (
-                                <SelectItem key={unit} value={unit}>{unit}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
+                            <div className="space-y-1">
+                              <Label htmlFor="signup-unit" className="flex items-center gap-2 text-xs">
+                                <Building className="w-3.5 h-3.5" /> Unidade *
+                              </Label>
+                              <Select value={signupUnit} onValueChange={setSignupUnit}>
+                                <SelectTrigger className="bg-background/50 border-border/50 h-9">
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {UNITS.map((unit) => (
+                                    <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
 
-                      {/* Seleção de Equipe - OBRIGATÓRIO */}
-                      <div className="space-y-1">
-                        <Label htmlFor="signup-team" className="flex items-center gap-2 text-xs">
-                          <Users className="w-3.5 h-3.5" /> Equipe *
-                        </Label>
-                        <Select value={signupTeam} onValueChange={(v) => setSignupTeam(v as typeof signupTeam)}>
-                          <SelectTrigger className={`bg-background/50 border-border/50 h-9 ${!signupTeam ? 'border-amber-500/50' : 'border-primary/50'}`}>
-                            <SelectValue placeholder="Selecione sua equipe" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {TEAMS.map((team) => (
-                              <SelectItem key={team.value} value={team.value}>
-                                <span className="flex items-center gap-2">
-                                  <span className={`w-2 h-2 rounded-full ${
-                                    team.value === 'alfa' ? 'bg-red-500' :
-                                    team.value === 'bravo' ? 'bg-blue-500' :
-                                    team.value === 'charlie' ? 'bg-green-500' : 'bg-amber-500'
-                                  }`} />
-                                  {team.label}
-                                </span>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {!signupTeam && (
-                          <p className="text-amber-500 text-[10px] flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" /> Selecione sua equipe para continuar
+                          {/* Team Selection */}
+                          <div className="space-y-1">
+                            <Label htmlFor="signup-team" className="flex items-center gap-2 text-xs">
+                              <Users className="w-3.5 h-3.5" /> Equipe *
+                            </Label>
+                            <Select value={signupTeam} onValueChange={(v) => setSignupTeam(v as typeof signupTeam)}>
+                              <SelectTrigger className={`bg-background/50 border-border/50 h-9 ${!signupTeam ? 'border-amber-500/50' : 'border-primary/50'}`}>
+                                <SelectValue placeholder="Selecione sua equipe" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {TEAMS.map((team) => (
+                                  <SelectItem key={team.value} value={team.value}>
+                                    <span className="flex items-center gap-2">
+                                      <span>{team.icon}</span>
+                                      {team.label}
+                                    </span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {!signupTeam && (
+                              <p className="text-amber-500 text-[10px] flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" /> Selecione sua equipe para continuar
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <Label htmlFor="signup-phone" className="flex items-center gap-2 text-xs">
+                                <Phone className="w-3.5 h-3.5" /> Telefone
+                              </Label>
+                              <Input
+                                id="signup-phone"
+                                type="tel"
+                                placeholder="(00) 00000-0000"
+                                value={signupPhone}
+                                onChange={(e) => setSignupPhone(formatPhone(e.target.value))}
+                                className="bg-background/50 border-border/50 h-9"
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <Label htmlFor="signup-email" className="flex items-center gap-2 text-xs">
+                                <Mail className="w-3.5 h-3.5" /> Email
+                              </Label>
+                              <Input
+                                id="signup-email"
+                                type="email"
+                                placeholder="seu@email.com"
+                                value={signupEmail}
+                                onChange={(e) => setSignupEmail(e.target.value)}
+                                className="bg-background/50 border-border/50 h-9"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label htmlFor="signup-password" className="flex items-center gap-2 text-xs">
+                              <Lock className="w-3.5 h-3.5" /> Senha *
+                            </Label>
+                            <Input
+                              id="signup-password"
+                              type="password"
+                              placeholder="Mínimo 6 caracteres"
+                              value={signupPassword}
+                              onChange={(e) => setSignupPassword(e.target.value)}
+                              className="bg-background/50 border-border/50 h-9"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label htmlFor="signup-confirm-password" className="flex items-center gap-2 text-xs">
+                              <Lock className="w-3.5 h-3.5" /> Confirmar Senha *
+                            </Label>
+                            <Input
+                              id="signup-confirm-password"
+                              type="password"
+                              placeholder="Repita a senha"
+                              value={signupConfirmPassword}
+                              onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                              className="bg-background/50 border-border/50 h-9"
+                            />
+                          </div>
+
+                          {signupError && (
+                            <div className="flex items-center gap-2 text-destructive text-xs">
+                              <AlertCircle className="w-3.5 h-3.5" />
+                              {signupError}
+                            </div>
+                          )}
+
+                          <Button
+                            type="submit"
+                            className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 h-9"
+                            disabled={isLoading || !!cpfError}
+                          >
+                            {isLoading ? (
+                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            ) : null}
+                            Criar Conta
+                          </Button>
+
+                          <p className="text-[10px] text-muted-foreground text-center">
+                            * Campos obrigatórios
                           </p>
-                        )}
-                      </div>
+                        </form>
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </main>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <Label htmlFor="signup-phone" className="flex items-center gap-2 text-xs">
-                            <Phone className="w-3.5 h-3.5" /> Telefone
-                          </Label>
-                          <Input
-                            id="signup-phone"
-                            type="tel"
-                            placeholder="(00) 00000-0000"
-                            value={signupPhone}
-                            onChange={(e) => setSignupPhone(formatPhone(e.target.value))}
-                            className="bg-background/50 border-border/50 h-9"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <Label htmlFor="signup-email" className="flex items-center gap-2 text-xs">
-                            <Mail className="w-3.5 h-3.5" /> Email
-                          </Label>
-                          <Input
-                            id="signup-email"
-                            type="email"
-                            placeholder="seu@email.com"
-                            value={signupEmail}
-                            onChange={(e) => setSignupEmail(e.target.value)}
-                            className="bg-background/50 border-border/50 h-9"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="signup-password" className="flex items-center gap-2 text-xs">
-                          <Lock className="w-3.5 h-3.5" /> Senha *
-                        </Label>
-                        <Input
-                          id="signup-password"
-                          type="password"
-                          placeholder="Mínimo 6 caracteres"
-                          value={signupPassword}
-                          onChange={(e) => setSignupPassword(e.target.value)}
-                          className="bg-background/50 border-border/50 h-9"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <Label htmlFor="signup-confirm-password" className="flex items-center gap-2 text-xs">
-                          <Lock className="w-3.5 h-3.5" /> Confirmar Senha *
-                        </Label>
-                        <Input
-                          id="signup-confirm-password"
-                          type="password"
-                          placeholder="Repita a senha"
-                          value={signupConfirmPassword}
-                          onChange={(e) => setSignupConfirmPassword(e.target.value)}
-                          className="bg-background/50 border-border/50 h-9"
-                        />
-                      </div>
-
-                      {signupError && (
-                        <div className="flex items-center gap-2 text-destructive text-xs">
-                          <AlertCircle className="w-3.5 h-3.5" />
-                          {signupError}
-                        </div>
-                      )}
-
-                      <Button
-                        type="submit"
-                        className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 h-9"
-                        disabled={isLoading || !!cpfError}
-                      >
-                        {isLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        ) : null}
-                        Criar Conta
-                      </Button>
-
-                      <p className="text-[10px] text-muted-foreground text-center">
-                        * Campos obrigatórios
-                      </p>
-                    </form>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
+            {/* Footer */}
+            <footer className="py-3 text-center text-muted-foreground text-xs space-y-1">
+              <p>PlantãoPro v1.0 • Developed by Franc Denis</p>
+              <button 
+                onClick={() => setShowAbout(true)}
+                className="hover:text-primary transition-colors underline"
+              >
+                Sobre o Sistema
+              </button>
+            </footer>
           </motion.div>
-        </main>
-
-        {/* Footer */}
-        <footer className="py-3 text-center text-muted-foreground text-xs space-y-1">
-          <p>PlantãoPro v1.0 • Developed by Franc Denis</p>
-          <button 
-            onClick={() => setShowAbout(true)}
-            className="hover:text-primary transition-colors underline"
-          >
-            Sobre o Sistema
-          </button>
-        </footer>
-      </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
