@@ -325,7 +325,7 @@ const PlantaoHome = () => {
       setMasterError(error);
     } else {
       toast.success('Login master realizado!');
-      navigate('/dashboard');
+      navigate('/master');
     }
   };
 
