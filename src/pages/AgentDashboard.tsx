@@ -282,51 +282,51 @@ const AgentDashboard = () => {
 
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur">
-        <div className="container mx-auto px-4 py-3">
+        <div className="container mx-auto px-2 sm:px-4 py-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src={plantaoLogo} alt="PlantãoPro" className="h-10 w-auto object-contain" />
-              <div>
-                <h1 className="text-lg font-display tracking-wide">PLANTÃO<span className="text-primary">PRO</span></h1>
-                <p className="text-xs text-muted-foreground">{agent?.unit || 'Unidade não definida'}</p>
+            <div className="flex items-center gap-2">
+              <img src={plantaoLogo} alt="PlantãoPro" className="h-8 w-auto object-contain" />
+              <div className="hidden sm:block">
+                <h1 className="text-sm font-display tracking-wide">PLANTÃO<span className="text-primary">PRO</span></h1>
+                <p className="text-[10px] text-muted-foreground">{agent?.unit || 'Unidade'}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => setShowGlobalChat(true)}
-                className="gap-1 h-8 px-2"
+                className="h-7 w-7"
               >
                 <MessageCircle className="w-4 h-4" />
-                <span className="hidden sm:inline text-xs">Chat</span>
               </Button>
               <OnlineIndicator compact />
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowAbout(true)}
+                className="h-7 w-7"
                 title="Sobre"
               >
-                <Info className="w-5 h-5" />
+                <Info className="w-4 h-4" />
               </Button>
 
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative"
+                className="relative h-7 w-7"
                 onClick={() => setActivePanel('alerts')}
               >
-                <Bell className="w-5 h-5" />
+                <Bell className="w-4 h-4" />
                 {unreadAlerts > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-white text-xs rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-white text-[10px] rounded-full flex items-center justify-center">
                     {unreadAlerts}
                   </span>
                 )}
               </Button>
 
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSignOut}>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4" />
               </Button>
               <LicenseCounter onExpired={() => setIsLicenseExpired(true)} />
@@ -337,40 +337,40 @@ const AgentDashboard = () => {
 
       {/* User Info Bar */}
       <div className="border-b border-border/30 bg-card/50">
-        <div className="container mx-auto px-4 py-3">
+        <div className="container mx-auto px-2 sm:px-4 py-2">
           <div className="flex items-center justify-between">
             <button 
               onClick={() => setShowProfile(true)}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
                 {agent.avatar_url ? (
                   <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <User className="w-5 h-5 text-primary" />
+                  <User className="w-4 h-4 text-primary" />
                 )}
               </div>
               <div className="text-left">
-                <p className="font-medium">{agent.full_name}</p>
-                <p className="text-sm text-muted-foreground">Mat: {agent.registration_number || 'N/A'}</p>
+                <p className="text-sm font-medium truncate max-w-[120px] sm:max-w-none">{agent.full_name}</p>
+                <p className="text-[10px] text-muted-foreground">Mat: {agent.registration_number || 'N/A'}</p>
               </div>
             </button>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowChat(true)}
-                className="relative"
+                className="relative h-7 w-7"
                 title="Chat da Equipe"
               >
-                <MessageCircle className="w-5 h-5" />
+                <MessageCircle className="w-4 h-4" />
               </Button>
               <Badge 
                 variant="outline" 
-                className={`${getTeamColor(agent.current_team)} ${agent.current_team ? 'text-white border-transparent' : ''}`}
+                className={`${getTeamColor(agent.current_team)} ${agent.current_team ? 'text-white border-transparent' : ''} text-[10px] px-1.5 py-0.5`}
               >
-                {agent.current_team ? `Equipe ${agent.current_team.charAt(0).toUpperCase() + agent.current_team.slice(1)}` : 'Sem equipe'}
+                {agent.current_team ? agent.current_team.charAt(0).toUpperCase() + agent.current_team.slice(1) : 'N/A'}
               </Badge>
             </div>
           </div>
