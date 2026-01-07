@@ -386,53 +386,44 @@ const PlantaoHome = () => {
               </div>
             </header>
 
-            {/* Main Content */}
-            <main className="flex-1 flex flex-col items-center justify-start px-4 pt-4 pb-6">
-              {/* Logo */}
+            {/* Main Content - Compact */}
+            <main className="flex-1 flex flex-col items-center justify-center px-4">
+              {/* Logo + Title Combined */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
-                className="relative mb-6"
+                className="relative mb-4 text-center"
               >
                 <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
                 <img 
                   src={plantaoLogo} 
                   alt="PlantãoPro" 
-                  className="relative h-24 md:h-28 w-auto object-contain drop-shadow-2xl"
+                  className="relative h-20 md:h-24 w-auto object-contain drop-shadow-2xl mx-auto"
                 />
-              </motion.div>
-
-              {/* Title */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-center mb-6"
-              >
-                <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground tracking-wider">
+                <h1 className="text-xl md:text-2xl font-display font-bold text-foreground tracking-wider mt-2">
                   PLANTÃO<span className="text-primary">PRO</span>
                 </h1>
-                <p className="text-muted-foreground text-xs font-mono uppercase tracking-widest mt-1">
+                <p className="text-muted-foreground text-[10px] font-mono uppercase tracking-widest mt-0.5">
                   Gestão de Plantões • Segurança
                 </p>
               </motion.div>
 
-              {/* Teams Grid - Interactive Tactical Style */}
+              {/* Teams Grid - Compact */}
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="w-full max-w-md mb-6"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="w-full max-w-sm"
               >
-                <div className="text-center mb-3">
+                <div className="text-center mb-2">
                   <span className="text-[10px] font-mono text-primary/60 uppercase tracking-widest">
                     {savedCredentials 
-                      ? `[ Agente: ${savedCredentials.team.toUpperCase()} ]` 
+                      ? `[ ${savedCredentials.team.toUpperCase()} ]` 
                       : '[ Selecione sua Equipe ]'}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   {TEAMS.map((team, index) => {
                     const isUserTeam = savedCredentials?.team === team.value;
                     const isBlocked = savedCredentials && !isUserTeam;
@@ -441,28 +432,28 @@ const PlantaoHome = () => {
                     return (
                       <motion.button
                         key={team.value}
-                        initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
+                        initial={{ opacity: 0, x: index % 2 === 0 ? -10 : 10 }}
                         animate={{ 
                           opacity: 1, 
-                          x: isBlockedClicked ? [0, -5, 5, -5, 5, 0] : 0,
+                          x: isBlockedClicked ? [0, -4, 4, -4, 4, 0] : 0,
                           scale: isBlockedClicked ? [1, 0.98, 1] : 1,
                         }}
                         transition={{ 
-                          delay: 0.4 + index * 0.1,
+                          delay: 0.3 + index * 0.05,
                           x: isBlockedClicked ? { duration: 0.4 } : undefined,
                         }}
-                        whileHover={{ scale: isBlocked ? 1 : 1.03 }}
-                        whileTap={{ scale: isBlocked ? 0.98 : 0.97 }}
+                        whileHover={{ scale: isBlocked ? 1 : 1.02 }}
+                        whileTap={{ scale: isBlocked ? 0.98 : 0.96 }}
                         onClick={() => handleTeamClick(team.value)}
                         disabled={isAutoLogging}
                         className={`
-                          relative p-4 rounded-none border-l-4 text-left
+                          relative p-3 rounded-sm border-l-3 text-left
                           ${isBlockedClicked ? 'border-red-500' : team.borderColor}
                           ${isBlocked 
-                            ? 'bg-gradient-to-r from-red-900/20 to-transparent opacity-50 cursor-not-allowed' 
-                            : 'bg-gradient-to-r from-black/40 to-transparent cursor-pointer hover:from-black/60'}
-                          backdrop-blur-sm group transition-all duration-300
-                          ${isUserTeam ? 'ring-2 ring-primary/50 ring-offset-1 ring-offset-transparent' : ''}
+                            ? 'bg-gradient-to-r from-red-900/20 to-transparent opacity-40 cursor-not-allowed' 
+                            : 'bg-gradient-to-r from-black/50 to-transparent cursor-pointer hover:from-black/70'}
+                          backdrop-blur-sm group transition-all duration-200
+                          ${isUserTeam ? 'ring-1 ring-primary/50' : ''}
                         `}
                       >
                         {/* Blocked overlay effect */}
@@ -475,32 +466,29 @@ const PlantaoHome = () => {
                           />
                         )}
                         
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded ${isBlocked ? 'bg-red-500/10' : team.bgColor} transition-colors`}>
+                        <div className="flex items-center gap-2">
+                          <div className={`p-1.5 rounded ${isBlocked ? 'bg-red-500/10' : team.bgColor} transition-colors`}>
                             {isBlocked ? (
-                              <Ban className="w-5 h-5 text-red-400/60" />
+                              <Ban className="w-4 h-4 text-red-400/60" />
                             ) : isUserTeam ? (
-                              <Fingerprint className={`w-5 h-5 ${team.textColor}`} />
+                              <Fingerprint className={`w-4 h-4 ${team.textColor}`} />
                             ) : (
-                              <team.icon className={`w-5 h-5 ${team.textColor}`} />
+                              <team.icon className={`w-4 h-4 ${team.textColor}`} />
                             )}
                           </div>
-                          <div>
-                            <span className={`font-bold text-sm block ${isBlocked ? 'text-muted-foreground/50' : team.textColor}`}>
+                          <div className="flex-1 min-w-0">
+                            <span className={`font-bold text-xs block ${isBlocked ? 'text-muted-foreground/50' : team.textColor}`}>
                               {team.label}
                             </span>
-                            <span className={`text-[10px] font-mono uppercase ${isBlocked ? 'text-red-400/50' : 'text-muted-foreground'}`}>
-                              {isUserTeam ? 'Toque para entrar' : isBlocked ? 'Bloqueado' : team.subtitle}
+                            <span className={`text-[9px] font-mono uppercase ${isBlocked ? 'text-red-400/40' : 'text-muted-foreground/70'}`}>
+                              {isUserTeam ? 'Entrar' : isBlocked ? 'Bloqueado' : team.subtitle}
                             </span>
                           </div>
-                        </div>
-                        
-                        {/* Status indicator */}
-                        <div className="absolute top-2 right-2 flex items-center gap-1">
+                          {/* Status indicator */}
                           {isUserTeam ? (
-                            <CheckCircle className="w-4 h-4 text-green-500" />
+                            <CheckCircle className="w-3.5 h-3.5 text-green-500" />
                           ) : isBlocked ? (
-                            <Lock className="w-3.5 h-3.5 text-red-400/60" />
+                            <Lock className="w-3 h-3 text-red-400/50" />
                           ) : (
                             <div className={`w-1.5 h-1.5 rounded-full ${team.bgColor} animate-pulse`} />
                           )}
@@ -508,66 +496,38 @@ const PlantaoHome = () => {
 
                         {/* Shimmer effect on user's team */}
                         {isUserTeam && (
-                          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.05)_50%,transparent_75%)] bg-[length:200%_200%] animate-shimmer" />
+                          <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-sm">
+                            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.03)_50%,transparent_75%)] bg-[length:200%_200%] animate-shimmer" />
                           </div>
                         )}
                       </motion.button>
                     );
                   })}
                 </div>
+                
+                {/* Loading indicator for auto-login */}
+                <AnimatePresence>
+                  {isAutoLogging && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="flex items-center justify-center gap-2 mt-3 py-2"
+                    >
+                      <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                      <span className="text-xs text-primary font-mono">Autenticando...</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
 
-              {/* Loading indicator for auto-login */}
-              <AnimatePresence>
-                {isAutoLogging && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="flex flex-col items-center gap-3 mb-6"
-                  >
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
-                      <Loader2 className="w-10 h-10 text-primary animate-spin relative" />
-                    </div>
-                    <span className="text-sm text-primary font-mono">Autenticando...</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Info text when no saved credentials */}
-              {!savedCredentials && !isAutoLogging && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.9 }}
-                  className="text-center text-xs text-muted-foreground mb-4 max-w-xs"
-                >
-                  Clique na sua equipe para acessar o sistema
-                </motion.p>
-              )}
-
-              {/* Master access button */}
+              {/* Decorative scan line effect */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1 }}
-              >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedTeam(null);
-                    setShowAuthPanel(true);
-                    setShowMasterLogin(true);
-                  }}
-                  className="text-amber-500/60 hover:text-amber-500 hover:bg-amber-500/10 text-xs"
-                >
-                  <Crown className="w-3.5 h-3.5 mr-1.5" />
-                  Acesso Administrador
-                </Button>
-              </motion.div>
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="absolute bottom-20 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"
+              />
             </main>
 
             {/* Bottom HUD Bar */}
