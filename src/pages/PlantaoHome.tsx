@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
+import { usePlantaoTheme } from '@/contexts/PlantaoThemeContext';
+import { useBiometricAuth } from '@/hooks/useBiometricAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoLogo from '@/assets/plantao-logo.png';
 import plantaoBg from '@/assets/plantao-bg.png';
 import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
+import ThemeSelector from '@/components/plantao/ThemeSelector';
 
 // Saved credentials type
 interface SavedCredentials {
@@ -110,6 +114,8 @@ const AlertPulse = () => (
 
 const PlantaoHome = () => {
   const { signIn, signInMaster, signUp, isLoading, agent } = usePlantaoAuth();
+  const { themeConfig, playSound } = usePlantaoTheme();
+  const { isSupported: biometricSupported, isRegistered: biometricRegistered, authenticateWithBiometric, registerBiometric } = useBiometricAuth();
   const navigate = useNavigate();
   const [showAbout, setShowAbout] = useState(false);
   const [showAuthPanel, setShowAuthPanel] = useState(false);
@@ -118,7 +124,8 @@ const PlantaoHome = () => {
   const [savedCredentials, setSavedCredentials] = useState<SavedCredentials | null>(null);
   const [isAutoLogging, setIsAutoLogging] = useState(false);
   const [blockedTeamClicked, setBlockedTeamClicked] = useState<string | null>(null);
-  
+  const [rememberPassword, setRememberPassword] = useState(true);
+
   // Login state
   const [loginCpf, setLoginCpf] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -399,10 +406,24 @@ const PlantaoHome = () => {
             {/* Top HUD Bar */}
             <header className="py-3 px-4 border-b border-primary/20">
               <div className="container mx-auto flex items-center justify-between">
-                <HUDElement>Sistema</HUDElement>
-                <div className="flex items-center gap-2">
-                  <AlertPulse />
-                  <span className="text-xs font-mono text-green-400 uppercase">Online</span>
+                <HUDElement>
+                  <span className="flex items-center gap-1">
+                    {themeConfig.icon} {themeConfig.name}
+                  </span>
+                </HUDElement>
+                <div className="flex items-center gap-3">
+                  <ThemeSelector 
+                    trigger={
+                      <button className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 hover:bg-muted transition-colors">
+                        <Palette className="w-4 h-4 text-primary" />
+                        <span className="text-xs font-mono">Tema</span>
+                      </button>
+                    }
+                  />
+                  <div className="flex items-center gap-2">
+                    <AlertPulse />
+                    <span className="text-xs font-mono text-green-400 uppercase">Online</span>
+                  </div>
                 </div>
                 <HUDElement>v1.0</HUDElement>
               </div>
@@ -586,7 +607,14 @@ const PlantaoHome = () => {
             {/* Bottom HUD Bar */}
             <footer className="py-2 px-4 border-t border-primary/20">
               <div className="container mx-auto flex items-center justify-between text-[10px] font-mono text-muted-foreground">
-                <span>© 2024 Franc Denis</span>
+                <motion.span
+                  animate={{ 
+                    color: ['hsl(var(--primary))', 'hsl(var(--muted-foreground))', 'hsl(var(--primary))'],
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  © 2026 Franc Denis
+                </motion.span>
                 <div className="flex items-center gap-4">
                   <span className="text-primary/60">SYS::READY</span>
                   <span className="text-green-500/60">SEC::ACTIVE</span>
@@ -689,6 +717,73 @@ const PlantaoHome = () => {
                                 {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                               </button>
                             </div>
+                          </div>
+
+                          {/* Opções de lembrar senha e biometria */}
+                          <div className="flex flex-col gap-2 py-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="remember-password" className="flex items-center gap-2 text-xs cursor-pointer">
+                                <Save className="w-3.5 h-3.5 text-primary" />
+                                Lembrar senha
+                              </Label>
+                              <Switch
+                                id="remember-password"
+                                checked={rememberPassword}
+                                onCheckedChange={setRememberPassword}
+                              />
+                            </div>
+                            
+                            {biometricSupported && (
+                              <div className="flex items-center justify-between">
+                                <Label className="flex items-center gap-2 text-xs">
+                                  <Fingerprint className="w-3.5 h-3.5 text-primary" />
+                                  {biometricRegistered ? 'Biometria ativada' : 'Ativar biometria'}
+                                </Label>
+                                {biometricRegistered ? (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={async () => {
+                                      const result = await authenticateWithBiometric();
+                                      if (result.success && result.cpf) {
+                                        const creds = localStorage.getItem('plantao_credentials');
+                                        if (creds) {
+                                          const parsed = JSON.parse(creds);
+                                          if (parsed.cpf.replace(/\D/g, '') === result.cpf.replace(/\D/g, '')) {
+                                            const { error } = await signIn(parsed.cpf, parsed.password);
+                                            if (!error) {
+                                              playSound('notification');
+                                              navigate('/dashboard');
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }}
+                                    className="h-7 text-xs gap-1"
+                                  >
+                                    <Fingerprint className="w-3 h-3" />
+                                    Usar
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      if (loginCpf) {
+                                        registerBiometric(loginCpf.replace(/\D/g, ''));
+                                      } else {
+                                        toast.error('Preencha o CPF primeiro');
+                                      }
+                                    }}
+                                    className="h-7 text-xs"
+                                  >
+                                    Ativar
+                                  </Button>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           {loginError && (
