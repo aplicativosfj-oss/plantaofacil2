@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Dumbbell, Shield, Info, Search } from 'lucide-react';
 
-import SplashScreen from '@/components/SplashScreen';
+
 import DigitalClock from '@/components/DigitalClock';
 import GymButton from '@/components/GymButton';
 import AppFooter from '@/components/AppFooter';
@@ -97,9 +97,6 @@ const Home: React.FC = () => {
     }
   };
 
-  if (showSplash) {
-    return <SplashScreen onComplete={handleSplashComplete} />;
-  }
 
   return (
     <div

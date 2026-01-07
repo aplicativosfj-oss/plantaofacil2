@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, Truck, Shield, Info, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-import SplashScreen from '@/components/SplashScreen';
+
 import DigitalClock from '@/components/DigitalClock';
 import GymButton from '@/components/GymButton';
 import LoginDialog from '@/components/LoginDialog';
@@ -95,9 +95,6 @@ const FreteHome: React.FC = () => {
     }
   };
 
-  if (showSplash) {
-    return <SplashScreen onComplete={handleSplashComplete} />;
-  }
 
   return (
     <div

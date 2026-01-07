@@ -19,7 +19,7 @@ import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 import plantaoBg from '@/assets/plantao-bg.png';
 import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
 import ThemeSelector from '@/components/plantao/ThemeSelector';
-import SplashScreen from '@/components/SplashScreen';
+
 
 // Saved credentials type
 interface SavedCredentials {
@@ -695,10 +695,6 @@ const PlantaoHome = () => {
     }
   };
 
-  // Mostra splash intro apenas na primeira abertura da sessão
-  if (showSplash) {
-    return <SplashScreen onComplete={handleSplashComplete} />;
-  }
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
