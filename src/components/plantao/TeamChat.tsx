@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Users, MessageCircle, Globe } from 'lucide-react';
+import { X, Send, Users, MessageCircle, Globe, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { format } from 'date-fns';
@@ -29,6 +35,15 @@ interface TeamChatProps {
   onClose: () => void;
 }
 
+type TeamType = 'alfa' | 'bravo' | 'charlie' | 'delta';
+
+const TEAMS: { value: TeamType; label: string; color: string }[] = [
+  { value: 'alfa', label: 'Alfa', color: 'bg-blue-500' },
+  { value: 'bravo', label: 'Bravo', color: 'bg-amber-500' },
+  { value: 'charlie', label: 'Charlie', color: 'bg-sky-500' },
+  { value: 'delta', label: 'Delta', color: 'bg-green-500' },
+];
+
 const getTeamColor = (team: string | null) => {
   switch (team) {
     case 'alfa': return 'bg-blue-500';
@@ -39,14 +54,27 @@ const getTeamColor = (team: string | null) => {
   }
 };
 
+const getTeamLabel = (team: string | null) => {
+  const found = TEAMS.find(t => t.value === team);
+  return found ? found.label : 'Equipe';
+};
+
 const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
   const { agent } = usePlantaoAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [activeTab, setActiveTab] = useState<'team' | 'all'>('team');
+  const [selectedTeam, setSelectedTeam] = useState<TeamType | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Initialize selected team with agent's team
+  useEffect(() => {
+    if (agent?.current_team) {
+      setSelectedTeam(agent.current_team as TeamType);
+    }
+  }, [agent?.current_team]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -71,8 +99,8 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
         .order('created_at', { ascending: true })
         .limit(100);
 
-      if (activeTab === 'team' && agent.current_team) {
-        query = query.eq('recipient_team', agent.current_team);
+      if (activeTab === 'team' && selectedTeam) {
+        query = query.eq('recipient_team', selectedTeam);
       } else {
         query = query.eq('is_broadcast', true);
       }
@@ -108,7 +136,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
         } as Message;
 
         // Only add if it matches current filter
-        if (activeTab === 'team' && newMsg.recipient_team === agent.current_team) {
+        if (activeTab === 'team' && newMsg.recipient_team === selectedTeam) {
           setMessages(prev => [...prev, newMsg]);
         } else if (activeTab === 'all' && newMsg.is_broadcast) {
           setMessages(prev => [...prev, newMsg]);
@@ -119,7 +147,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isOpen, agent, activeTab]);
+  }, [isOpen, agent, activeTab, selectedTeam]);
 
   useEffect(() => {
     scrollToBottom();
@@ -134,7 +162,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
       const messageData = {
         sender_id: agent.id,
         content: newMessage.trim(),
-        recipient_team: activeTab === 'team' ? agent.current_team : null,
+        recipient_team: activeTab === 'team' ? selectedTeam : null,
         is_broadcast: activeTab === 'all',
       };
 
@@ -162,9 +190,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
 
   if (!agent) return null;
 
-  const teamName = agent.current_team 
-    ? agent.current_team.charAt(0).toUpperCase() + agent.current_team.slice(1)
-    : '';
+  const currentTeamLabel = selectedTeam ? getTeamLabel(selectedTeam) : 'Selecionar';
 
   return (
     <AnimatePresence>
@@ -204,16 +230,46 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'team' | 'all')} className="flex-1 flex flex-col">
-              <TabsList className="w-full rounded-none border-b border-border">
-                <TabsTrigger value="team" className="flex-1 gap-2">
-                  <Users className="w-4 h-4" />
-                  Equipe {teamName}
-                </TabsTrigger>
-                <TabsTrigger value="all" className="flex-1 gap-2">
-                  <Globe className="w-4 h-4" />
-                  Geral
-                </TabsTrigger>
-              </TabsList>
+              <div className="flex items-center border-b border-border">
+                <TabsList className="flex-1 rounded-none border-none bg-transparent">
+                  <TabsTrigger value="team" className="flex-1 gap-2">
+                    <Users className="w-4 h-4" />
+                    Equipe
+                  </TabsTrigger>
+                  <TabsTrigger value="all" className="flex-1 gap-2">
+                    <Globe className="w-4 h-4" />
+                    Geral
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Team Selector Dropdown */}
+                {activeTab === 'team' && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="gap-1 mr-2">
+                        <span className={`w-2 h-2 rounded-full ${getTeamColor(selectedTeam)}`} />
+                        {currentTeamLabel}
+                        <ChevronDown className="w-3 h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {TEAMS.map((team) => (
+                        <DropdownMenuItem
+                          key={team.value}
+                          onClick={() => setSelectedTeam(team.value)}
+                          className="gap-2"
+                        >
+                          <span className={`w-3 h-3 rounded-full ${team.color}`} />
+                          {team.label}
+                          {team.value === agent.current_team && (
+                            <Badge variant="outline" className="text-[10px] ml-auto">Minha</Badge>
+                          )}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
 
               <TabsContent value={activeTab} className="flex-1 flex flex-col m-0 overflow-hidden">
                 {/* Messages */}
@@ -291,7 +347,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      placeholder={`Mensagem para ${activeTab === 'team' ? `Equipe ${teamName}` : 'Todos'}...`}
+                      placeholder={`Mensagem para ${activeTab === 'team' ? `Equipe ${currentTeamLabel}` : 'Todos'}...`}
                       className="flex-1"
                       disabled={sending}
                     />
