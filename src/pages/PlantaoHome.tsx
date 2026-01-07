@@ -574,7 +574,9 @@ const PlantaoHome = () => {
                 >
                   <button
                     onClick={() => {
+                      playSound('click');
                       setShowMasterLogin(true);
+                      setSelectedTeam(null);
                       setShowAuthPanel(true);
                     }}
                     className="w-full group relative overflow-hidden"
@@ -661,18 +663,101 @@ const PlantaoHome = () => {
                 className="w-full max-w-md"
               >
 
-                <Card className="border-primary/20 bg-card/90 backdrop-blur-md shadow-2xl shadow-primary/10">
+                <Card className={`border-primary/20 bg-card/90 backdrop-blur-md shadow-2xl shadow-primary/10 ${showMasterLogin ? 'border-amber-500/30' : ''}`}>
                   <CardHeader className="text-center pb-3">
-                    <CardTitle className="text-lg font-display tracking-wide flex items-center justify-center gap-2">
-                      <Shield className="w-5 h-5 text-primary" />
-                      Acesso ao Sistema
+                    <CardTitle className={`text-lg font-display tracking-wide flex items-center justify-center gap-2 ${showMasterLogin ? 'text-amber-500' : ''}`}>
+                      {showMasterLogin ? (
+                        <>
+                          <Crown className="w-5 h-5 text-amber-500" />
+                          Painel Administrativo
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="w-5 h-5 text-primary" />
+                          Acesso ao Sistema
+                        </>
+                      )}
                     </CardTitle>
                     <CardDescription className="text-xs">
-                      Gestão de Plantões - Agentes Socioeducativos
+                      {showMasterLogin ? 'Acesso exclusivo para administradores' : 'Gestão de Plantões - Agentes Socioeducativos'}
                     </CardDescription>
                   </CardHeader>
                   
                   <CardContent>
+                    {showMasterLogin ? (
+                      /* Master Login Form */
+                      <div className="space-y-4">
+                        <form onSubmit={handleMasterLogin} className="space-y-3">
+                          <div className="space-y-1">
+                            <Label htmlFor="master-username" className="flex items-center gap-2 text-xs text-amber-500">
+                              <User className="w-3.5 h-3.5" /> Usuário Master *
+                            </Label>
+                            <Input
+                              id="master-username"
+                              type="text"
+                              placeholder="Digite o usuário"
+                              value={masterUsername}
+                              onChange={(e) => setMasterUsername(e.target.value)}
+                              className="bg-background/50 border-amber-500/30 h-9"
+                              autoFocus
+                            />
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <Label htmlFor="master-password" className="flex items-center gap-2 text-xs text-amber-500">
+                              <Lock className="w-3.5 h-3.5" /> Senha Master *
+                            </Label>
+                            <Input
+                              id="master-password"
+                              type="password"
+                              placeholder="••••••"
+                              value={masterPassword}
+                              onChange={(e) => setMasterPassword(e.target.value)}
+                              className="bg-background/50 border-amber-500/30 h-9"
+                            />
+                          </div>
+
+                          {masterError && (
+                            <div className="flex items-center gap-2 text-destructive text-xs">
+                              <AlertCircle className="w-3.5 h-3.5" />
+                              {masterError}
+                            </div>
+                          )}
+
+                          <Button
+                            type="submit"
+                            className="w-full bg-amber-500 hover:bg-amber-600 text-black h-10 font-bold"
+                            disabled={isLoading}
+                          >
+                            {isLoading ? (
+                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            ) : (
+                              <Crown className="w-4 h-4 mr-2" />
+                            )}
+                            Entrar como Administrador
+                          </Button>
+                        </form>
+
+                        <div className="relative my-3">
+                          <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t border-border/50" />
+                          </div>
+                          <div className="relative flex justify-center text-xs">
+                            <span className="bg-card px-2 text-muted-foreground">ou</span>
+                          </div>
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full h-9 text-xs"
+                          onClick={() => setShowMasterLogin(false)}
+                        >
+                          <ChevronRight className="w-3.5 h-3.5 mr-2 rotate-180" />
+                          Voltar ao login de agente
+                        </Button>
+                      </div>
+                    ) : (
                     <Tabs defaultValue="login" className="w-full">
                       <TabsList className="grid w-full grid-cols-2 mb-3">
                         <TabsTrigger value="login">Entrar</TabsTrigger>
@@ -817,63 +902,11 @@ const PlantaoHome = () => {
                             type="button"
                             variant="outline"
                             className="w-full h-9 text-xs border-amber-500/50 text-amber-500 hover:bg-amber-500/10"
-                            onClick={() => setShowMasterLogin(!showMasterLogin)}
+                            onClick={() => setShowMasterLogin(true)}
                           >
                             <Crown className="w-3.5 h-3.5 mr-2" />
-                            {showMasterLogin ? 'Voltar ao login normal' : 'Acesso Administrador'}
+                            Acesso Administrador
                           </Button>
-
-                          {showMasterLogin && (
-                            <form onSubmit={handleMasterLogin} className="space-y-2 mt-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
-                              <div className="space-y-1">
-                                <Label htmlFor="master-username" className="flex items-center gap-2 text-xs text-amber-500">
-                                  <User className="w-3.5 h-3.5" /> Usuário Master
-                                </Label>
-                                <Input
-                                  id="master-username"
-                                  type="text"
-                                  placeholder="Digite o usuário"
-                                  value={masterUsername}
-                                  onChange={(e) => setMasterUsername(e.target.value)}
-                                  className="bg-background/50 border-amber-500/30 h-9"
-                                />
-                              </div>
-                              
-                              <div className="space-y-1">
-                                <Label htmlFor="master-password" className="flex items-center gap-2 text-xs text-amber-500">
-                                  <Lock className="w-3.5 h-3.5" /> Senha Master
-                                </Label>
-                                <Input
-                                  id="master-password"
-                                  type="password"
-                                  placeholder="••••••"
-                                  value={masterPassword}
-                                  onChange={(e) => setMasterPassword(e.target.value)}
-                                  className="bg-background/50 border-amber-500/30 h-9"
-                                />
-                              </div>
-
-                              {masterError && (
-                                <div className="flex items-center gap-2 text-destructive text-xs">
-                                  <AlertCircle className="w-3.5 h-3.5" />
-                                  {masterError}
-                                </div>
-                              )}
-
-                              <Button
-                                type="submit"
-                                className="w-full bg-amber-500 hover:bg-amber-600 text-black h-9"
-                                disabled={isLoading}
-                              >
-                                {isLoading ? (
-                                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                ) : (
-                                  <Crown className="w-4 h-4 mr-2" />
-                                )}
-                                Entrar como Administrador
-                              </Button>
-                            </form>
-                          )}
                         </form>
                       </TabsContent>
 
@@ -1107,6 +1140,7 @@ const PlantaoHome = () => {
                         </form>
                       </TabsContent>
                     </Tabs>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
