@@ -511,6 +511,16 @@ const PlantaoHome = () => {
     e.preventDefault();
     setSignupError('');
     
+    // Block registration for units other than CS Feijó
+    if (signupUnit && signupUnit !== 'CS Feijó') {
+      toast.error(
+        '🚫 Cadastro indisponível para sua unidade no momento. Entre em contato com o administrador para mais informações.',
+        { duration: 6000 }
+      );
+      setSignupError('Cadastro disponível apenas para CS Feijó. Entre em contato com o administrador.');
+      return;
+    }
+    
     if (!signupCpf || !signupPassword || !signupName || !signupRegistration || !signupCity || !signupUnit || !signupTeam) {
       setSignupError('Preencha todos os campos obrigatórios');
       return;
@@ -793,9 +803,6 @@ const PlantaoHome = () => {
                             onClick={() => {
                               setSelectedUnit(unit.name);
                               setShowUnitSelector(false);
-                              if (!unit.active) {
-                                toast.info(`🚧 ${unit.name}: Funcionalidade não disponível para sua unidade ainda. Aguarde novidades!`, { duration: 4000 });
-                              }
                             }}
                             whileHover={{ x: 4 }}
                             className={`w-full p-2 rounded-lg flex items-center justify-between transition-colors ${
