@@ -258,20 +258,20 @@ const LicenseCounter = ({ onExpired }: LicenseCounterProps) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="px-3 py-2 flex items-center gap-2"
+              className="px-2 py-1 flex items-center gap-1"
             >
-              <Clock className={`w-4 h-4 ${isExpired || isCritical ? 'animate-pulse' : ''}`} />
-              <div className="text-xs font-medium">
+              <Clock className={`w-3 h-3 ${isExpired || isCritical ? 'animate-pulse' : ''}`} />
+              <div className="text-[10px] font-medium whitespace-nowrap">
                 {isExpired ? (
-                  'EXPIRADA'
+                  'EXP'
                 ) : countdown.days > 0 ? (
-                  `${countdown.days}d ${countdown.hours}h`
+                  `${countdown.days}d`
                 ) : (
-                  `${countdown.hours}h ${countdown.minutes}m`
+                  `${countdown.hours}h`
                 )}
               </div>
-              {(isWarning || isCritical || isExpired) && (
-                <AlertTriangle className="w-3 h-3 animate-pulse" />
+              {(isCritical || isExpired) && (
+                <AlertTriangle className="w-2.5 h-2.5 animate-pulse" />
               )}
             </motion.div>
           )}
