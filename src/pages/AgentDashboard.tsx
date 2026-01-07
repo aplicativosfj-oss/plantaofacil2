@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -31,6 +30,9 @@ import MonitoringRotation from '@/components/plantao/MonitoringRotation';
 import OnlineIndicator from '@/components/plantao/OnlineIndicator';
 import LicenseCounter from '@/components/plantao/LicenseCounter';
 import LicenseExpiredOverlay from '@/components/plantao/LicenseExpiredOverlay';
+import TeamBanner from '@/components/plantao/TeamBanner';
+import SoundButton from '@/components/plantao/SoundButton';
+import useClickSound from '@/hooks/useClickSound';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 
 interface Shift {
@@ -70,6 +72,7 @@ const getTeamTextColor = (team: string | null) => {
 const AgentDashboard = () => {
   const { agent, signOut, isLoading, refreshAgent } = usePlantaoAuth();
   const navigate = useNavigate();
+  const { playClick } = useClickSound();
   
   const [nextShift, setNextShift] = useState<Shift | null>(null);
   const [overtimeSummary, setOvertimeSummary] = useState<OvertimeSummary | null>(null);
@@ -85,6 +88,12 @@ const AgentDashboard = () => {
   const [showGlobalChat, setShowGlobalChat] = useState(false);
   const [hasShiftSchedule, setHasShiftSchedule] = useState<boolean | null>(null);
   const [isLicenseExpired, setIsLicenseExpired] = useState(false);
+
+  // Helper to handle panel change with sound
+  const handlePanelChange = (panel: typeof activePanel) => {
+    playClick();
+    setActivePanel(panel);
+  };
 
   // Show welcome only once every 24 hours
   useEffect(() => {
@@ -306,7 +315,7 @@ const AgentDashboard = () => {
         <div className="container mx-auto px-2 sm:px-4 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Button
+              <SoundButton
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate('/')}
@@ -314,7 +323,7 @@ const AgentDashboard = () => {
                 title="Voltar à tela inicial"
               >
                 <ArrowLeft className="w-4 h-4" />
-              </Button>
+              </SoundButton>
               <img src={plantaoLogo} alt="PlantãoPro" className="h-8 w-auto object-contain" />
               <div className="hidden sm:block">
                 <h1 className="text-sm font-display tracking-wide">PLANTÃO<span className="text-primary">PRO</span></h1>
@@ -323,16 +332,16 @@ const AgentDashboard = () => {
             </div>
 
             <div className="flex items-center gap-1">
-              <Button
+              <SoundButton
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowGlobalChat(true)}
                 className="h-7 w-7"
               >
                 <MessageCircle className="w-4 h-4" />
-              </Button>
+              </SoundButton>
               <OnlineIndicator compact />
-              <Button
+              <SoundButton
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowAbout(true)}
@@ -340,13 +349,13 @@ const AgentDashboard = () => {
                 title="Sobre"
               >
                 <Info className="w-4 h-4" />
-              </Button>
+              </SoundButton>
 
-              <Button
+              <SoundButton
                 variant="ghost"
                 size="icon"
                 className="relative h-7 w-7"
-                onClick={() => setActivePanel('alerts')}
+                onClick={() => handlePanelChange('alerts')}
               >
                 <Bell className="w-4 h-4" />
                 {unreadAlerts > 0 && (
@@ -354,11 +363,11 @@ const AgentDashboard = () => {
                     {unreadAlerts}
                   </span>
                 )}
-              </Button>
+              </SoundButton>
 
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleSignOut}>
+              <SoundButton variant="ghost" size="icon" className="h-7 w-7" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4" />
-              </Button>
+              </SoundButton>
               <LicenseCounter onExpired={() => setIsLicenseExpired(true)} />
             </div>
           </div>
@@ -370,8 +379,11 @@ const AgentDashboard = () => {
         <div className="container mx-auto px-2 sm:px-4 py-2">
           <div className="flex items-center justify-between">
             <button 
-              onClick={() => setShowProfile(true)}
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              onClick={() => {
+                playClick();
+                setShowProfile(true);
+              }}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/30"
             >
               <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
                 {agent.avatar_url ? (
@@ -384,10 +396,11 @@ const AgentDashboard = () => {
                 <p className="text-sm font-medium truncate max-w-[120px] sm:max-w-none">{agent.full_name}</p>
                 <p className="text-[10px] text-muted-foreground">Mat: {agent.registration_number || 'N/A'}</p>
               </div>
+              <ChevronRight className="w-4 h-4 text-primary ml-1" />
             </button>
 
             <div className="flex items-center gap-1">
-              <Button
+              <SoundButton
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowChat(true)}
@@ -395,7 +408,7 @@ const AgentDashboard = () => {
                 title="Chat da Equipe"
               >
                 <MessageCircle className="w-4 h-4" />
-              </Button>
+              </SoundButton>
               <Badge 
                 variant="outline" 
                 className={`${getTeamColor(agent.current_team)} ${agent.current_team ? 'text-white border-transparent' : ''} text-[10px] px-1.5 py-0.5`}
@@ -415,6 +428,9 @@ const AgentDashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-3"
           >
+            {/* Team Banner */}
+            <TeamBanner />
+
             {/* Today's Shift Card */}
             <ShiftDayCard />
 
@@ -467,7 +483,7 @@ const AgentDashboard = () => {
                 ) : (
                   <div 
                     className="flex items-center gap-3 p-2 bg-muted/20 rounded cursor-pointer hover:bg-muted/30 transition-colors"
-                    onClick={() => setActivePanel('calendar')}
+                    onClick={() => handlePanelChange('calendar')}
                   >
                     <Calendar className="w-8 h-8 text-muted-foreground/50" />
                     <div className="flex-1">
@@ -484,7 +500,7 @@ const AgentDashboard = () => {
             <div className="grid grid-cols-4 gap-2">
               <Card 
                 className="cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => setActivePanel('calendar')}
+                onClick={() => handlePanelChange('calendar')}
               >
                 <CardContent className="p-2 text-center">
                   <Calendar className="w-5 h-5 mx-auto text-primary mb-1" />
@@ -494,7 +510,7 @@ const AgentDashboard = () => {
 
               <Card 
                 className="cursor-pointer hover:border-accent/50 transition-colors"
-                onClick={() => setActivePanel('monitoring')}
+                onClick={() => handlePanelChange('monitoring')}
               >
                 <CardContent className="p-2 text-center">
                   <Shield className="w-5 h-5 mx-auto text-accent mb-1" />
@@ -504,7 +520,7 @@ const AgentDashboard = () => {
 
               <Card 
                 className="cursor-pointer hover:border-primary/50 transition-colors relative"
-                onClick={() => setActivePanel('swaps')}
+                onClick={() => handlePanelChange('swaps')}
               >
                 <CardContent className="p-2 text-center">
                   <ArrowLeftRight className="w-5 h-5 mx-auto text-primary mb-1" />
@@ -519,7 +535,7 @@ const AgentDashboard = () => {
 
               <Card 
                 className="cursor-pointer hover:border-accent/50 transition-colors"
-                onClick={() => setActivePanel('overtime')}
+                onClick={() => handlePanelChange('overtime')}
               >
                 <CardContent className="p-2 text-center">
                   <DollarSign className="w-5 h-5 mx-auto text-accent mb-1" />
@@ -567,7 +583,7 @@ const AgentDashboard = () => {
                   ? 'border-border/50 hover:border-primary/50'
                   : 'border-warning/50'
               }`}
-              onClick={() => setActivePanel('team')}
+              onClick={() => handlePanelChange('team')}
             >
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
@@ -601,23 +617,23 @@ const AgentDashboard = () => {
         )}
 
         {activePanel === 'team' && (
-          <TeamSelector onBack={() => setActivePanel('overview')} onTeamChanged={refreshAgent} />
+          <TeamSelector onBack={() => handlePanelChange('overview')} onTeamChanged={refreshAgent} />
         )}
 
         {activePanel === 'overtime' && (
-          <OvertimePanel onBack={() => setActivePanel('overview')} />
+          <OvertimePanel onBack={() => handlePanelChange('overview')} />
         )}
 
         {activePanel === 'swaps' && agent && (
           <SwapPanel 
-            onBack={() => setActivePanel('overview')} 
+            onBack={() => handlePanelChange('overview')} 
             agentId={agent.id} 
             agentTeam={agent.current_team} 
           />
         )}
 
         {activePanel === 'alerts' && (
-          <AlertsPanel onBack={() => setActivePanel('overview')} />
+          <AlertsPanel onBack={() => handlePanelChange('overview')} />
         )}
 
         {activePanel === 'calendar' && (
@@ -627,9 +643,9 @@ const AgentDashboard = () => {
             className="space-y-4"
           >
             <div className="flex items-center gap-2 mb-4">
-              <Button variant="ghost" size="icon" onClick={() => setActivePanel('overview')}>
+              <SoundButton variant="ghost" size="icon" onClick={() => handlePanelChange('overview')}>
                 <ArrowLeft className="w-4 h-4" />
-              </Button>
+              </SoundButton>
               <h2 className="text-xl font-bold">Calendário de Plantões</h2>
             </div>
 
@@ -648,9 +664,9 @@ const AgentDashboard = () => {
             className="space-y-4"
           >
             <div className="flex items-center gap-2 mb-4">
-              <Button variant="ghost" size="icon" onClick={() => setActivePanel('overview')}>
+              <SoundButton variant="ghost" size="icon" onClick={() => handlePanelChange('overview')}>
                 <ArrowLeft className="w-4 h-4" />
-              </Button>
+              </SoundButton>
               <h2 className="text-xl font-bold">Divisão de Monitoramento</h2>
             </div>
 
