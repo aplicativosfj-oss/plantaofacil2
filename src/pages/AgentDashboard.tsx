@@ -425,7 +425,7 @@ const AgentDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <main className="container mx-auto px-2 sm:px-4 py-3 sm:py-4 max-w-lg">
+      <main className="container mx-auto px-2 sm:px-4 py-2 max-w-md pb-6">
         {activePanel === 'overview' && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}

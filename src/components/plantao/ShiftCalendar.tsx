@@ -505,64 +505,64 @@ const ShiftCalendar = () => {
     .sort((a, b) => parseDateOnly(a.note_date).getTime() - parseDateOnly(b.note_date).getTime());
 
   return (
-    <div className="space-y-6">
-      {/* Edit Shift Button */}
+    <div className="space-y-3">
+      {/* Edit Shift Button - Compact */}
       {shiftSchedule && (
-        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border">
+        <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30 border text-sm">
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-amber-500" />
-            <span className="text-sm">
-              Primeiro plantão: <strong>{format(parseDateOnly(shiftSchedule.first_shift_date), "dd/MM/yyyy")}</strong>
+            <Clock className="w-3.5 h-3.5 text-amber-500" />
+            <span className="text-xs">
+              1º plantão: <strong>{format(parseDateOnly(shiftSchedule.first_shift_date), "dd/MM/yy")}</strong>
             </span>
           </div>
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={handleOpenEditShift}
             disabled={!canEditShift()}
-            className={!canEditShift() ? 'opacity-50' : ''}
+            className={`h-7 text-xs px-2 ${!canEditShift() ? 'opacity-50' : ''}`}
           >
-            <Edit2 className="w-4 h-4 mr-1" />
+            <Edit2 className="w-3 h-3 mr-1" />
             Editar
           </Button>
         </div>
       )}
 
       {shiftSchedule && !canEditShift() && (
-        <Alert className="border-amber-500/50 bg-amber-500/10">
-          <AlertTriangle className="h-4 w-4 text-amber-500" />
-          <AlertDescription className="text-amber-200 text-sm">
-            O prazo de 24 horas para edição da escala expirou. A configuração está bloqueada.
+        <Alert className="border-amber-500/50 bg-amber-500/10 py-2">
+          <AlertTriangle className="h-3 w-3 text-amber-500" />
+          <AlertDescription className="text-amber-200 text-xs">
+            Prazo de 24h para edição expirou.
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Calendar Header */}
+      {/* Calendar Header - Compact */}
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-          <ChevronLeft className="w-5 h-5" />
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+          <ChevronLeft className="w-4 h-4" />
         </Button>
-        <h3 className="text-lg font-bold capitalize">
-          {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
+        <h3 className="text-base font-bold capitalize">
+          {format(currentMonth, 'MMM yyyy', { locale: ptBR })}
         </h3>
-        <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-          <ChevronRight className="w-5 h-5" />
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+          <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
 
-      {/* Week Days */}
-      <div className="grid grid-cols-7 gap-1 text-center">
+      {/* Week Days - Compact */}
+      <div className="grid grid-cols-7 gap-0.5 text-center">
         {weekDays.map(day => (
-          <div key={day} className="text-xs font-semibold text-muted-foreground py-2">
+          <div key={day} className="text-[10px] font-semibold text-muted-foreground py-1">
             {day}
           </div>
         ))}
       </div>
 
-      {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1">
+      {/* Calendar Grid - Compact */}
+      <div className="grid grid-cols-7 gap-0.5">
         {paddingDays.map((_, i) => (
-          <div key={`pad-${i}`} className="h-16 bg-muted/10 rounded-lg" />
+          <div key={`pad-${i}`} className="h-12 bg-muted/10 rounded" />
         ))}
         
         {days.map(day => {
@@ -582,29 +582,22 @@ const ShiftCalendar = () => {
               onClick={() => !shiftCompleted && handleDateClick(day)}
               disabled={shiftCompleted}
               className={`
-                h-16 p-1 rounded-lg transition-all relative
+                h-12 p-0.5 rounded transition-all relative
                 ${shiftCompleted
-                  ? 'border-2 border-green-600/50 bg-gradient-to-br from-green-800/40 to-green-900/30 opacity-60 cursor-not-allowed'
+                  ? 'border border-green-600/50 bg-gradient-to-br from-green-800/40 to-green-900/30 opacity-60 cursor-not-allowed'
                   : overtime
-                    ? 'border-2 border-cyan-500 bg-gradient-to-br from-cyan-500/30 to-cyan-600/20 shadow-md shadow-cyan-500/20'
+                    ? 'border border-cyan-500 bg-gradient-to-br from-cyan-500/30 to-cyan-600/20'
                     : dayOff
-                      ? 'border-2 border-purple-500 bg-gradient-to-br from-purple-500/30 to-purple-600/20 shadow-md shadow-purple-500/20'
+                      ? 'border border-purple-500 bg-gradient-to-br from-purple-500/30 to-purple-600/20'
                       : isShift 
-                        ? 'border-2 border-amber-500 bg-gradient-to-br from-amber-500/30 to-amber-600/20 shadow-md shadow-amber-500/20' 
+                        ? 'border border-amber-500 bg-gradient-to-br from-amber-500/30 to-amber-600/20' 
                         : 'border border-transparent hover:border-muted-foreground/20 hover:bg-muted/20'
                 }
               `}
             >
               <div className="flex flex-col h-full items-center justify-center">
-                {/* Day of week (small) */}
-                <div className={`text-[9px] uppercase ${
-                  shiftCompleted ? 'text-green-500' : overtime ? 'text-cyan-400' : dayOff ? 'text-purple-400' : isShift ? 'text-amber-400' : 'text-muted-foreground'
-                }`}>
-                  {dayOfWeek}
-                </div>
-                
                 {/* Date number */}
-                <div className={`text-lg font-bold ${
+                <div className={`text-sm font-bold ${
                   shiftCompleted
                     ? 'text-green-500'
                     : overtime
@@ -620,40 +613,36 @@ const ShiftCalendar = () => {
                   {format(day, 'd')}
                 </div>
                 
-                {/* Completed shift indicator */}
+                {/* Status indicator - Compact */}
                 {shiftCompleted && (
-                  <div className="text-[7px] font-bold text-green-500 mt-0.5 flex items-center gap-0.5">
+                  <div className="text-[6px] font-bold text-green-500 flex items-center">
                     <Check className="w-2 h-2" />
-                    CUMPRIDO
                   </div>
                 )}
 
-                {/* Overtime indicator */}
                 {overtime && !shiftCompleted && (
-                  <div className="text-[7px] font-bold text-cyan-400 mt-0.5">
-                    BH {overtime.hours_worked}h
+                  <div className="text-[6px] font-bold text-cyan-400">
+                    BH
                   </div>
                 )}
                 
-                {/* Day off indicator */}
                 {dayOff && !shiftCompleted && !overtime && (
-                  <div className="text-[7px] font-bold text-purple-400 mt-0.5">
-                    FOLGA {dayOff.off_type}
+                  <div className="text-[6px] font-bold text-purple-400">
+                    F
                   </div>
                 )}
                 
-                {/* Shift indicator */}
                 {isShift && !dayOff && !shiftCompleted && !overtime && (
-                  <div className="text-[7px] font-bold text-amber-400 mt-0.5">
-                    PLANTÃO
+                  <div className="text-[6px] font-bold text-amber-400">
+                    P
                   </div>
                 )}
 
                 {/* Note indicator dot */}
                 {dayNotes.length > 0 && !isShift && !dayOff && !shiftCompleted && !overtime && (
-                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
-                    {dayNotes.slice(0, 3).map((note, idx) => (
-                      <div key={idx} className={`w-1.5 h-1.5 rounded-full ${getColorClass(note.color)}`} />
+                  <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
+                    {dayNotes.slice(0, 2).map((note, idx) => (
+                      <div key={idx} className={`w-1 h-1 rounded-full ${getColorClass(note.color)}`} />
                     ))}
                   </div>
                 )}
@@ -663,81 +652,70 @@ const ShiftCalendar = () => {
         })}
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+      {/* Legend - Compact */}
+      <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded border-2 border-amber-500 bg-amber-500/30" />
-          <span>Plantão</span>
+          <div className="w-2 h-2 rounded border border-amber-500 bg-amber-500/30" />
+          <span>P</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded border-2 border-green-600/50 bg-green-800/40" />
-          <span>Cumprido</span>
+          <div className="w-2 h-2 rounded border border-green-600/50 bg-green-800/40" />
+          <span>✓</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded border-2 border-cyan-500 bg-cyan-500/30" />
+          <div className="w-2 h-2 rounded border border-cyan-500 bg-cyan-500/30" />
           <span>BH</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded border-2 border-purple-500 bg-purple-500/30" />
-          <span>Folga</span>
+          <div className="w-2 h-2 rounded border border-purple-500 bg-purple-500/30" />
+          <span>F</span>
         </div>
       </div>
 
-      {/* My Schedule Panel */}
+      {/* My Schedule Panel - Compact */}
       <Card className="border-primary/30">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-primary" />
+        <CardHeader className="pb-2 pt-3 px-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Calendar className="w-3.5 h-3.5 text-primary" />
             Minha Agenda
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 pb-3">
           {upcomingNotes.length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground text-sm">
-              <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>Nenhum agendamento encontrado</p>
-              <p className="text-xs mt-1">Clique em uma data para adicionar</p>
+            <div className="text-center py-3 text-muted-foreground text-xs">
+              <Calendar className="w-6 h-6 mx-auto mb-1 opacity-50" />
+              <p>Nenhum agendamento</p>
+              <p className="text-[10px] mt-0.5">Clique em uma data para adicionar</p>
             </div>
           ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {upcomingNotes.map(note => {
+            <div className="space-y-1.5 max-h-40 overflow-y-auto">
+              {upcomingNotes.slice(0, 5).map(note => {
                 const noteDate = parseDateOnly(note.note_date);
                 const isNoteToday = isToday(noteDate);
                 
                 return (
                   <div
                     key={note.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg border ${
+                    className={`flex items-center gap-2 p-2 rounded border ${
                       isNoteToday ? 'border-primary/50 bg-primary/5' : 'border-border/50 bg-muted/20'
                     }`}
                   >
-                    <div className={`w-2 h-full min-h-8 rounded-full ${getColorClass(note.color)}`} />
+                    <div className={`w-1.5 h-6 rounded-full ${getColorClass(note.color)}`} />
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm truncate">{note.title}</span>
-                        {isNoteToday && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                            Hoje
-                          </Badge>
-                        )}
+                      <span className="font-medium text-xs truncate block">{note.title}</span>
+                      <div className="text-[10px] text-muted-foreground">
+                        {format(noteDate, "dd/MM", { locale: ptBR })}
+                        {isNoteToday && <span className="ml-1 text-primary font-semibold">Hoje</span>}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {format(noteDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
-                      </div>
-                      {note.content && (
-                        <p className="text-xs text-muted-foreground mt-1 truncate">
-                          {note.content}
-                        </p>
-                      )}
                     </div>
 
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditNote(note)}>
-                        <Edit2 className="w-3 h-3" />
+                    <div className="flex">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleEditNote(note)}>
+                        <Edit2 className="w-2.5 h-2.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteNote(note.id)}>
-                        <Trash2 className="w-3 h-3" />
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDeleteNote(note.id)}>
+                        <Trash2 className="w-2.5 h-2.5" />
                       </Button>
                     </div>
                   </div>
