@@ -598,8 +598,12 @@ const AgentDashboard = () => {
           <OvertimePanel onBack={() => setActivePanel('overview')} />
         )}
 
-        {activePanel === 'swaps' && (
-          <SwapPanel onBack={() => setActivePanel('overview')} />
+        {activePanel === 'swaps' && agent && (
+          <SwapPanel 
+            onBack={() => setActivePanel('overview')} 
+            agentId={agent.id} 
+            agentTeam={agent.current_team} 
+          />
         )}
 
         {activePanel === 'alerts' && (
