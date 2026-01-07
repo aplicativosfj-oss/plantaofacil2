@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { 
   Shield, LogOut, Users, DollarSign, Calendar, User, Search, 
   Clock, TrendingUp, Key, Eye, EyeOff, Save, AlertTriangle,
-  CheckCircle, XCircle, ChevronDown, ChevronUp, Receipt, CreditCard
+  CheckCircle, XCircle, ChevronDown, ChevronUp, Receipt, CreditCard, ArrowLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, parseISO, differenceInDays, startOfMonth, endOfMonth } from 'date-fns';
@@ -424,6 +424,15 @@ const PlantaoMasterDashboard = () => {
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/')}
+                className="h-8 w-8"
+                title="Voltar à tela inicial"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
               <img src={plantaoLogo} alt="PlantãoPro" className="h-10 w-auto object-contain" />
               <div>
                 <h1 className="text-lg font-display tracking-wide">PLANTÃO<span className="text-primary">PRO</span></h1>

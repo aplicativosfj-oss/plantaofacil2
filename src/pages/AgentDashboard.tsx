@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Shield, LogOut, Clock, Calendar, Users, DollarSign, 
   Bell, ArrowLeftRight, User, ChevronRight, AlertTriangle,
-  Timer, TrendingUp, Info, MessageCircle
+  Timer, TrendingUp, Info, MessageCircle, ArrowLeft
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format, differenceInHours } from 'date-fns';
@@ -285,6 +285,15 @@ const AgentDashboard = () => {
         <div className="container mx-auto px-2 sm:px-4 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/')}
+                className="h-7 w-7"
+                title="Voltar à tela inicial"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
               <img src={plantaoLogo} alt="PlantãoPro" className="h-8 w-auto object-contain" />
               <div className="hidden sm:block">
                 <h1 className="text-sm font-display tracking-wide">PLANTÃO<span className="text-primary">PRO</span></h1>
