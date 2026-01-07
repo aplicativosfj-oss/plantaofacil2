@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { usePlantaoTheme } from '@/contexts/PlantaoThemeContext';
 import { useBiometricAuth } from '@/hooks/useBiometricAuth';
+import { useAgentCpfValidation, useAgentRegistrationValidation } from '@/hooks/useAgentValidation';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -344,8 +345,11 @@ const PlantaoHome = () => {
   const [signupBirthDate, setSignupBirthDate] = useState('');
   const [signupError, setSignupError] = useState('');
   const [cpfError, setCpfError] = useState('');
+  const [registrationError, setRegistrationError] = useState('');
 
-  // Load saved credentials on mount
+  // Real-time validation hooks
+  const cpfValidation = useAgentCpfValidation(signupCpf.replace(/\D/g, ''));
+  const registrationValidation = useAgentRegistrationValidation(signupRegistration);
   useEffect(() => {
     const stored = localStorage.getItem('plantao_credentials');
     if (stored) {
@@ -591,8 +595,20 @@ const PlantaoHome = () => {
       return;
     }
 
+    // Check for duplicate CPF
+    if (cpfValidation.isDuplicate) {
+      setSignupError(`CPF já cadastrado para: ${cpfValidation.duplicateName}`);
+      return;
+    }
+
     if (signupRegistration.length !== 9 || !/^\d{9}$/.test(signupRegistration)) {
       setSignupError('Matrícula deve ter exatamente 9 dígitos numéricos');
+      return;
+    }
+
+    // Check for duplicate registration
+    if (registrationValidation.isDuplicate) {
+      setSignupError(`Matrícula já cadastrada para: ${registrationValidation.duplicateName}`);
       return;
     }
 
@@ -1270,6 +1286,7 @@ const PlantaoHome = () => {
                           <div className="space-y-1">
                             <Label htmlFor="signup-cpf" className="flex items-center gap-2 text-xs">
                               <IdCard className="w-3.5 h-3.5" /> CPF (Será seu login) *
+                              {cpfValidation.isChecking && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
                             </Label>
                             <Input
                               id="signup-cpf"
@@ -1277,10 +1294,18 @@ const PlantaoHome = () => {
                               placeholder="000.000.000-00"
                               value={signupCpf}
                               onChange={(e) => handleCpfChange(e.target.value, true)}
-                              className={`bg-background/50 border-border/50 h-9 ${cpfError ? 'border-destructive' : ''}`}
+                              className={`bg-background/50 border-border/50 h-9 ${cpfError || cpfValidation.isDuplicate ? 'border-destructive ring-1 ring-destructive/50' : ''}`}
                             />
                             {cpfError ? (
-                              <p className="text-destructive text-xs">{cpfError}</p>
+                              <p className="text-destructive text-xs flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" />
+                                {cpfError}
+                              </p>
+                            ) : cpfValidation.isDuplicate ? (
+                              <p className="text-destructive text-xs flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" />
+                                {cpfValidation.error}
+                              </p>
                             ) : (
                               <p className="text-[10px] text-muted-foreground">Seu CPF será usado para fazer login</p>
                             )}
@@ -1289,6 +1314,7 @@ const PlantaoHome = () => {
                           <div className="space-y-1">
                             <Label htmlFor="signup-registration" className="flex items-center gap-2 text-xs">
                               <Shield className="w-3.5 h-3.5" /> Matrícula * (9 dígitos)
+                              {registrationValidation.isChecking && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
                             </Label>
                             <Input
                               id="signup-registration"
@@ -1301,8 +1327,16 @@ const PlantaoHome = () => {
                                 const numericOnly = e.target.value.replace(/\D/g, '').slice(0, 9);
                                 setSignupRegistration(numericOnly);
                               }}
-                              className="bg-background/50 border-border/50 h-9"
+                              className={`bg-background/50 border-border/50 h-9 ${registrationValidation.isDuplicate ? 'border-destructive ring-1 ring-destructive/50' : ''}`}
                             />
+                            {registrationValidation.isDuplicate ? (
+                              <p className="text-destructive text-xs flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" />
+                                {registrationValidation.error}
+                              </p>
+                            ) : (
+                              <p className="text-[10px] text-muted-foreground">Sua matrícula funcional de 9 dígitos</p>
+                            )}
                           </div>
 
                           <div className="grid grid-cols-2 gap-2">

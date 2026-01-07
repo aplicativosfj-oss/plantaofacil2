@@ -9,7 +9,7 @@ import {
   Bell, ArrowLeftRight, User, ChevronRight, AlertTriangle,
   Timer, TrendingUp, Info, MessageCircle, ArrowLeft,
   Radio, Siren, Target, Crosshair, FileText, Briefcase,
-  Banknote, Repeat, CalendarDays
+  Banknote, Repeat, CalendarDays, Building
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format, differenceInHours } from 'date-fns';
@@ -35,6 +35,7 @@ import LicenseExpiredOverlay from '@/components/plantao/LicenseExpiredOverlay';
 import LicenseExpiryAlert from '@/components/plantao/LicenseExpiryAlert';
 import TeamBanner from '@/components/plantao/TeamBanner';
 import SoundButton from '@/components/plantao/SoundButton';
+import UnitTransferPanel from '@/components/plantao/UnitTransferPanel';
 import useClickSound from '@/hooks/useClickSound';
 import { useOvertimeAlerts } from '@/hooks/useOvertimeAlerts';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
@@ -85,7 +86,7 @@ const AgentDashboard = () => {
   const [overtimeSummary, setOvertimeSummary] = useState<OvertimeSummary | null>(null);
   const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [pendingSwaps, setPendingSwaps] = useState(0);
-  const [activePanel, setActivePanel] = useState<'overview' | 'team' | 'overtime' | 'swaps' | 'alerts' | 'calendar' | 'monitoring'>('overview');
+  const [activePanel, setActivePanel] = useState<'overview' | 'team' | 'overtime' | 'swaps' | 'alerts' | 'calendar' | 'monitoring' | 'unit'>('overview');
   const [countdown, setCountdown] = useState<string>('');
   const [showAbout, setShowAbout] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -709,6 +710,31 @@ const AgentDashboard = () => {
               </CardContent>
             </Card>
 
+            {/* Unit Management - Compact */}
+            <Card 
+              className="cursor-pointer transition-colors border-border/50 hover:border-amber-500/50"
+              onClick={() => handlePanelChange('unit')}
+            >
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded bg-amber-500/20">
+                      <Building className="w-4 h-4 text-amber-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {agent.unit || 'Unidade'}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        Transferência e matrícula
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Team Members Card */}
             <TeamMembersCard />
           </motion.div>
@@ -770,6 +796,16 @@ const AgentDashboard = () => {
 
             <MonitoringRotation />
           </motion.div>
+        )}
+
+        {activePanel === 'unit' && (
+          <UnitTransferPanel 
+            onBack={() => handlePanelChange('overview')} 
+            onAccountDeleted={() => {
+              signOut();
+              navigate('/');
+            }}
+          />
         )}
       </main>
     </div>
