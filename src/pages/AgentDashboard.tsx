@@ -18,6 +18,7 @@ import OvertimePanel from '@/components/plantao/OvertimePanel';
 import SwapPanel from '@/components/plantao/SwapPanel';
 import AlertsPanel from '@/components/plantao/AlertsPanel';
 import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
+import TeamMembersCard from '@/components/plantao/TeamMembersCard';
 import plantaoLogo from '@/assets/plantao-logo.png';
 
 interface Shift {
@@ -400,6 +401,9 @@ const AgentDashboard = () => {
               </Card>
             </div>
 
+            {/* Team Members Card */}
+            <TeamMembersCard />
+
             {/* Team Selection */}
             <Card 
               className="cursor-pointer hover:border-primary/50 transition-colors"
@@ -412,7 +416,7 @@ const AgentDashboard = () => {
                     <div>
                       <p className="font-medium">
                         {agent.current_team 
-                          ? `Equipe ${agent.current_team.charAt(0).toUpperCase() + agent.current_team.slice(1)}`
+                          ? `Gerenciar Equipe`
                           : 'Selecionar Equipe'}
                       </p>
                       <p className="text-sm text-muted-foreground">

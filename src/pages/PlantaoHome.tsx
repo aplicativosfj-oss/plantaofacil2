@@ -83,6 +83,7 @@ const PlantaoHome = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
   
   // Login state
   const [loginCpf, setLoginCpf] = useState('');
@@ -102,15 +103,57 @@ const PlantaoHome = () => {
   const [signupError, setSignupError] = useState('');
   const [cpfError, setCpfError] = useState('');
 
+  // Autoplay music on first load (after user interaction)
+  useEffect(() => {
+    const userManuallyStopped = sessionStorage.getItem('musicManuallyStopped') === 'true';
+    
+    if (userManuallyStopped) {
+      // User previously stopped music, don't autoplay
+      return;
+    }
+
+    // Try to autoplay on first interaction
+    const handleFirstInteraction = () => {
+      if (!hasUserInteracted && audioRef.current) {
+        setHasUserInteracted(true);
+        audioRef.current.play()
+          .then(() => setIsMusicPlaying(true))
+          .catch(() => {});
+      }
+    };
+
+    // Add listeners for first interaction
+    document.addEventListener('click', handleFirstInteraction, { once: true });
+    document.addEventListener('touchstart', handleFirstInteraction, { once: true });
+    document.addEventListener('keydown', handleFirstInteraction, { once: true });
+
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+  }, [hasUserInteracted]);
+
   const toggleMusic = () => {
     if (audioRef.current) {
       if (isMusicPlaying) {
         audioRef.current.pause();
+        sessionStorage.setItem('musicManuallyStopped', 'true');
       } else {
         audioRef.current.play();
+        sessionStorage.removeItem('musicManuallyStopped');
       }
       setIsMusicPlaying(!isMusicPlaying);
     }
+  };
+
+  // Stop music when navigating to dashboard
+  const stopMusicAndNavigate = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsMusicPlaying(false);
+    }
+    navigate('/dashboard');
   };
 
   const handleCpfChange = (value: string, isSignup: boolean) => {
@@ -153,7 +196,7 @@ const PlantaoHome = () => {
       setLoginError(error);
     } else {
       toast.success('Login realizado com sucesso!');
-      navigate('/dashboard');
+      stopMusicAndNavigate();
     }
   };
 
@@ -198,7 +241,7 @@ const PlantaoHome = () => {
       setSignupError(error);
     } else {
       toast.success('Cadastro realizado com sucesso!');
-      navigate('/dashboard');
+      stopMusicAndNavigate();
     }
   };
 
