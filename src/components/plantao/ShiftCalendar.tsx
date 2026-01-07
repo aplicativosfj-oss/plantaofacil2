@@ -44,6 +44,7 @@ interface OvertimeEntry {
   hours_worked: number;
   description: string | null;
   total_value: number | null;
+  hour_value?: number;
   shift_type?: string;
   scheduled_time?: string;
 }
@@ -78,8 +79,9 @@ const ShiftCalendar = () => {
   const [newFirstShiftDate, setNewFirstShiftDate] = useState<string>('');
   const [dayOffForm, setDayOffForm] = useState({ off_type: '24h', reason: '' });
   const [selectedDayOff, setSelectedDayOff] = useState<DayOff | null>(null);
-  const [overtimeForm, setOvertimeForm] = useState({ hours: '', description: '', shiftType: 'day', scheduledTime: '' });
+  const [overtimeForm, setOvertimeForm] = useState({ hours: '', description: '', shiftType: 'day', scheduledTime: '', hourValue: '15.75' });
   const [selectedOvertime, setSelectedOvertime] = useState<OvertimeEntry | null>(null);
+  const [isEditingHourValue, setIsEditingHourValue] = useState(false);
 
   // IMPORTANT: date strings like "2026-01-03" MUST be parsed as local dates.
   // new Date('YYYY-MM-DD') parses as UTC and shifts the day in Brazil timezone.
@@ -405,12 +407,14 @@ const ShiftCalendar = () => {
         hours: existingOvertime.hours_worked.toString(), 
         description: existingOvertime.description || '',
         shiftType: existingOvertime.shift_type || 'day',
-        scheduledTime: existingOvertime.scheduled_time || ''
+        scheduledTime: existingOvertime.scheduled_time || '',
+        hourValue: existingOvertime.hour_value?.toString() || '15.75'
       });
     } else {
       setSelectedOvertime(null);
-      setOvertimeForm({ hours: '', description: '', shiftType: 'day', scheduledTime: '' });
+      setOvertimeForm({ hours: '', description: '', shiftType: 'day', scheduledTime: '', hourValue: '15.75' });
     }
+    setIsEditingHourValue(false);
     setIsDialogOpen(false);
     setIsOvertimeDialogOpen(true);
   };
@@ -428,14 +432,15 @@ const ShiftCalendar = () => {
     }
 
     const monthYear = format(selectedDate, 'yyyy-MM');
+    const hourValue = parseFloat(overtimeForm.hourValue) || 15.75;
     const overtimeData = {
       agent_id: agent.id,
       date: format(selectedDate, 'yyyy-MM-dd'),
       hours_worked: hours,
       description: overtimeForm.description || null,
       month_year: monthYear,
-      hour_value: 15.75,
-      total_value: hours * 15.75,
+      hour_value: hourValue,
+      total_value: hours * hourValue,
       shift_type: overtimeForm.shiftType,
       scheduled_time: overtimeForm.scheduledTime || null,
       alert_sent: false
@@ -959,7 +964,7 @@ const ShiftCalendar = () => {
 
       {/* Overtime Dialog */}
       <Dialog open={isOvertimeDialogOpen} onOpenChange={setIsOvertimeDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Banknote className="w-5 h-5 text-cyan-500" />
@@ -1043,6 +1048,38 @@ const ShiftCalendar = () => {
               </p>
             </div>
 
+            {/* Hour Value - Editable */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-semibold">Valor da Hora (R$)</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs"
+                  onClick={() => setIsEditingHourValue(!isEditingHourValue)}
+                >
+                  <Edit2 className="w-3 h-3 mr-1" />
+                  {isEditingHourValue ? 'OK' : 'Editar'}
+                </Button>
+              </div>
+              {isEditingHourValue ? (
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={overtimeForm.hourValue}
+                  onChange={e => setOvertimeForm(prev => ({ ...prev, hourValue: e.target.value }))}
+                  className="h-10"
+                  placeholder="15.75"
+                />
+              ) : (
+                <div className="p-2 rounded-lg bg-muted/50 border border-border text-center">
+                  <span className="font-bold text-lg">R$ {parseFloat(overtimeForm.hourValue || '15.75').toFixed(2)}</span>
+                  <span className="text-xs text-muted-foreground ml-2">/ hora</span>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label>Descrição (opcional)</Label>
               <Textarea
@@ -1053,28 +1090,72 @@ const ShiftCalendar = () => {
               />
             </div>
 
-            {overtimeForm.hours && (
-              <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Valor estimado:</span>
-                  <span className="font-bold text-cyan-400 text-lg">
-                    R$ {(parseFloat(overtimeForm.hours || '0') * 15.75).toFixed(2)}
-                  </span>
+            {/* Auto-generated Summary */}
+            {(overtimeForm.hours || overtimeForm.scheduledTime) && selectedDate && (
+              <div className="p-4 rounded-lg bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/30 space-y-3">
+                <div className="text-sm font-semibold text-cyan-400 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Resumo do BH
                 </div>
-                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                  {overtimeForm.shiftType === 'day' ? (
-                    <><Sun className="w-3 h-3 text-amber-400" /> Turno Diurno</>
-                  ) : (
-                    <><Moon className="w-3 h-3 text-indigo-400" /> Turno Noturno</>
+                
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground text-xs">Data:</span>
+                    <div className="font-medium">{format(selectedDate, "dd/MM/yyyy")}</div>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-xs">Turno:</span>
+                    <div className="font-medium flex items-center gap-1">
+                      {overtimeForm.shiftType === 'day' ? (
+                        <><Sun className="w-3 h-3 text-amber-400" /> Diurno</>
+                      ) : (
+                        <><Moon className="w-3 h-3 text-indigo-400" /> Noturno</>
+                      )}
+                    </div>
+                  </div>
+                  {overtimeForm.scheduledTime && overtimeForm.hours && (
+                    <>
+                      <div>
+                        <span className="text-muted-foreground text-xs">Início:</span>
+                        <div className="font-medium">{overtimeForm.scheduledTime}</div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground text-xs">Término (estimado):</span>
+                        <div className="font-medium">
+                          {(() => {
+                            const [h, m] = overtimeForm.scheduledTime.split(':').map(Number);
+                            const hoursToAdd = parseFloat(overtimeForm.hours) || 0;
+                            const totalMinutes = h * 60 + m + hoursToAdd * 60;
+                            const endHours = Math.floor(totalMinutes / 60) % 24;
+                            const endMinutes = Math.floor(totalMinutes % 60);
+                            return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+                          })()}
+                        </div>
+                      </div>
+                    </>
                   )}
-                  {overtimeForm.scheduledTime && (
-                    <span className="ml-2">• Início às {overtimeForm.scheduledTime}</span>
-                  )}
+                  <div>
+                    <span className="text-muted-foreground text-xs">Horas:</span>
+                    <div className="font-medium">{overtimeForm.hours || '0'}h</div>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-xs">Valor/hora:</span>
+                    <div className="font-medium">R$ {parseFloat(overtimeForm.hourValue || '15.75').toFixed(2)}</div>
+                  </div>
+                </div>
+                
+                <div className="pt-2 border-t border-cyan-500/20">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Total:</span>
+                    <span className="font-bold text-cyan-400 text-xl">
+                      R$ {(parseFloat(overtimeForm.hours || '0') * parseFloat(overtimeForm.hourValue || '15.75')).toFixed(2)}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-2">
               {selectedOvertime && (
                 <Button
                   variant="destructive"
