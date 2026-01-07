@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Clock, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Clock, AlertCircle, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -25,6 +26,12 @@ interface CalendarNote {
 interface ShiftDate {
   shift_date: string;
   is_working: boolean;
+}
+
+interface TeamMemberShift {
+  agent_id: string;
+  agent_name: string;
+  shift_date: string;
 }
 
 const COLORS = [
@@ -45,9 +52,11 @@ const ShiftCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [notes, setNotes] = useState<CalendarNote[]>([]);
   const [shiftDates, setShiftDates] = useState<ShiftDate[]>([]);
+  const [teamShifts, setTeamShifts] = useState<TeamMemberShift[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<CalendarNote | null>(null);
   const [formData, setFormData] = useState({ title: '', content: '', color: 'blue', is_reminder: false });
+  const [showTeamShifts, setShowTeamShifts] = useState(true);
 
   // Fetch notes
   useEffect(() => {
@@ -91,6 +100,55 @@ const ShiftCalendar = () => {
     fetchShiftDates();
   }, [agent?.id]);
 
+  // Fetch team members' shift dates
+  useEffect(() => {
+    if (!agent?.current_team) return;
+
+    const fetchTeamShifts = async () => {
+      // Get all team members with schedules
+      const { data: teamMembers } = await supabase
+        .from('agents')
+        .select('id, full_name')
+        .eq('current_team', agent.current_team)
+        .eq('is_active', true)
+        .neq('id', agent.id);
+
+      if (!teamMembers) return;
+
+      const allTeamShifts: TeamMemberShift[] = [];
+
+      for (const member of teamMembers) {
+        const { data: schedule } = await supabase
+          .from('shift_schedules')
+          .select('first_shift_date, shift_pattern')
+          .eq('agent_id', member.id)
+          .single();
+
+        if (schedule) {
+          const { data: shifts } = await supabase.rpc('generate_shift_dates', {
+            p_first_date: schedule.first_shift_date,
+            p_pattern: schedule.shift_pattern,
+            p_months_ahead: 3
+          });
+
+          if (shifts) {
+            shifts.forEach((shift: ShiftDate) => {
+              allTeamShifts.push({
+                agent_id: member.id,
+                agent_name: member.full_name,
+                shift_date: shift.shift_date
+              });
+            });
+          }
+        }
+      }
+
+      setTeamShifts(allTeamShifts);
+    };
+
+    fetchTeamShifts();
+  }, [agent?.current_team, agent?.id]);
+
   const days = eachDayOfInterval({
     start: startOfMonth(currentMonth),
     end: endOfMonth(currentMonth)
@@ -104,6 +162,10 @@ const ShiftCalendar = () => {
 
   const isShiftDay = (date: Date) => {
     return shiftDates.some(shift => isSameDay(new Date(shift.shift_date), date));
+  };
+
+  const getTeamShiftsForDate = (date: Date) => {
+    return teamShifts.filter(shift => isSameDay(new Date(shift.shift_date), date));
   };
 
   const handleDateClick = (date: Date) => {
@@ -206,6 +268,23 @@ const ShiftCalendar = () => {
         </Button>
       </div>
 
+      {/* Team shifts toggle */}
+      {agent?.current_team && (
+        <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+          <div className="flex items-center gap-2 text-sm">
+            <Users className="w-4 h-4 text-primary" />
+            <span>Mostrar plantões da equipe</span>
+          </div>
+          <Button
+            variant={showTeamShifts ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowTeamShifts(!showTeamShifts)}
+          >
+            {showTeamShifts ? 'Sim' : 'Não'}
+          </Button>
+        </div>
+      )}
+
       {/* Week Days */}
       <div className="grid grid-cols-7 gap-1 text-center">
         {weekDays.map(day => (
@@ -218,7 +297,7 @@ const ShiftCalendar = () => {
       {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-1">
         {paddingDays.map((_, i) => (
-          <div key={`pad-${i}`} className="h-20 bg-muted/20 rounded-lg" />
+          <div key={`pad-${i}`} className="h-24 bg-muted/20 rounded-lg" />
         ))}
         
         {days.map(day => {
@@ -226,6 +305,7 @@ const ShiftCalendar = () => {
           const isShift = isShiftDay(day);
           const today = isToday(day);
           const isShiftToday = isShift && today;
+          const teamShiftsToday = showTeamShifts ? getTeamShiftsForDate(day) : [];
 
           return (
             <motion.button
@@ -234,7 +314,7 @@ const ShiftCalendar = () => {
               whileTap={{ scale: 0.98 }}
               onClick={() => handleDateClick(day)}
               className={`
-                h-24 p-1 rounded-lg border-2 transition-all relative overflow-hidden
+                h-28 p-1 rounded-lg border-2 transition-all relative overflow-hidden
                 ${isShiftToday 
                   ? 'border-amber-500 bg-gradient-to-br from-amber-500/20 to-amber-600/10 ring-2 ring-amber-500/30 shadow-lg shadow-amber-500/20' 
                   : isShift 
@@ -268,6 +348,26 @@ const ShiftCalendar = () => {
                   </div>
                 )}
 
+                {/* Team shifts */}
+                {teamShiftsToday.length > 0 && (
+                  <div className="mt-0.5 flex flex-wrap gap-0.5">
+                    {teamShiftsToday.slice(0, 2).map((shift, idx) => (
+                      <div
+                        key={idx}
+                        className="text-[8px] px-1 py-0.5 rounded bg-blue-500/20 text-blue-400 truncate max-w-full"
+                        title={shift.agent_name}
+                      >
+                        {shift.agent_name.split(' ')[0]}
+                      </div>
+                    ))}
+                    {teamShiftsToday.length > 2 && (
+                      <div className="text-[8px] text-muted-foreground">
+                        +{teamShiftsToday.length - 2}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Notes */}
                 <div className="flex-1 overflow-hidden space-y-0.5 mt-1">
                   {dayNotes.slice(0, 1).map(note => (
@@ -291,15 +391,21 @@ const ShiftCalendar = () => {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
           <Clock className="w-3 h-3 text-amber-500" />
-          <span>Dia de Plantão</span>
+          <span>Meu Plantão</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded border-2 border-primary bg-primary/10" />
           <span>Hoje</span>
         </div>
+        {showTeamShifts && (
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-blue-500/20" />
+            <span>Equipe</span>
+          </div>
+        )}
       </div>
 
       {/* Note Dialog */}

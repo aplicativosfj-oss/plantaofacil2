@@ -119,7 +119,7 @@ const FirstShiftSetup = ({ onComplete }: FirstShiftSetupProps) => {
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="center">
+              <PopoverContent className="w-auto p-0 z-50" align="center">
                 <CalendarPicker
                   mode="single"
                   selected={selectedDate}
@@ -127,9 +127,9 @@ const FirstShiftSetup = ({ onComplete }: FirstShiftSetupProps) => {
                     setSelectedDate(date);
                     setShowPreview(true);
                   }}
-                  disabled={(date) => date < new Date()}
                   locale={ptBR}
                   initialFocus
+                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
