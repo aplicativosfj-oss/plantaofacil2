@@ -71,11 +71,16 @@ const ComponentLoader = () => (
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, profile, role, license, signOut, licenseExpired, isLicenseValid } = useAuth();
-  const { playClickSound } = useAudio();
+  const { playClickSound, stopMusicImmediately } = useAudio();
   const [aboutOpen, setAboutOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const isMaster = role === 'master';
+
+  // Parar música ao entrar no painel administrativo
+  useEffect(() => {
+    stopMusicImmediately();
+  }, [stopMusicImmediately]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
