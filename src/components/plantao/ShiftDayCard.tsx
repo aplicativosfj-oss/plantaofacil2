@@ -21,6 +21,14 @@ interface DayOff {
   reason: string | null;
 }
 
+const parseDateOnly = (value: string) => {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  return new Date(value);
+};
+
 const ShiftDayCard = () => {
   const { agent } = usePlantaoAuth();
   const [isShiftToday, setIsShiftToday] = useState(false);
@@ -73,15 +81,16 @@ const ShiftDayCard = () => {
   const checkIfShiftToday = (firstShiftDate: string) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const firstShift = new Date(firstShiftDate);
+
+    const firstShift = parseDateOnly(firstShiftDate);
     firstShift.setHours(0, 0, 0, 0);
-    
+
     // Calculate days since first shift
     const daysDiff = Math.floor((today.getTime() - firstShift.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     // 24x72 pattern: work 1 day, rest 3 days = 4 day cycle
     const isWorkDay = daysDiff >= 0 && daysDiff % 4 === 0;
-    
+
     // Calculate next shift date
     if (daysDiff < 0) {
       setNextShiftDate(firstShift);
@@ -89,7 +98,7 @@ const ShiftDayCard = () => {
       const daysUntilNextShift = (4 - (daysDiff % 4)) % 4 || 4;
       setNextShiftDate(addDays(today, isWorkDay ? 0 : daysUntilNextShift));
     }
-    
+
     if (isWorkDay) {
       setIsShiftToday(true);
       // Shift starts at 06:00
@@ -175,7 +184,7 @@ const ShiftDayCard = () => {
               <div className="flex gap-1">
                 {upcomingDaysOff.slice(0, 2).map(dayOff => (
                   <Badge key={dayOff.id} variant="outline" className="text-[9px] px-1 py-0 bg-purple-500/10 border-purple-500/20">
-                    {format(new Date(dayOff.off_date), "dd/MM", { locale: ptBR })}
+                    {format(parseDateOnly(dayOff.off_date), "dd/MM", { locale: ptBR })}
                   </Badge>
                 ))}
               </div>
@@ -267,7 +276,7 @@ const ShiftDayCard = () => {
                 <div className="flex gap-1">
                   {upcomingDaysOff.slice(0, 2).map(dayOff => (
                     <Badge key={dayOff.id} variant="outline" className="text-[9px] px-1 py-0 bg-purple-500/10 border-purple-500/20">
-                      {format(new Date(dayOff.off_date), "dd/MM", { locale: ptBR })}
+                      {format(parseDateOnly(dayOff.off_date), "dd/MM", { locale: ptBR })}
                     </Badge>
                   ))}
                 </div>
