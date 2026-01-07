@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format, differenceInSeconds, addHours, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Clock, Play, CheckCircle, AlertTriangle, Timer, Calendar, Moon } from 'lucide-react';
+import { Clock, Play, CheckCircle, AlertTriangle, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -138,18 +138,16 @@ const ShiftDayCard = () => {
   // If on day off today
   if (todayDayOff) {
     return (
-      <Card className="border-purple-500/50 bg-purple-500/5">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <Moon className="w-8 h-8 text-purple-500" />
-            <div>
-              <p className="font-semibold text-purple-400">Folga Hoje</p>
-              <p className="text-sm text-muted-foreground">
-                {todayDayOff.off_type === '24h' ? 'Folga de 24 horas' : 'Folga de 12 horas'}
+      <Card className="border-purple-500/30 bg-purple-500/5">
+        <CardContent className="p-3">
+          <div className="flex items-center gap-2">
+            <Moon className="w-5 h-5 text-purple-500" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-purple-400">Folga Hoje</p>
+              <p className="text-xs text-muted-foreground">
+                {todayDayOff.off_type === '24h' ? '24 horas' : '12 horas'}
+                {todayDayOff.reason && ` • ${todayDayOff.reason}`}
               </p>
-              {todayDayOff.reason && (
-                <p className="text-xs text-muted-foreground mt-1">{todayDayOff.reason}</p>
-              )}
             </div>
           </div>
         </CardContent>
@@ -159,38 +157,30 @@ const ShiftDayCard = () => {
 
   if (!isShiftToday) {
     return (
-      <Card className="border-border/50">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <Clock className="w-8 h-8 text-muted-foreground opacity-50" />
-            <div>
-              <p className="text-muted-foreground text-sm">Hoje não é dia de plantão</p>
-              {nextShiftDate && (
-                <p className="text-xs text-primary mt-1">
-                  Próximo: {format(nextShiftDate, "EEEE, dd/MM", { locale: ptBR })}
-                </p>
-              )}
-            </div>
-          </div>
-          
-          {/* Upcoming days off */}
-          {upcomingDaysOff.length > 0 && (
-            <div className="mt-4 pt-3 border-t border-border/30">
-              <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                <Moon className="w-3 h-3" /> Próximas folgas:
-              </p>
-              <div className="space-y-1">
-                {upcomingDaysOff.map(dayOff => (
-                  <div key={dayOff.id} className="flex items-center justify-between text-xs">
-                    <span>{format(new Date(dayOff.off_date), "dd/MM (EEE)", { locale: ptBR })}</span>
-                    <Badge variant="outline" className="text-[10px] px-1.5">
-                      {dayOff.off_type}
-                    </Badge>
-                  </div>
-                ))}
+      <Card className="border-border/30">
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-muted-foreground/50" />
+              <div>
+                <p className="text-sm text-muted-foreground">Sem plantão hoje</p>
+                {nextShiftDate && (
+                  <p className="text-xs text-primary">
+                    Próximo: {format(nextShiftDate, "EEE, dd/MM", { locale: ptBR })}
+                  </p>
+                )}
               </div>
             </div>
-          )}
+            {upcomingDaysOff.length > 0 && (
+              <div className="flex gap-1">
+                {upcomingDaysOff.slice(0, 2).map(dayOff => (
+                  <Badge key={dayOff.id} variant="outline" className="text-[9px] px-1 py-0 bg-purple-500/10 border-purple-500/20">
+                    {format(new Date(dayOff.off_date), "dd/MM", { locale: ptBR })}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     );
@@ -200,68 +190,60 @@ const ShiftDayCard = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
     >
-      <Card className={`border-2 ${isCompleted ? 'border-green-500/50 bg-green-500/5' : 'border-amber-500/50 bg-amber-500/5'}`}>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center justify-between">
+      <Card className={`border ${isCompleted ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5'}`}>
+        <CardContent className="p-3 space-y-3">
+          {/* Header */}
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {isCompleted ? (
-                <CheckCircle className="w-5 h-5 text-green-500" />
+                <CheckCircle className="w-4 h-4 text-green-500" />
               ) : (
-                <Play className="w-5 h-5 text-amber-500 animate-pulse" />
+                <Play className="w-4 h-4 text-amber-500 animate-pulse" />
               )}
-              <span className="text-lg">Plantão de Hoje</span>
+              <span className="text-sm font-medium">Plantão de Hoje</span>
             </div>
-            <Badge variant={isCompleted ? 'default' : 'secondary'} className={isCompleted ? 'bg-green-500' : 'bg-amber-500'}>
+            <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 ${isCompleted ? 'bg-green-500/20 text-green-500' : 'bg-amber-500/20 text-amber-500'}`}>
               {isCompleted ? 'Concluído' : 'Em Andamento'}
             </Badge>
-          </CardTitle>
-        </CardHeader>
-        
-        <CardContent className="space-y-4">
-          {/* Timer Display */}
-          <div className="text-center py-4">
-            <div className="text-4xl font-mono font-bold tracking-wider">
+          </div>
+
+          {/* Timer Display - Compact */}
+          <div className="text-center py-2">
+            <div className="text-3xl font-mono font-bold tracking-wider">
               <span className="text-primary">{String(elapsedTime.hours).padStart(2, '0')}</span>
               <span className="text-muted-foreground">:</span>
               <span className="text-primary">{String(elapsedTime.minutes).padStart(2, '0')}</span>
-              <span className="text-muted-foreground">:</span>
-              <span className="text-muted-foreground">{String(elapsedTime.seconds).padStart(2, '0')}</span>
+              <span className="text-muted-foreground text-xl">:{String(elapsedTime.seconds).padStart(2, '0')}</span>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">Horas trabalhadas</p>
+            <p className="text-[10px] text-muted-foreground">Horas trabalhadas</p>
           </div>
 
           {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-muted-foreground">
+          <div className="space-y-1">
+            <Progress value={progress} className="h-2" />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
               <span>06:00</span>
               <span>{Math.round(progress)}%</span>
               <span>06:00 (+1)</span>
             </div>
-            <Progress value={progress} className="h-3" />
           </div>
 
           {/* Shift Details with Date and Day of Week */}
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            <div className="text-center p-3 bg-muted/30 rounded-lg">
-              <Timer className="w-4 h-4 mx-auto mb-1 text-primary" />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="text-center p-2 bg-muted/30 rounded">
               <p className="text-[10px] text-muted-foreground">Início</p>
-              <p className="text-sm font-bold">
-                {shiftStart && format(shiftStart, 'HH:mm')}
-              </p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className="text-sm font-bold">{shiftStart && format(shiftStart, 'HH:mm')}</p>
+              <p className="text-[9px] text-muted-foreground">
                 {shiftStart && format(shiftStart, "dd/MM (EEE)", { locale: ptBR })}
               </p>
             </div>
-            <div className="text-center p-3 bg-muted/30 rounded-lg">
-              <Clock className="w-4 h-4 mx-auto mb-1 text-accent" />
+            <div className="text-center p-2 bg-muted/30 rounded">
               <p className="text-[10px] text-muted-foreground">Término</p>
-              <p className="text-sm font-bold">
-                {shiftEnd && format(shiftEnd, 'HH:mm')}
-              </p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className="text-sm font-bold">{shiftEnd && format(shiftEnd, 'HH:mm')}</p>
+              <p className="text-[9px] text-muted-foreground">
                 {shiftEnd && format(shiftEnd, "dd/MM (EEE)", { locale: ptBR })}
               </p>
             </div>
@@ -269,24 +251,26 @@ const ShiftDayCard = () => {
 
           {/* Remaining Hours Alert */}
           {!isCompleted && (24 - elapsedTime.hours) <= 4 && (
-            <div className="flex items-center gap-2 text-amber-500 text-sm bg-amber-500/10 p-3 rounded-lg">
-              <AlertTriangle className="w-4 h-4" />
-              <span>Faltam {24 - elapsedTime.hours} horas para finalizar</span>
+            <div className="flex items-center gap-1.5 text-amber-500 text-xs bg-amber-500/10 px-2 py-1.5 rounded">
+              <AlertTriangle className="w-3 h-3" />
+              <span>Faltam {24 - elapsedTime.hours}h</span>
             </div>
           )}
 
-          {/* Upcoming days off */}
+          {/* Upcoming days off - Compact */}
           {upcomingDaysOff.length > 0 && (
-            <div className="pt-3 border-t border-border/30">
-              <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                <Moon className="w-3 h-3" /> Próximas folgas:
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {upcomingDaysOff.map(dayOff => (
-                  <Badge key={dayOff.id} variant="outline" className="text-xs bg-purple-500/10 border-purple-500/30">
-                    {format(new Date(dayOff.off_date), "dd/MM", { locale: ptBR })} • {dayOff.off_type}
-                  </Badge>
-                ))}
+            <div className="pt-2 border-t border-border/20">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <Moon className="w-3 h-3" /> Folgas:
+                </span>
+                <div className="flex gap-1">
+                  {upcomingDaysOff.slice(0, 2).map(dayOff => (
+                    <Badge key={dayOff.id} variant="outline" className="text-[9px] px-1 py-0 bg-purple-500/10 border-purple-500/20">
+                      {format(new Date(dayOff.off_date), "dd/MM", { locale: ptBR })}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
           )}
