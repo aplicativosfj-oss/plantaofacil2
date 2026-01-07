@@ -27,6 +27,8 @@ import GlobalChat from '@/components/plantao/GlobalChat';
 import ShiftCalendar from '@/components/plantao/ShiftCalendar';
 import FirstShiftSetup from '@/components/plantao/FirstShiftSetup';
 import OnlineIndicator from '@/components/plantao/OnlineIndicator';
+import LicenseCounter from '@/components/plantao/LicenseCounter';
+import LicenseExpiredOverlay from '@/components/plantao/LicenseExpiredOverlay';
 import plantaoLogo from '@/assets/plantao-pro-logo.png';
 
 interface Shift {
@@ -80,6 +82,7 @@ const AgentDashboard = () => {
   const [showChat, setShowChat] = useState(false);
   const [showGlobalChat, setShowGlobalChat] = useState(false);
   const [hasShiftSchedule, setHasShiftSchedule] = useState<boolean | null>(null);
+  const [isLicenseExpired, setIsLicenseExpired] = useState(false);
 
   // Show welcome on first load
   useEffect(() => {
@@ -234,6 +237,11 @@ const AgentDashboard = () => {
 
   const isShiftSoon = nextShift && differenceInHours(new Date(nextShift.shift_start), new Date()) < 24;
 
+  // Handle license expiration
+  if (isLicenseExpired) {
+    return <LicenseExpiredOverlay onLogout={handleSignOut} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-dark">
       {/* Dialogs */}
@@ -289,6 +297,7 @@ const AgentDashboard = () => {
                 <MessageCircle className="w-4 h-4" />
                 <span className="hidden sm:inline text-xs">Chat</span>
               </Button>
+              <LicenseCounter onExpired={() => setIsLicenseExpired(true)} />
               <OnlineIndicator compact />
               <Button
                 variant="ghost"
