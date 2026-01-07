@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, Volume2, VolumeX, MapPin, Building, Info, Users, Crown } from 'lucide-react';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoLogo from '@/assets/plantao-logo.png';
@@ -88,10 +88,7 @@ const TEAMS = [
 const PlantaoHome = () => {
   const { signIn, signInMaster, signUp, isLoading } = usePlantaoAuth();
   const navigate = useNavigate();
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
-  const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [showMasterLogin, setShowMasterLogin] = useState(false);
   
   // Login state
@@ -117,59 +114,6 @@ const PlantaoHome = () => {
   const [signupEmail, setSignupEmail] = useState('');
   const [signupError, setSignupError] = useState('');
   const [cpfError, setCpfError] = useState('');
-
-  // Autoplay music on first load (after user interaction)
-  useEffect(() => {
-    const userManuallyStopped = sessionStorage.getItem('musicManuallyStopped') === 'true';
-    
-    if (userManuallyStopped) {
-      // User previously stopped music, don't autoplay
-      return;
-    }
-
-    // Try to autoplay on first interaction
-    const handleFirstInteraction = () => {
-      if (!hasUserInteracted && audioRef.current) {
-        setHasUserInteracted(true);
-        audioRef.current.play()
-          .then(() => setIsMusicPlaying(true))
-          .catch(() => {});
-      }
-    };
-
-    // Add listeners for first interaction
-    document.addEventListener('click', handleFirstInteraction, { once: true });
-    document.addEventListener('touchstart', handleFirstInteraction, { once: true });
-    document.addEventListener('keydown', handleFirstInteraction, { once: true });
-
-    return () => {
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('touchstart', handleFirstInteraction);
-      document.removeEventListener('keydown', handleFirstInteraction);
-    };
-  }, [hasUserInteracted]);
-
-  const toggleMusic = () => {
-    if (audioRef.current) {
-      if (isMusicPlaying) {
-        audioRef.current.pause();
-        sessionStorage.setItem('musicManuallyStopped', 'true');
-      } else {
-        audioRef.current.play();
-        sessionStorage.removeItem('musicManuallyStopped');
-      }
-      setIsMusicPlaying(!isMusicPlaying);
-    }
-  };
-
-  // Stop music when navigating to dashboard
-  const stopMusicAndNavigate = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      setIsMusicPlaying(false);
-    }
-    navigate('/dashboard');
-  };
 
   const handleCpfChange = (value: string, isSignup: boolean) => {
     const formatted = formatCPF(value);
@@ -211,7 +155,7 @@ const PlantaoHome = () => {
       setLoginError(error);
     } else {
       toast.success('Login realizado com sucesso!');
-      stopMusicAndNavigate();
+      navigate('/dashboard');
     }
   };
 
@@ -257,7 +201,7 @@ const PlantaoHome = () => {
       setSignupError(error);
     } else {
       toast.success('Cadastro realizado com sucesso!');
-      stopMusicAndNavigate();
+      navigate('/dashboard');
     }
   };
 
@@ -276,28 +220,14 @@ const PlantaoHome = () => {
       setMasterError(error);
     } else {
       toast.success('Login master realizado!');
-      stopMusicAndNavigate();
+      navigate('/dashboard');
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Background Audio */}
-      <audio ref={audioRef} loop>
-        <source src="/audio/cidade-vigilancia.mp3" type="audio/mpeg" />
-      </audio>
-
       {/* About Dialog */}
       <PlantaoAboutDialog isOpen={showAbout} onClose={() => setShowAbout(false)} />
-
-      {/* Music Toggle Button */}
-      <button
-        onClick={toggleMusic}
-        className="fixed bottom-4 right-4 z-50 p-3 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground shadow-lg transition-all duration-300 hover:scale-110"
-        title={isMusicPlaying ? 'Pausar música' : 'Tocar música'}
-      >
-        {isMusicPlaying ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-      </button>
 
       {/* About Button - Discrete */}
       <button

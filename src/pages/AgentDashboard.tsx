@@ -8,10 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Shield, LogOut, Clock, Calendar, Users, DollarSign, 
   Bell, ArrowLeftRight, User, ChevronRight, AlertTriangle,
-  Timer, TrendingUp, Info
+  Timer, TrendingUp, Info, MessageCircle
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { format, formatDistanceToNow, differenceInHours, differenceInMinutes } from 'date-fns';
+import { format, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import TeamSelector from '@/components/plantao/TeamSelector';
 import OvertimePanel from '@/components/plantao/OvertimePanel';
@@ -19,6 +19,10 @@ import SwapPanel from '@/components/plantao/SwapPanel';
 import AlertsPanel from '@/components/plantao/AlertsPanel';
 import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
 import TeamMembersCard from '@/components/plantao/TeamMembersCard';
+import WelcomeDialog from '@/components/plantao/WelcomeDialog';
+import ChangePasswordDialog from '@/components/plantao/ChangePasswordDialog';
+import AgentProfileDialog from '@/components/plantao/AgentProfileDialog';
+import TeamChat from '@/components/plantao/TeamChat';
 import plantaoLogo from '@/assets/plantao-logo.png';
 
 interface Shift {
@@ -66,6 +70,18 @@ const AgentDashboard = () => {
   const [activePanel, setActivePanel] = useState<'overview' | 'team' | 'overtime' | 'swaps' | 'alerts'>('overview');
   const [countdown, setCountdown] = useState<string>('');
   const [showAbout, setShowAbout] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+
+  // Show welcome on first load
+  useEffect(() => {
+    if (agent && !sessionStorage.getItem('welcomeShown')) {
+      setShowWelcome(true);
+      sessionStorage.setItem('welcomeShown', 'true');
+    }
+  }, [agent]);
 
   useEffect(() => {
     if (!isLoading && !agent) {
@@ -214,8 +230,35 @@ const AgentDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-dark">
-      {/* About Dialog */}
+      {/* Dialogs */}
       <PlantaoAboutDialog isOpen={showAbout} onClose={() => setShowAbout(false)} />
+      <WelcomeDialog 
+        isOpen={showWelcome} 
+        onClose={() => setShowWelcome(false)} 
+        agentName={agent.full_name}
+        isFirstLogin={agent.is_first_login}
+        onChangePassword={() => {
+          setShowWelcome(false);
+          setShowChangePassword(true);
+        }}
+      />
+      <ChangePasswordDialog 
+        isOpen={showChangePassword} 
+        onClose={() => setShowChangePassword(false)}
+        onSuccess={async () => {
+          await supabase.from('agents').update({ is_first_login: false }).eq('id', agent.id);
+          refreshAgent();
+        }}
+      />
+      <AgentProfileDialog 
+        isOpen={showProfile} 
+        onClose={() => setShowProfile(false)}
+        onChangePassword={() => {
+          setShowProfile(false);
+          setShowChangePassword(true);
+        }}
+      />
+      <TeamChat isOpen={showChat} onClose={() => setShowChat(false)} />
 
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur">
@@ -265,22 +308,40 @@ const AgentDashboard = () => {
       <div className="border-b border-border/30 bg-card/50">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                <User className="w-5 h-5 text-primary" />
+            <button 
+              onClick={() => setShowProfile(true)}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+                {agent.avatar_url ? (
+                  <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-5 h-5 text-primary" />
+                )}
               </div>
-              <div>
+              <div className="text-left">
                 <p className="font-medium">{agent.full_name}</p>
                 <p className="text-sm text-muted-foreground">Mat: {agent.registration_number || 'N/A'}</p>
               </div>
-            </div>
+            </button>
 
-            <Badge 
-              variant="outline" 
-              className={`${getTeamColor(agent.current_team)} ${agent.current_team ? 'text-white border-transparent' : ''}`}
-            >
-              {agent.current_team ? `Equipe ${agent.current_team.charAt(0).toUpperCase() + agent.current_team.slice(1)}` : 'Sem equipe'}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowChat(true)}
+                className="relative"
+                title="Chat da Equipe"
+              >
+                <MessageCircle className="w-5 h-5" />
+              </Button>
+              <Badge 
+                variant="outline" 
+                className={`${getTeamColor(agent.current_team)} ${agent.current_team ? 'text-white border-transparent' : ''}`}
+              >
+                {agent.current_team ? `Equipe ${agent.current_team.charAt(0).toUpperCase() + agent.current_team.slice(1)}` : 'Sem equipe'}
+              </Badge>
+            </div>
           </div>
         </div>
       </div>

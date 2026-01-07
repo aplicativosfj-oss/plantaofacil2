@@ -25,6 +25,7 @@ interface AgentProfile {
   is_active: boolean;
   city: string | null;
   unit: string | null;
+  is_first_login?: boolean;
 }
 
 interface PlantaoAuthContextType {

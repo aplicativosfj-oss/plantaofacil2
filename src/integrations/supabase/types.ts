@@ -158,6 +158,47 @@ export type Database = {
           },
         ]
       }
+      agent_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_broadcast: boolean | null
+          message_type: string
+          recipient_team: Database["public"]["Enums"]["team_type"] | null
+          sender_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_broadcast?: boolean | null
+          message_type?: string
+          recipient_team?: Database["public"]["Enums"]["team_type"] | null
+          sender_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_broadcast?: boolean | null
+          message_type?: string
+          recipient_team?: Database["public"]["Enums"]["team_type"] | null
+          sender_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agents: {
         Row: {
           avatar_url: string | null
@@ -169,6 +210,7 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean | null
+          is_first_login: boolean | null
           phone: string | null
           registration_number: string | null
           team_joined_at: string | null
@@ -186,6 +228,7 @@ export type Database = {
           full_name: string
           id?: string
           is_active?: boolean | null
+          is_first_login?: boolean | null
           phone?: string | null
           registration_number?: string | null
           team_joined_at?: string | null
@@ -203,6 +246,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean | null
+          is_first_login?: boolean | null
           phone?: string | null
           registration_number?: string | null
           team_joined_at?: string | null
