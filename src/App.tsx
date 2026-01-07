@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 
 const PlantaoHome = lazy(() => import("./pages/PlantaoHome"));
 const AgentDashboard = lazy(() => import("./pages/AgentDashboard"));
+const PlantaoMasterDashboard = lazy(() => import("./pages/PlantaoMasterDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -38,6 +39,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<PlantaoHome />} />
               <Route path="/dashboard" element={<AgentDashboard />} />
+              <Route path="/master" element={<PlantaoMasterDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

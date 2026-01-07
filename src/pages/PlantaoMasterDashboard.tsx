@@ -1,0 +1,751 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { 
+  Shield, LogOut, Users, DollarSign, Calendar, User, Search, 
+  Clock, TrendingUp, Key, Eye, EyeOff, Save, AlertTriangle,
+  CheckCircle, XCircle, ChevronDown, ChevronUp
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { format, parseISO, differenceInDays } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
+import OnlineIndicator from '@/components/plantao/OnlineIndicator';
+import plantaoLogo from '@/assets/plantao-logo.png';
+
+interface AgentWithDetails {
+  id: string;
+  full_name: string;
+  cpf: string;
+  registration_number: string | null;
+  current_team: string | null;
+  created_at: string;
+  is_active: boolean;
+  phone: string | null;
+  email: string | null;
+  city: string | null;
+  unit: string | null;
+  avatar_url: string | null;
+  lastAccess?: string | null;
+  totalOvertime?: number;
+  totalOvertimeValue?: number;
+  shiftsCount?: number;
+}
+
+interface OvertimeRecord {
+  id: string;
+  agent_id: string;
+  date: string;
+  hours_worked: number;
+  hour_value: number | null;
+  total_value: number | null;
+  description: string | null;
+  month_year: string;
+  agent?: { full_name: string };
+}
+
+interface TeamStats {
+  alfa: { count: number; overtime: number };
+  bravo: { count: number; overtime: number };
+  charlie: { count: number; overtime: number };
+  delta: { count: number; overtime: number };
+}
+
+const getTeamColor = (team: string | null) => {
+  switch (team) {
+    case 'alfa': return 'bg-team-alfa text-white';
+    case 'bravo': return 'bg-team-bravo text-white';
+    case 'charlie': return 'bg-team-charlie text-white';
+    case 'delta': return 'bg-team-delta text-white';
+    default: return 'bg-muted';
+  }
+};
+
+const PlantaoMasterDashboard = () => {
+  const { master, signOut, isLoading } = usePlantaoAuth();
+  const navigate = useNavigate();
+  
+  const [agents, setAgents] = useState<AgentWithDetails[]>([]);
+  const [overtimeRecords, setOvertimeRecords] = useState<OvertimeRecord[]>([]);
+  const [teamStats, setTeamStats] = useState<TeamStats>({
+    alfa: { count: 0, overtime: 0 },
+    bravo: { count: 0, overtime: 0 },
+    charlie: { count: 0, overtime: 0 },
+    delta: { count: 0, overtime: 0 },
+  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
+  
+  // Password change dialog
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading && !master) {
+      navigate('/');
+    }
+  }, [isLoading, master, navigate]);
+
+  useEffect(() => {
+    if (master) {
+      loadData();
+    }
+  }, [master]);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // Fetch all agents with their details
+      const { data: agentsData, error: agentsError } = await supabase
+        .from('agents')
+        .select('*')
+        .order('full_name');
+
+      if (agentsError) throw agentsError;
+
+      // Fetch overtime records for current month
+      const currentMonth = format(new Date(), 'yyyy-MM');
+      const { data: overtimeData, error: overtimeError } = await supabase
+        .from('overtime_bank')
+        .select('*, agent:agents!overtime_bank_agent_id_fkey(full_name)')
+        .eq('month_year', currentMonth)
+        .order('date', { ascending: false });
+
+      if (overtimeError) throw overtimeError;
+
+      // Fetch all overtime to calculate totals
+      const { data: allOvertime } = await supabase
+        .from('overtime_bank')
+        .select('agent_id, hours_worked, total_value');
+
+      // Fetch agent presence for last access
+      const { data: presenceData } = await supabase
+        .from('agent_presence')
+        .select('agent_id, last_seen');
+
+      // Fetch shifts count
+      const { data: shiftsData } = await supabase
+        .from('shifts')
+        .select('agent_id');
+
+      // Process agents with additional data
+      const processedAgents = (agentsData || []).map(agent => {
+        const agentOvertime = (allOvertime || []).filter(o => o.agent_id === agent.id);
+        const totalOvertime = agentOvertime.reduce((sum, o) => sum + (o.hours_worked || 0), 0);
+        const totalOvertimeValue = agentOvertime.reduce((sum, o) => sum + (o.total_value || 0), 0);
+        const presence = (presenceData || []).find(p => p.agent_id === agent.id);
+        const shiftsCount = (shiftsData || []).filter(s => s.agent_id === agent.id).length;
+
+        return {
+          ...agent,
+          lastAccess: presence?.last_seen || null,
+          totalOvertime,
+          totalOvertimeValue,
+          shiftsCount,
+        };
+      });
+
+      setAgents(processedAgents);
+      setOvertimeRecords(overtimeData || []);
+
+      // Calculate team stats
+      const stats: TeamStats = {
+        alfa: { count: 0, overtime: 0 },
+        bravo: { count: 0, overtime: 0 },
+        charlie: { count: 0, overtime: 0 },
+        delta: { count: 0, overtime: 0 },
+      };
+
+      processedAgents.forEach(agent => {
+        const team = agent.current_team as keyof TeamStats;
+        if (team && stats[team]) {
+          stats[team].count++;
+          stats[team].overtime += agent.totalOvertime || 0;
+        }
+      });
+
+      setTeamStats(stats);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast.error('Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  const handleChangePassword = async () => {
+    if (!master) return;
+
+    if (newPassword !== confirmPassword) {
+      toast.error('As senhas não coincidem');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      // Validate current password
+      const { data: validation, error: validError } = await supabase.rpc('validate_master_credentials', {
+        p_username: master.username,
+        p_password: currentPassword
+      });
+
+      if (validError || !validation || validation.length === 0 || !validation[0].is_valid) {
+        toast.error('Senha atual incorreta');
+        return;
+      }
+
+      // Update password
+      const { error: updateError } = await supabase.rpc('update_master_password', {
+        p_credential_id: master.id,
+        p_new_password: newPassword
+      });
+
+      if (updateError) throw updateError;
+
+      toast.success('Senha alterada com sucesso!');
+      setShowPasswordDialog(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast.error('Erro ao alterar senha');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const filteredAgents = agents.filter(agent =>
+    agent.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    agent.cpf.includes(searchTerm) ||
+    agent.registration_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    agent.current_team?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalAgents = agents.length;
+  const activeAgents = agents.filter(a => a.is_active).length;
+  const totalOvertimeHours = agents.reduce((sum, a) => sum + (a.totalOvertime || 0), 0);
+  const totalOvertimeValue = agents.reduce((sum, a) => sum + (a.totalOvertimeValue || 0), 0);
+
+  if (isLoading || !master) {
+    return (
+      <div className="min-h-screen bg-gradient-dark flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-dark">
+      {/* Password Change Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="w-5 h-5 text-primary" />
+              Alterar Senha Master
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Senha Atual</Label>
+              <div className="relative">
+                <Input
+                  type={showPasswords ? 'text' : 'password'}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Digite a senha atual"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Nova Senha</Label>
+              <Input
+                type={showPasswords ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Digite a nova senha"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Confirmar Nova Senha</Label>
+              <Input
+                type={showPasswords ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirme a nova senha"
+              />
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowPasswords(!showPasswords)}
+              className="gap-2"
+            >
+              {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPasswords ? 'Ocultar senhas' : 'Mostrar senhas'}
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleChangePassword} disabled={changingPassword}>
+              {changingPassword ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img src={plantaoLogo} alt="PlantãoPro" className="h-10 w-auto object-contain" />
+              <div>
+                <h1 className="text-lg font-display tracking-wide">PLANTÃO<span className="text-primary">PRO</span></h1>
+                <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50 text-xs">
+                  <Shield className="w-3 h-3 mr-1" />
+                  MASTER
+                </Badge>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <OnlineIndicator compact />
+              <Button variant="ghost" size="sm" onClick={() => setShowPasswordDialog(true)} title="Alterar Senha">
+                <Key className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleSignOut}>
+                <LogOut className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* User Info Bar */}
+      <div className="border-b border-border/30 bg-card/50">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <p className="font-medium">{master.full_name || master.username}</p>
+                <p className="text-sm text-muted-foreground">Administrador Master</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-6">
+        {loading ? (
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-4">
+              <TabsTrigger value="overview" className="gap-2">
+                <TrendingUp className="w-4 h-4" />
+                <span className="hidden sm:inline">Visão Geral</span>
+              </TabsTrigger>
+              <TabsTrigger value="agents" className="gap-2">
+                <Users className="w-4 h-4" />
+                <span className="hidden sm:inline">Agentes</span>
+              </TabsTrigger>
+              <TabsTrigger value="overtime" className="gap-2">
+                <DollarSign className="w-4 h-4" />
+                <span className="hidden sm:inline">Banco de Horas</span>
+              </TabsTrigger>
+              <TabsTrigger value="shifts" className="gap-2">
+                <Calendar className="w-4 h-4" />
+                <span className="hidden sm:inline">Plantões</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-blue-500/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Users className="w-8 h-8 text-blue-500" />
+                      <div>
+                        <p className="text-2xl font-bold text-blue-500">{totalAgents}</p>
+                        <p className="text-xs text-muted-foreground">Total de Agentes</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-500/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-8 h-8 text-green-500" />
+                      <div>
+                        <p className="text-2xl font-bold text-green-500">{activeAgents}</p>
+                        <p className="text-xs text-muted-foreground">Agentes Ativos</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 border-amber-500/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-8 h-8 text-amber-500" />
+                      <div>
+                        <p className="text-2xl font-bold text-amber-500">{totalOvertimeHours.toFixed(1)}h</p>
+                        <p className="text-xs text-muted-foreground">BH Total</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/30">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="w-8 h-8 text-purple-500" />
+                      <div>
+                        <p className="text-2xl font-bold text-purple-500">
+                          R$ {totalOvertimeValue.toFixed(2)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Valor BH</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Team Stats */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-primary" />
+                    Estatísticas por Equipe
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {(['alfa', 'bravo', 'charlie', 'delta'] as const).map(team => (
+                      <div key={team} className={`p-4 rounded-lg ${getTeamColor(team)}`}>
+                        <p className="text-lg font-bold capitalize">{team}</p>
+                        <div className="mt-2 space-y-1">
+                          <p className="text-sm opacity-90">
+                            {teamStats[team].count} agente(s)
+                          </p>
+                          <p className="text-sm opacity-90">
+                            {teamStats[team].overtime.toFixed(1)}h BH
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Recent Overtime */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    BH Recentes (Mês Atual)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {overtimeRecords.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">
+                      Nenhum registro de BH este mês
+                    </p>
+                  ) : (
+                    <ScrollArea className="h-[300px]">
+                      <div className="space-y-2">
+                        {overtimeRecords.slice(0, 20).map(record => (
+                          <div key={record.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                            <div>
+                              <p className="font-medium">{record.agent?.full_name || 'Desconhecido'}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {format(parseISO(record.date), "dd/MM/yyyy", { locale: ptBR })}
+                                {record.description && ` - ${record.description}`}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-primary">{record.hours_worked}h</p>
+                              <p className="text-sm text-muted-foreground">
+                                R$ {(record.total_value || 0).toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Agents Tab */}
+            <TabsContent value="agents" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5 text-primary" />
+                      Todos os Agentes
+                    </CardTitle>
+                    <div className="relative w-64">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar agente..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[500px]">
+                    <div className="space-y-2">
+                      {filteredAgents.map(agent => (
+                        <motion.div
+                          key={agent.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="border border-border/50 rounded-lg overflow-hidden"
+                        >
+                          <button
+                            className="w-full p-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
+                            onClick={() => setExpandedAgent(expandedAgent === agent.id ? null : agent.id)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+                                {agent.avatar_url ? (
+                                  <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <User className="w-5 h-5 text-primary" />
+                                )}
+                              </div>
+                              <div className="text-left">
+                                <p className="font-medium">{agent.full_name}</p>
+                                <p className="text-sm text-muted-foreground">Mat: {agent.registration_number || 'N/A'}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <Badge className={`${getTeamColor(agent.current_team)} ${!agent.current_team && 'bg-muted text-muted-foreground'}`}>
+                                {agent.current_team ? agent.current_team.toUpperCase() : 'SEM EQUIPE'}
+                              </Badge>
+                              <Badge variant={agent.is_active ? 'default' : 'destructive'}>
+                                {agent.is_active ? 'Ativo' : 'Inativo'}
+                              </Badge>
+                              {expandedAgent === agent.id ? (
+                                <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                              )}
+                            </div>
+                          </button>
+
+                          <AnimatePresence>
+                            {expandedAgent === agent.id && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="border-t border-border/50 bg-muted/10"
+                              >
+                                <div className="p-4 grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                                  <div>
+                                    <p className="text-muted-foreground">CPF</p>
+                                    <p className="font-medium">{agent.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Telefone</p>
+                                    <p className="font-medium">{agent.phone || 'Não informado'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Email</p>
+                                    <p className="font-medium">{agent.email || 'Não informado'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Cidade/Unidade</p>
+                                    <p className="font-medium">{agent.city || 'N/A'} / {agent.unit || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Cadastrado em</p>
+                                    <p className="font-medium">
+                                      {format(parseISO(agent.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Último Acesso</p>
+                                    <p className="font-medium">
+                                      {agent.lastAccess 
+                                        ? format(parseISO(agent.lastAccess), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+                                        : 'Nunca acessou'
+                                      }
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">Plantões Registrados</p>
+                                    <p className="font-medium">{agent.shiftsCount || 0}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-muted-foreground">BH Total</p>
+                                    <p className="font-medium text-primary">
+                                      {(agent.totalOvertime || 0).toFixed(1)}h (R$ {(agent.totalOvertimeValue || 0).toFixed(2)})
+                                    </p>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Overtime Tab */}
+            <TabsContent value="overtime" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-primary" />
+                    Banco de Horas por Agente
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[500px]">
+                    <div className="space-y-2">
+                      {agents
+                        .filter(a => (a.totalOvertime || 0) > 0)
+                        .sort((a, b) => (b.totalOvertime || 0) - (a.totalOvertime || 0))
+                        .map(agent => (
+                          <div key={agent.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+                                {agent.avatar_url ? (
+                                  <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <User className="w-5 h-5 text-primary" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-medium">{agent.full_name}</p>
+                                <Badge className={getTeamColor(agent.current_team)} variant="outline">
+                                  {agent.current_team?.toUpperCase() || 'SEM EQUIPE'}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-bold text-primary">{(agent.totalOvertime || 0).toFixed(1)}h</p>
+                              <p className="text-sm text-muted-foreground">
+                                R$ {(agent.totalOvertimeValue || 0).toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      }
+                      {agents.every(a => (a.totalOvertime || 0) === 0) && (
+                        <p className="text-muted-foreground text-center py-8">
+                          Nenhum agente com BH registrado
+                        </p>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Shifts Tab */}
+            <TabsContent value="shifts" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-primary" />
+                    Plantões Programados
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[500px]">
+                    <div className="space-y-2">
+                      {agents
+                        .filter(a => (a.shiftsCount || 0) > 0)
+                        .sort((a, b) => (b.shiftsCount || 0) - (a.shiftsCount || 0))
+                        .map(agent => (
+                          <div key={agent.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+                                {agent.avatar_url ? (
+                                  <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <User className="w-5 h-5 text-primary" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-medium">{agent.full_name}</p>
+                                <Badge className={getTeamColor(agent.current_team)} variant="outline">
+                                  {agent.current_team?.toUpperCase() || 'SEM EQUIPE'}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-bold text-primary">{agent.shiftsCount || 0}</p>
+                              <p className="text-sm text-muted-foreground">plantões</p>
+                            </div>
+                          </div>
+                        ))
+                      }
+                      {agents.every(a => (a.shiftsCount || 0) === 0) && (
+                        <p className="text-muted-foreground text-center py-8">
+                          Nenhum plantão programado ainda
+                        </p>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default PlantaoMasterDashboard;
