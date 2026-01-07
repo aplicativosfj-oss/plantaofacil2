@@ -21,6 +21,7 @@ import { format, parseISO, differenceInDays, startOfMonth, endOfMonth } from 'da
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import OnlineIndicator from '@/components/plantao/OnlineIndicator';
+import LicenseManagement from '@/components/plantao/LicenseManagement';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 
 interface AgentWithDetails {
@@ -906,10 +907,14 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6 lg:grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7 lg:grid-cols-7">
               <TabsTrigger value="overview" className="gap-2">
                 <TrendingUp className="w-4 h-4" />
                 <span className="hidden sm:inline">Visão Geral</span>
+              </TabsTrigger>
+              <TabsTrigger value="licenses" className="gap-2">
+                <Key className="w-4 h-4" />
+                <span className="hidden sm:inline">Licenças</span>
               </TabsTrigger>
               <TabsTrigger value="billing" className="gap-2">
                 <Receipt className="w-4 h-4" />
@@ -1051,6 +1056,21 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                       </div>
                     </ScrollArea>
                   )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Licenses Tab */}
+            <TabsContent value="licenses" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Key className="w-5 h-5 text-primary" />
+                    Gestão de Licenças
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <LicenseManagement onRefresh={loadData} />
                 </CardContent>
               </Card>
             </TabsContent>

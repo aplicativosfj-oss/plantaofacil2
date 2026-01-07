@@ -4,8 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Shield, AlertTriangle, CreditCard, LogOut, Phone, Mail } from 'lucide-react';
-import { format } from 'date-fns';
+import { Shield, AlertTriangle, CreditCard, LogOut, Phone, Mail, MessageCircle, Clock, Send } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import PaymentDialog from './PaymentDialog';
 
@@ -21,6 +21,13 @@ interface License {
 interface LicenseExpiredOverlayProps {
   onLogout: () => void;
 }
+
+// Informações de contato do administrador
+const ADMIN_CONTACT = {
+  email: 'francdenis@gmail.com',
+  whatsapp: '5568999461733',
+  whatsappDisplay: '(68) 99946-1733',
+};
 
 const LicenseExpiredOverlay = ({ onLogout }: LicenseExpiredOverlayProps) => {
   const { agent } = usePlantaoAuth();
@@ -80,6 +87,30 @@ const LicenseExpiredOverlay = ({ onLogout }: LicenseExpiredOverlayProps) => {
 
   if (!license) return null;
 
+  const daysExpired = differenceInDays(new Date(), new Date(license.expires_at));
+
+  const openWhatsApp = () => {
+    const message = encodeURIComponent(
+      `Olá! Sou ${agent?.full_name || 'um agente'} (Matrícula: ${agent?.registration_number || 'N/A'}). ` +
+      `Minha licença do PlantãoPro expirou há ${daysExpired} dia(s) e gostaria de solicitar o desbloqueio/renovação.`
+    );
+    window.open(`https://wa.me/${ADMIN_CONTACT.whatsapp}?text=${message}`, '_blank');
+  };
+
+  const openEmail = () => {
+    const subject = encodeURIComponent(`Solicitação de Desbloqueio - PlantãoPro`);
+    const body = encodeURIComponent(
+      `Olá!\n\n` +
+      `Sou ${agent?.full_name || 'um agente'}\n` +
+      `Matrícula: ${agent?.registration_number || 'N/A'}\n` +
+      `Equipe: ${agent?.current_team?.toUpperCase() || 'N/A'}\n\n` +
+      `Minha licença do PlantãoPro expirou em ${format(new Date(license.expires_at), "dd/MM/yyyy", { locale: ptBR })}.\n` +
+      `Gostaria de solicitar o desbloqueio/renovação do meu acesso.\n\n` +
+      `Agradeço a atenção.`
+    );
+    window.open(`mailto:${ADMIN_CONTACT.email}?subject=${subject}&body=${body}`, '_blank');
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -116,7 +147,7 @@ const LicenseExpiredOverlay = ({ onLogout }: LicenseExpiredOverlayProps) => {
           </div>
 
           <p className="text-sm text-muted-foreground mb-4">
-            Para continuar utilizando o aplicativo, é necessário renovar sua licença.
+            Para continuar utilizando o aplicativo, entre em contato com o administrador para renovar sua licença.
           </p>
 
           <div className="p-4 bg-muted/30 rounded-xl">
@@ -124,9 +155,10 @@ const LicenseExpiredOverlay = ({ onLogout }: LicenseExpiredOverlayProps) => {
               <span className="text-sm text-muted-foreground">Taxa mensal</span>
               <span className="text-2xl font-bold">R$ {license.monthly_fee.toFixed(2)}</span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Renovação válida por 30 dias
-            </p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="w-3.5 h-3.5" />
+              <span>Expirado há {daysExpired} dia(s)</span>
+            </div>
           </div>
         </div>
 
@@ -143,6 +175,35 @@ const LicenseExpiredOverlay = ({ onLogout }: LicenseExpiredOverlayProps) => {
           </div>
         )}
 
+        {/* Contact Admin Section */}
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-4">
+          <h3 className="font-medium mb-3 flex items-center gap-2">
+            <Send className="w-4 h-4 text-primary" />
+            Solicitar Desbloqueio
+          </h3>
+          <div className="grid grid-cols-2 gap-2">
+            <Button 
+              variant="outline"
+              className="gap-2 border-green-500/30 hover:bg-green-500/10 hover:border-green-500/50"
+              onClick={openWhatsApp}
+            >
+              <MessageCircle className="w-4 h-4 text-green-500" />
+              <span className="text-sm">WhatsApp</span>
+            </Button>
+            <Button 
+              variant="outline"
+              className="gap-2 border-blue-500/30 hover:bg-blue-500/10 hover:border-blue-500/50"
+              onClick={openEmail}
+            >
+              <Mail className="w-4 h-4 text-blue-500" />
+              <span className="text-sm">E-mail</span>
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            {ADMIN_CONTACT.whatsappDisplay} • {ADMIN_CONTACT.email}
+          </p>
+        </div>
+
         {/* Actions */}
         <div className="space-y-3">
           <Button 
@@ -151,7 +212,7 @@ const LicenseExpiredOverlay = ({ onLogout }: LicenseExpiredOverlayProps) => {
             onClick={() => setShowPayment(true)}
           >
             <CreditCard className="w-5 h-5" />
-            {hasPendingPayment ? 'Enviar Novo Comprovante' : 'Renovar Licença'}
+            {hasPendingPayment ? 'Enviar Novo Comprovante' : 'Enviar Comprovante de Pagamento'}
           </Button>
 
           <Button 
@@ -162,24 +223,6 @@ const LicenseExpiredOverlay = ({ onLogout }: LicenseExpiredOverlayProps) => {
             <LogOut className="w-5 h-5" />
             Sair do Aplicativo
           </Button>
-        </div>
-
-        {/* Contact Info */}
-        <div className="mt-6 pt-6 border-t border-border">
-          <p className="text-sm text-center text-muted-foreground mb-3">
-            Precisa de ajuda? Entre em contato:
-          </p>
-          <div className="flex items-center justify-center gap-4 text-sm">
-            <a href="tel:+5500000000000" className="flex items-center gap-1 text-primary hover:underline">
-              <Phone className="w-4 h-4" />
-              Suporte
-            </a>
-            <span className="text-border">|</span>
-            <a href="mailto:suporte@plantaopro.app" className="flex items-center gap-1 text-primary hover:underline">
-              <Mail className="w-4 h-4" />
-              Email
-            </a>
-          </div>
         </div>
       </motion.div>
 

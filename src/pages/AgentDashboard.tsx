@@ -32,6 +32,7 @@ import MonitoringRotation from '@/components/plantao/MonitoringRotation';
 import OnlineIndicator from '@/components/plantao/OnlineIndicator';
 import LicenseCounter from '@/components/plantao/LicenseCounter';
 import LicenseExpiredOverlay from '@/components/plantao/LicenseExpiredOverlay';
+import LicenseExpiryAlert from '@/components/plantao/LicenseExpiryAlert';
 import TeamBanner from '@/components/plantao/TeamBanner';
 import SoundButton from '@/components/plantao/SoundButton';
 import useClickSound from '@/hooks/useClickSound';
@@ -285,6 +286,9 @@ const AgentDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-dark">
+      {/* License Expiry Alert (shows when license is about to expire) */}
+      <LicenseExpiryAlert />
+      
       {/* Dialogs */}
       <PlantaoAboutDialog isOpen={showAbout} onClose={() => setShowAbout(false)} />
       <WelcomeDialog 
