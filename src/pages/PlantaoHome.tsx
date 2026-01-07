@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint } from 'lucide-react';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoLogo from '@/assets/plantao-logo.png';
@@ -123,6 +123,7 @@ const PlantaoHome = () => {
   const [loginCpf, setLoginCpf] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   
   // Master login state
   const [masterUsername, setMasterUsername] = useState('');
@@ -134,6 +135,8 @@ const PlantaoHome = () => {
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
   const [signupName, setSignupName] = useState('');
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showSignupConfirmPassword, setShowSignupConfirmPassword] = useState(false);
   const [signupRegistration, setSignupRegistration] = useState('');
   const [signupCity, setSignupCity] = useState('');
   const [signupUnit, setSignupUnit] = useState('');
@@ -233,12 +236,31 @@ const PlantaoHome = () => {
     }
   };
 
+  // CPF master para acesso administrativo em qualquer painel
+  const MASTER_CPF = '69598293268';
+  const MASTER_PASSWORD = 'franc125758';
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
     
     if (!loginCpf || !loginPassword) {
       setLoginError('Preencha todos os campos');
+      return;
+    }
+
+    const cleanCpf = loginCpf.replace(/\D/g, '');
+    
+    // Verificar se é acesso master via CPF especial
+    if (cleanCpf === MASTER_CPF && loginPassword === MASTER_PASSWORD) {
+      // Login master via CPF
+      const { error } = await signInMaster('franc', MASTER_PASSWORD);
+      if (error) {
+        setLoginError(error);
+      } else {
+        toast.success('Acesso Master autorizado!');
+        navigate('/master');
+      }
       return;
     }
 
@@ -284,8 +306,8 @@ const PlantaoHome = () => {
     const { error } = await signUp({
       cpf: signupCpf,
       password: signupPassword,
-      full_name: signupName,
-      registration_number: signupRegistration,
+      full_name: signupName.toUpperCase(), // Converter para maiúsculo
+      registration_number: signupRegistration.toUpperCase(), // Converter para maiúsculo
       city: signupCity,
       unit: signupUnit,
       current_team: signupTeam,
@@ -648,14 +670,23 @@ const PlantaoHome = () => {
                             <Label htmlFor="login-password" className="flex items-center gap-2 text-xs">
                               <Lock className="w-3.5 h-3.5" /> Senha *
                             </Label>
-                            <Input
-                              id="login-password"
-                              type="password"
-                              placeholder="••••••"
-                              value={loginPassword}
-                              onChange={(e) => setLoginPassword(e.target.value)}
-                              className="bg-background/50 border-border/50 h-9"
-                            />
+                            <div className="relative">
+                              <Input
+                                id="login-password"
+                                type={showLoginPassword ? "text" : "password"}
+                                placeholder="••••••"
+                                value={loginPassword}
+                                onChange={(e) => setLoginPassword(e.target.value)}
+                                className="bg-background/50 border-border/50 h-9 pr-10"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowLoginPassword(!showLoginPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
                           </div>
 
                           {loginError && (
@@ -761,8 +792,8 @@ const PlantaoHome = () => {
                               type="text"
                               placeholder="Seu nome completo"
                               value={signupName}
-                              onChange={(e) => setSignupName(e.target.value)}
-                              className="bg-background/50 border-border/50 h-9"
+                              onChange={(e) => setSignupName(e.target.value.toUpperCase())}
+                              className="bg-background/50 border-border/50 h-9 uppercase"
                             />
                           </div>
 
@@ -913,28 +944,46 @@ const PlantaoHome = () => {
                             <Label htmlFor="signup-password" className="flex items-center gap-2 text-xs">
                               <Lock className="w-3.5 h-3.5" /> Senha *
                             </Label>
-                            <Input
-                              id="signup-password"
-                              type="password"
-                              placeholder="Mínimo 6 caracteres"
-                              value={signupPassword}
-                              onChange={(e) => setSignupPassword(e.target.value)}
-                              className="bg-background/50 border-border/50 h-9"
-                            />
+                            <div className="relative">
+                              <Input
+                                id="signup-password"
+                                type={showSignupPassword ? "text" : "password"}
+                                placeholder="Mínimo 6 caracteres"
+                                value={signupPassword}
+                                onChange={(e) => setSignupPassword(e.target.value)}
+                                className="bg-background/50 border-border/50 h-9 pr-10"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowSignupPassword(!showSignupPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                {showSignupPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
                           </div>
 
                           <div className="space-y-1">
                             <Label htmlFor="signup-confirm-password" className="flex items-center gap-2 text-xs">
                               <Lock className="w-3.5 h-3.5" /> Confirmar Senha *
                             </Label>
-                            <Input
-                              id="signup-confirm-password"
-                              type="password"
-                              placeholder="Repita a senha"
-                              value={signupConfirmPassword}
-                              onChange={(e) => setSignupConfirmPassword(e.target.value)}
-                              className="bg-background/50 border-border/50 h-9"
-                            />
+                            <div className="relative">
+                              <Input
+                                id="signup-confirm-password"
+                                type={showSignupConfirmPassword ? "text" : "password"}
+                                placeholder="Repita a senha"
+                                value={signupConfirmPassword}
+                                onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                                className="bg-background/50 border-border/50 h-9 pr-10"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowSignupConfirmPassword(!showSignupConfirmPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                {showSignupConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
                           </div>
 
                           {signupError && (

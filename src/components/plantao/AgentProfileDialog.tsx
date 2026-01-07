@@ -25,6 +25,15 @@ const getTeamColor = (team: string | null) => {
   }
 };
 
+// Formatar CPF: XXX.XXX.XXX-XX
+const formatCPF = (cpf: string) => {
+  const digits = cpf.replace(/\D/g, '');
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+};
+
 const AgentProfileDialog: React.FC<AgentProfileDialogProps> = ({ 
   isOpen, 
   onClose,
@@ -202,14 +211,14 @@ const AgentProfileDialog: React.FC<AgentProfileDialogProps> = ({
                   <IdCard className="w-5 h-5 text-muted-foreground" />
                   <div>
                     <p className="text-xs text-muted-foreground">CPF</p>
-                    <p className="font-medium">{agent.cpf}</p>
+                    <p className="font-medium font-mono">{formatCPF(agent.cpf)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <User className="w-5 h-5 text-muted-foreground" />
                   <div>
                     <p className="text-xs text-muted-foreground">Matrícula</p>
-                    <p className="font-medium">{agent.registration_number || 'N/A'}</p>
+                    <p className="font-medium uppercase">{agent.registration_number || 'N/A'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

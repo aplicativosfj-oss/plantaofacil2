@@ -326,8 +326,8 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const { error: agentError } = await supabase.from('agents').insert({
         user_id: authData.user.id,
         cpf: cleanCpf,
-        full_name: data.full_name,
-        registration_number: data.registration_number,
+        full_name: data.full_name.toUpperCase(), // Sempre maiúsculo
+        registration_number: data.registration_number?.toUpperCase() || null, // Sempre maiúsculo
         city: data.city,
         unit: data.unit,
         current_team: data.current_team,
