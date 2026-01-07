@@ -8,7 +8,6 @@ import {
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useAudio } from '@/contexts/AudioContext';
-import MusicToggle from '@/components/MusicToggle';
 import AppFooter from '@/components/AppFooter';
 import LicenseTimer from '@/components/LicenseTimer';
 import ProfileAvatar from '@/components/shared/ProfileAvatar';
@@ -320,7 +319,6 @@ const ClientDashboard: React.FC = () => {
           />
         </Suspense>
         
-        <MusicToggle />
         <div className="px-4">
           <AppFooter />
         </div>

@@ -47,50 +47,56 @@ const App = () => {
   useEffect(() => {
     clearExpiredCache();
 
+    // Se ainda estiver pegando arquivos antigos (PWA/service worker), limpamos UMA vez
+    // para remover qualquer cache "vinculado" de versões/projetos anteriores.
+    const CACHE_RESET_KEY = 'plantaopro_cache_reset_v1';
+    if (localStorage.getItem(CACHE_RESET_KEY) !== '1') {
+      localStorage.setItem(CACHE_RESET_KEY, '1');
+      (async () => {
+        try {
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map((r) => r.unregister()));
+          }
+          if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map((k) => caches.delete(k)));
+          }
+        } catch {
+          // ignore
+        } finally {
+          window.location.reload();
+        }
+      })();
+      return;
+    }
+
     // Bloquear definitivamente qualquer tentativa de tocar músicas de background
     // (mantém sons curtos como clique/notificação)
-    const blockedAudioSubstrings = [
-      '/audio/background',
-      '/audio/background-',
-      '/audio/background-music',
-      '/audio/peso-do-ritmo',
-      '/audio/peso-neon',
-      '/audio/gym-pro-funk',
-      '/audio/cidade-vigilancia',
-      '/audio/cidade-vigilancia.mp3',
-    ];
+    const allowedAudioSubstrings = ['/audio/click.mp3', '/audio/notification.mp3'];
 
     const originalPlay = HTMLMediaElement.prototype.play;
 
     HTMLMediaElement.prototype.play = function (this: HTMLMediaElement, ...args: any[]) {
       try {
+        const tag = (this.tagName || '').toUpperCase();
         const src = (this.currentSrc || (this as any).src || '').toString();
-        if (blockedAudioSubstrings.some((s) => src.includes(s))) {
-          try {
-            this.pause();
-            this.currentTime = 0;
-          } catch {}
-          return Promise.resolve();
+
+        // Só bloqueia ÁUDIO (não vídeo). E só permite SFX conhecidos.
+        if (tag === 'AUDIO') {
+          const isAllowed = allowedAudioSubstrings.some((s) => src.includes(s));
+          if (!isAllowed) {
+            try {
+              this.pause();
+              this.currentTime = 0;
+            } catch {}
+            return Promise.resolve();
+          }
         }
       } catch {}
 
       return (originalPlay as any).apply(this, args);
     };
-
-
-    // Tenta parar imediatamente qualquer mídia já tocando dessas faixas
-    try {
-      document.querySelectorAll('audio, video').forEach((el) => {
-        const media = el as HTMLMediaElement;
-        const src = (media.currentSrc || (media as any).src || '').toString();
-        if (blockedAudioSubstrings.some((s) => src.includes(s))) {
-          try {
-            media.pause();
-            media.currentTime = 0;
-          } catch {}
-        }
-      });
-    } catch {}
 
     // Register for online/offline events
     const handleOnline = () => {
