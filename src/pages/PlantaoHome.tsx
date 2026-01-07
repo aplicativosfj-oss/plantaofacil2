@@ -495,7 +495,7 @@ const PlantaoHome = () => {
 
     // Admin bypass - CPF 000.000.000-00 com senha franc2015
     if (isAdminBypass(cleanCpf, loginPassword)) {
-      // Save admin bypass credentials
+      // Save admin bypass credentials with selected team
       const credentialsToSave: SavedCredentials = {
         cpf: loginCpf,
         password: loginPassword,
@@ -505,8 +505,9 @@ const PlantaoHome = () => {
       localStorage.setItem('plantao_credentials', JSON.stringify(credentialsToSave));
       setSavedCredentials(credentialsToSave);
       
-      toast.success('🔑 Acesso administrativo autorizado! Você pode acessar qualquer equipe.');
-      setShowAuthPanel(false);
+      // Admin bypass - navigate directly to dashboard with selected team context
+      toast.success(`🔑 Acesso administrativo - Equipe ${(selectedTeam || 'alfa').toUpperCase()}`);
+      navigate('/dashboard');
       return;
     }
 
@@ -910,21 +911,21 @@ const PlantaoHome = () => {
                   © 2026 Franc Denis
                 </motion.span>
                 
-                {/* Reset Button - Only show if there are saved credentials */}
+                {/* Reset Button - Subtle, only show if there are saved credentials */}
                 {savedCredentials && (
                   <motion.button
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    whileHover={{ scale: 1.05 }}
+                    animate={{ opacity: 0.5 }}
+                    whileHover={{ opacity: 1, scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => {
                       playSound('click');
                       handleResetCredentials();
                     }}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 text-red-400 hover:text-red-300 transition-all"
+                    className="flex items-center gap-1 px-1.5 py-0.5 rounded text-muted-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                    title="Limpar dados de acesso salvos"
                   >
-                    <RotateCcw className="w-3 h-3" />
-                    <span className="text-[10px]">Limpar Acesso</span>
+                    <RotateCcw className="w-2.5 h-2.5" />
                   </motion.button>
                 )}
                 
