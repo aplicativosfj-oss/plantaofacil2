@@ -100,6 +100,112 @@ export type Database = {
           },
         ]
       }
+      agent_alerts: {
+        Row: {
+          agent_id: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          related_shift_id: string | null
+          related_swap_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          related_shift_id?: string | null
+          related_swap_id?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          related_shift_id?: string | null
+          related_swap_id?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_alerts_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_alerts_related_shift_id_fkey"
+            columns: ["related_shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_alerts_related_swap_id_fkey"
+            columns: ["related_swap_id"]
+            isOneToOne: false
+            referencedRelation: "shift_swaps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agents: {
+        Row: {
+          avatar_url: string | null
+          cpf: string
+          created_at: string | null
+          current_team: Database["public"]["Enums"]["team_type"] | null
+          email: string | null
+          full_name: string
+          id: string
+          is_active: boolean | null
+          phone: string | null
+          registration_number: string | null
+          team_joined_at: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          cpf: string
+          created_at?: string | null
+          current_team?: Database["public"]["Enums"]["team_type"] | null
+          email?: string | null
+          full_name: string
+          id?: string
+          is_active?: boolean | null
+          phone?: string | null
+          registration_number?: string | null
+          team_joined_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          cpf?: string
+          created_at?: string | null
+          current_team?: Database["public"]["Enums"]["team_type"] | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          is_active?: boolean | null
+          phone?: string | null
+          registration_number?: string | null
+          team_joined_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       deleted_items_trash: {
         Row: {
           auto_purge_at: string
@@ -934,6 +1040,60 @@ export type Database = {
           },
         ]
       }
+      overtime_bank: {
+        Row: {
+          agent_id: string
+          created_at: string | null
+          created_by: string | null
+          date: string
+          description: string | null
+          hour_value: number | null
+          hours_worked: number
+          id: string
+          month_year: string
+          total_value: number | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string | null
+          created_by?: string | null
+          date: string
+          description?: string | null
+          hour_value?: number | null
+          hours_worked: number
+          id?: string
+          month_year: string
+          total_value?: number | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          date?: string
+          description?: string | null
+          hour_value?: number | null
+          hours_worked?: number
+          id?: string
+          month_year?: string
+          total_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "overtime_bank_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "overtime_bank_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       password_reset_codes: {
         Row: {
           attempts: number
@@ -1453,6 +1613,183 @@ export type Database = {
           },
         ]
       }
+      shift_swaps: {
+        Row: {
+          compensation_date: string
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          original_shift_date: string
+          requested_at: string | null
+          requested_id: string
+          requester_id: string
+          requester_notes: string | null
+          responded_at: string | null
+          response_notes: string | null
+          status: Database["public"]["Enums"]["swap_status"] | null
+        }
+        Insert: {
+          compensation_date: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          original_shift_date: string
+          requested_at?: string | null
+          requested_id: string
+          requester_id: string
+          requester_notes?: string | null
+          responded_at?: string | null
+          response_notes?: string | null
+          status?: Database["public"]["Enums"]["swap_status"] | null
+        }
+        Update: {
+          compensation_date?: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          original_shift_date?: string
+          requested_at?: string | null
+          requested_id?: string
+          requester_id?: string
+          requester_notes?: string | null
+          responded_at?: string | null
+          response_notes?: string | null
+          status?: Database["public"]["Enums"]["swap_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_swaps_requested_id_fkey"
+            columns: ["requested_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_swaps_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shifts: {
+        Row: {
+          agent_id: string
+          created_at: string | null
+          id: string
+          is_completed: boolean | null
+          notes: string | null
+          rest_end: string
+          shift_end: string
+          shift_start: string
+          team: Database["public"]["Enums"]["team_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          notes?: string | null
+          rest_end: string
+          shift_end: string
+          shift_start: string
+          team: Database["public"]["Enums"]["team_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          notes?: string | null
+          rest_end?: string
+          shift_end?: string
+          shift_start?: string
+          team?: Database["public"]["Enums"]["team_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shifts_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_settings: {
+        Row: {
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: number
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value: number
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: number
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_history: {
+        Row: {
+          agent_id: string
+          created_at: string | null
+          id: string
+          joined_at: string | null
+          left_at: string | null
+          team: Database["public"]["Enums"]["team_type"]
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string | null
+          id?: string
+          joined_at?: string | null
+          left_at?: string | null
+          team: Database["public"]["Enums"]["team_type"]
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string | null
+          id?: string
+          joined_at?: string | null
+          left_at?: string | null
+          team?: Database["public"]["Enums"]["team_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_history_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           created_at: string | null
@@ -1820,8 +2157,17 @@ export type Database = {
       }
       generate_license_key: { Args: { prefix?: string }; Returns: string }
       generate_student_id: { Args: never; Returns: string }
+      get_current_agent_id: { Args: never; Returns: string }
       get_current_profile_id: { Args: never; Returns: string }
       get_current_tenant_id: { Args: never; Returns: string }
+      get_monthly_overtime: {
+        Args: { p_agent_id: string; p_month_year: string }
+        Returns: {
+          remaining_hours: number
+          total_hours: number
+          total_value: number
+        }[]
+      }
       get_student_basic_info: {
         Args: { p_student_id: string }
         Returns: {
@@ -1845,6 +2191,13 @@ export type Database = {
       is_admin_or_higher: { Args: { _user_id: string }; Returns: boolean }
       is_master: { Args: { _user_id: string }; Returns: boolean }
       purge_expired_trash_items: { Args: never; Returns: number }
+      transfer_agent_team: {
+        Args: {
+          p_agent_id: string
+          p_new_team: Database["public"]["Enums"]["team_type"]
+        }
+        Returns: boolean
+      }
       update_master_password: {
         Args: { p_credential_id: string; p_new_password: string }
         Returns: boolean
@@ -1869,6 +2222,8 @@ export type Database = {
         | "maintenance"
       license_status: "active" | "expired" | "blocked"
       license_type: "demo" | "trial" | "full" | "master"
+      swap_status: "pending" | "accepted" | "rejected" | "completed"
+      team_type: "alfa" | "bravo" | "charlie" | "delta"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2006,6 +2361,8 @@ export const Constants = {
       ],
       license_status: ["active", "expired", "blocked"],
       license_type: ["demo", "trial", "full", "master"],
+      swap_status: ["pending", "accepted", "rejected", "completed"],
+      team_type: ["alfa", "bravo", "charlie", "delta"],
     },
   },
 } as const
