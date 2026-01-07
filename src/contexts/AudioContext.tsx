@@ -1,20 +1,8 @@
-import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
-// Playlist de músicas - todas as músicas disponíveis
-const MUSIC_TRACKS: { path: string; name: string }[] = [
-  { path: '/audio/peso-do-ritmo-1-new.mp3', name: 'Peso do Ritmo' },
-  { path: '/audio/peso-neon-new.mp3', name: 'Neon Pulse' },
-  { path: '/audio/cidade-vigilancia.mp3', name: 'Cidade Vigilância' },
-  { path: '/audio/background-80.mp3', name: 'Retro 80s' },
-  { path: '/audio/background-lento.mp3', name: 'Ambiente Calmo' },
-];
-
-const DEFAULT_MUSIC_VOLUME = 0.18;
-const MAX_MUSIC_VOLUME = 0.5;
-const FADE_DURATION = 2000;
+// Som de volume para SFX
 const SFX_VOLUME = 0.5;
-const VOLUME_STORAGE_KEY = 'gym_music_volume';
-const AUTOPLAY_DELAY_MS = 20000; // 20 segundos após splash
+const SFX_STORAGE_KEY = 'gym_sfx_enabled';
 
 interface AudioContextType {
   isMusicPlaying: boolean;
@@ -45,11 +33,7 @@ interface AudioContextType {
 
 const AudioContextData = createContext<AudioContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'gym_music_enabled';
-const SFX_STORAGE_KEY = 'gym_sfx_enabled';
-const MUSIC_STOPPED_SESSION_KEY = 'gym_music_stopped_session';
-
-// Singleton AudioContext para melhor performance
+// Singleton AudioContext para efeitos sonoros
 let sharedAudioContext: AudioContext | null = null;
 
 const getAudioContext = (): AudioContext | null => {
@@ -62,22 +46,11 @@ const getAudioContext = (): AudioContext | null => {
     }
     return sharedAudioContext;
   } catch (e) {
-    console.log('AudioContext not available');
     return null;
   }
 };
 
-// Embaralhar array (Fisher-Yates)
-const shuffleArray = <T,>(array: T[]): T[] => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-};
-
-// Sons sintetizados
+// Sons sintetizados (SFX apenas)
 const createSinisterClick = () => {
   const audioContext = getAudioContext();
   if (!audioContext) return;
@@ -99,7 +72,6 @@ const createSinisterClick = () => {
   oscillator.stop(audioContext.currentTime + 0.1);
 };
 
-// Som suave de hover
 const createHoverSound = () => {
   const audioContext = getAudioContext();
   if (!audioContext) return;
@@ -234,218 +206,23 @@ const createCountdownBeep = () => {
 };
 
 export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Música de fundo desabilitada permanentemente
-  const getStoredPreference = (): boolean => {
-    return false; // Sempre desabilitado
-  };
-
   const getSfxStoredPreference = (): boolean => {
     const stored = localStorage.getItem(SFX_STORAGE_KEY);
     return stored !== 'false';
   };
 
-  const getStoredVolume = (): number => {
-    const stored = localStorage.getItem(VOLUME_STORAGE_KEY);
-    return stored ? parseFloat(stored) : DEFAULT_MUSIC_VOLUME;
-  };
-
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [isMusicEnabled, setIsMusicEnabled] = useState(false); // Sempre desabilitado
+  // Música de fundo completamente removida - apenas SFX
   const [isSfxEnabled, setIsSfxEnabled] = useState(getSfxStoredPreference);
   const [isOnHomeScreen, setIsOnHomeScreenState] = useState(false);
   const [isSplashComplete, setIsSplashCompleteState] = useState(false);
-  const [shuffledPlaylist, setShuffledPlaylist] = useState<typeof MUSIC_TRACKS>([]);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-  const [analyserNode, setAnalyserNode] = useState<AnalyserNode | null>(null);
-  const [hasUserInteracted, setHasUserInteracted] = useState(false);
-  const [musicVolume, setMusicVolumeState] = useState(getStoredVolume);
-  const [autoplayScheduled, setAutoplayScheduled] = useState(false);
-  const autoplayTimerRef = useRef<number | null>(null);
-  
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const fadeIntervalRef = useRef<number | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const isInitializedRef = useRef(false);
 
-// Música de fundo completamente desabilitada - não inicializa áudio
-  useEffect(() => {
-    if (isInitializedRef.current) return;
-    isInitializedRef.current = true;
-    // Não carrega nenhuma música - sistema de background music removido
-  }, []);
-
-  // Configurar analyser após interação do usuário
-  const setupAnalyser = useCallback(() => {
-    if (!audioRef.current || audioContextRef.current) return;
-    
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      audioContextRef.current = ctx;
-      
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 64;
-      analyser.smoothingTimeConstant = 0.8;
-      setAnalyserNode(analyser);
-
-      const source = ctx.createMediaElementSource(audioRef.current);
-      source.connect(analyser);
-      analyser.connect(ctx.destination);
-      sourceNodeRef.current = source;
-    } catch (e) {
-      console.log('AudioContext for visualizer not available');
-    }
-  }, []);
-
-  const fadeIn = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
-
-    audio.volume = 0;
-    const steps = 20;
-    const stepDuration = FADE_DURATION / steps;
-    const volumeStep = musicVolume / steps;
-    let currentStep = 0;
-
-    fadeIntervalRef.current = window.setInterval(() => {
-      currentStep++;
-      const newVolume = Math.min(volumeStep * currentStep, musicVolume);
-      if (audioRef.current) audioRef.current.volume = newVolume;
-
-      if (currentStep >= steps && fadeIntervalRef.current) {
-        clearInterval(fadeIntervalRef.current);
-        fadeIntervalRef.current = null;
-      }
-    }, stepDuration);
-  }, [musicVolume]);
-
-  const fadeOut = useCallback((onComplete?: () => void) => {
-    const audio = audioRef.current;
-    if (!audio) {
-      onComplete?.();
-      return;
-    }
-
-    if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
-
-    const startVolume = audio.volume;
-    if (startVolume === 0) {
-      audio.pause();
-      setIsMusicPlaying(false);
-      onComplete?.();
-      return;
-    }
-
-    const steps = 20;
-    const stepDuration = FADE_DURATION / steps;
-    const volumeStep = startVolume / steps;
-    let currentStep = 0;
-
-    fadeIntervalRef.current = window.setInterval(() => {
-      currentStep++;
-      const newVolume = Math.max(startVolume - (volumeStep * currentStep), 0);
-      if (audioRef.current) audioRef.current.volume = newVolume;
-
-      if (currentStep >= steps) {
-        if (fadeIntervalRef.current) {
-          clearInterval(fadeIntervalRef.current);
-          fadeIntervalRef.current = null;
-        }
-        if (audioRef.current) audioRef.current.pause();
-        setIsMusicPlaying(false);
-        onComplete?.();
-      }
-    }, stepDuration);
-  }, []);
-
-  const stopMusicImmediately = useCallback(() => {
-    if (fadeIntervalRef.current) {
-      clearInterval(fadeIntervalRef.current);
-      fadeIntervalRef.current = null;
-    }
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.volume = 0;
-    }
-    setIsMusicPlaying(false);
-    sessionStorage.setItem(MUSIC_STOPPED_SESSION_KEY, 'true');
-  }, []);
-
-  // Próxima música quando terminar
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || shuffledPlaylist.length === 0) return;
-
-    const handleTrackEnd = () => {
-      const nextIndex = (currentTrackIndex + 1) % shuffledPlaylist.length;
-      setCurrentTrackIndex(nextIndex);
-      
-      if (audio && isMusicEnabled && isOnHomeScreen) {
-        audio.src = shuffledPlaylist[nextIndex].path;
-        audio.load();
-        audio.volume = musicVolume;
-        audio.play().catch(console.error);
-      }
-    };
-
-    audio.addEventListener('ended', handleTrackEnd);
-    return () => audio.removeEventListener('ended', handleTrackEnd);
-  }, [currentTrackIndex, shuffledPlaylist, isMusicEnabled, isOnHomeScreen, musicVolume]);
-
-  // Tentar autoplay após interação
-  // Música de fundo completamente desabilitada - tryAutoPlay não faz nada
-  const tryAutoPlay = useCallback(() => {
-    // Música de fundo removida do sistema - não executa nada
-    return;
-  }, []);
-
-  // Autoplay desabilitado - não agenda nenhuma reprodução automática
-
-  // Reset autoplay scheduled when leaving home
-  useEffect(() => {
-    if (!isOnHomeScreen) {
-      setAutoplayScheduled(false);
-      if (autoplayTimerRef.current) {
-        clearTimeout(autoplayTimerRef.current);
-        autoplayTimerRef.current = null;
-      }
-    }
-  }, [isOnHomeScreen]);
-
-  // Música continua em todos os painéis (removido o fadeOut automático ao sair da home)
-
-  const toggleMusic = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (isMusicPlaying) {
-      fadeOut();
-      setIsMusicEnabled(false);
-      localStorage.setItem(STORAGE_KEY, 'false');
-      sessionStorage.setItem(MUSIC_STOPPED_SESSION_KEY, 'true');
-    } else {
-      setIsMusicEnabled(true);
-      localStorage.setItem(STORAGE_KEY, 'true');
-      sessionStorage.removeItem(MUSIC_STOPPED_SESSION_KEY);
-      
-      setupAnalyser();
-      if (audioContextRef.current?.state === 'suspended') {
-        audioContextRef.current.resume();
-      }
-      
-      if (shuffledPlaylist.length > 0) {
-        audio.src = shuffledPlaylist[currentTrackIndex].path;
-        audio.load();
-        audio.volume = 0;
-        audio.play().then(() => {
-          setIsMusicPlaying(true);
-          fadeIn();
-        }).catch(console.error);
-      }
-    }
-  }, [isMusicPlaying, fadeOut, fadeIn, setupAnalyser, shuffledPlaylist, currentTrackIndex]);
+  // Funções de música agora são no-ops (música removida)
+  const toggleMusic = useCallback(() => {}, []);
+  const setMusicVolume = useCallback((_volume: number) => {}, []);
+  const stopMusicImmediately = useCallback(() => {}, []);
+  const tryAutoPlay = useCallback(() => {}, []);
+  const skipToNextTrack = useCallback(() => {}, []);
+  const skipToPreviousTrack = useCallback(() => {}, []);
 
   const setOnHomeScreen = useCallback((value: boolean) => {
     setIsOnHomeScreenState(value);
@@ -461,58 +238,6 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem(SFX_STORAGE_KEY, String(newEnabled));
   }, [isSfxEnabled]);
 
-  // Atualizar volume da música
-  const setMusicVolume = useCallback((volume: number) => {
-    const clampedVolume = Math.max(0, Math.min(volume, MAX_MUSIC_VOLUME));
-    setMusicVolumeState(clampedVolume);
-    localStorage.setItem(VOLUME_STORAGE_KEY, String(clampedVolume));
-    
-    if (audioRef.current && isMusicPlaying) {
-      audioRef.current.volume = clampedVolume;
-    }
-  }, [isMusicPlaying]);
-
-  // Pular para próxima música
-  const skipToNextTrack = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio || shuffledPlaylist.length === 0) return;
-
-    const nextIndex = (currentTrackIndex + 1) % shuffledPlaylist.length;
-    setCurrentTrackIndex(nextIndex);
-    
-    audio.src = shuffledPlaylist[nextIndex].path;
-    audio.load();
-    
-    if (isMusicPlaying) {
-      audio.volume = musicVolume;
-      audio.play().catch(console.error);
-    }
-  }, [shuffledPlaylist, currentTrackIndex, isMusicPlaying, musicVolume]);
-
-  // Voltar para música anterior
-  const skipToPreviousTrack = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio || shuffledPlaylist.length === 0) return;
-
-    const prevIndex = currentTrackIndex === 0 
-      ? shuffledPlaylist.length - 1 
-      : currentTrackIndex - 1;
-    setCurrentTrackIndex(prevIndex);
-    
-    audio.src = shuffledPlaylist[prevIndex].path;
-    audio.load();
-    
-    if (isMusicPlaying) {
-      audio.volume = musicVolume;
-      audio.play().catch(console.error);
-    }
-  }, [shuffledPlaylist, currentTrackIndex, isMusicPlaying, musicVolume]);
-
-  // Nome da música atual
-  const currentTrackName = shuffledPlaylist.length > 0 
-    ? shuffledPlaylist[currentTrackIndex]?.name || 'Música' 
-    : '';
-
   const playClickSound = useCallback(() => {
     if (!isSfxEnabled) return;
     try { createSinisterClick(); } catch {}
@@ -524,41 +249,41 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [isSfxEnabled]);
 
   const playNotificationSound = useCallback(() => {
-    if (isOnHomeScreen || !isSfxEnabled) return;
+    if (!isSfxEnabled) return;
     try { createNotificationSound(); } catch {}
-  }, [isOnHomeScreen, isSfxEnabled]);
+  }, [isSfxEnabled]);
 
   const playSuccessSound = useCallback(() => {
-    if (isOnHomeScreen || !isSfxEnabled) return;
+    if (!isSfxEnabled) return;
     try { createSuccessSound(); } catch {}
-  }, [isOnHomeScreen, isSfxEnabled]);
+  }, [isSfxEnabled]);
 
   const playTimerSound = useCallback(() => {
-    if (isOnHomeScreen || !isSfxEnabled) return;
+    if (!isSfxEnabled) return;
     try { createTimerSound(); } catch {}
-  }, [isOnHomeScreen, isSfxEnabled]);
+  }, [isSfxEnabled]);
 
   const playTickSound = useCallback(() => {
-    if (isOnHomeScreen || !isSfxEnabled) return;
+    if (!isSfxEnabled) return;
     try { createTickSound(); } catch {}
-  }, [isOnHomeScreen, isSfxEnabled]);
+  }, [isSfxEnabled]);
 
   const playCountdownBeep = useCallback(() => {
-    if (isOnHomeScreen || !isSfxEnabled) return;
+    if (!isSfxEnabled) return;
     try { createCountdownBeep(); } catch {}
-  }, [isOnHomeScreen, isSfxEnabled]);
+  }, [isSfxEnabled]);
 
   return (
     <AudioContextData.Provider
       value={{
-        isMusicPlaying,
-        isMusicEnabled,
+        isMusicPlaying: false,
+        isMusicEnabled: false,
         isSfxEnabled,
         isOnHomeScreen,
         isSplashComplete,
-        analyserNode,
-        musicVolume,
-        currentTrackName,
+        analyserNode: null,
+        musicVolume: 0,
+        currentTrackName: '',
         setMusicVolume,
         toggleMusic,
         toggleSfx,
