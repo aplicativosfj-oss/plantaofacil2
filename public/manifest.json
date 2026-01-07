@@ -1,7 +1,7 @@
 {
-  "name": "FrancGymPro - Sistema de Academia",
-  "short_name": "FrancGymPro",
-  "description": "Sistema completo de gerenciamento de academia profissional",
+  "name": "Plantão PRO - Gestão de Escalas",
+  "short_name": "Plantão PRO",
+  "description": "Sistema completo de gestão de plantões e escalas para agentes",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",
@@ -9,7 +9,9 @@
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "pt-BR",
-  "categories": ["fitness", "health", "sports", "business"],
+  "dir": "ltr",
+  "categories": ["productivity", "business", "utilities"],
+  "id": "plantao-pro-app",
   "icons": [
     {
       "src": "/pwa-192x192.png",
@@ -36,33 +38,41 @@
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "FrancGymPro Dashboard"
+      "label": "Plantão PRO Dashboard"
     },
     {
       "src": "/screenshot-mobile.png",
       "sizes": "720x1280",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "FrancGymPro Mobile"
+      "label": "Plantão PRO Mobile"
     }
   ],
   "shortcuts": [
     {
-      "name": "Acessar como Cliente",
-      "url": "/client",
+      "name": "Meu Calendário",
+      "short_name": "Calendário",
+      "url": "/dashboard?panel=calendar",
       "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Acessar como Instrutor",
-      "url": "/instructor",
+      "name": "Chat da Equipe",
+      "short_name": "Chat",
+      "url": "/dashboard?panel=chat",
       "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Acessar como Gerente",
-      "url": "/admin",
+      "name": "Solicitar Troca",
+      "short_name": "Troca",
+      "url": "/dashboard?panel=swap",
       "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
     }
   ],
-  "related_applications": [],
-  "prefer_related_applications": false
+  "display_override": ["standalone", "minimal-ui"],
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "prefer_related_applications": false,
+  "related_applications": []
 }

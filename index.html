@@ -2,58 +2,135 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
     
     <!-- App Info -->
-    <title>Frete Rápido - Chamou, chegou.</title>
-    <meta name="description" content="Marketplace de frete, mudança e transporte de objetos. Conectando clientes e prestadores com agilidade e praticidade.">
-    <meta name="author" content="Frete Rápido" />
-    <meta name="keywords" content="frete, mudança, transporte, carreto, freteiro, caminhão, entrega, Feijó, Acre">
+    <title>Plantão PRO - Gestão de Escalas</title>
+    <meta name="description" content="Sistema completo de gestão de plantões e escalas para agentes. Organize seus turnos com praticidade.">
+    <meta name="author" content="Plantão PRO" />
+    <meta name="keywords" content="plantão, escala, agente, turno, trabalho, gestão, calendario">
     
     <!-- Theme Colors -->
-    <meta name="theme-color" content="#f97316" />
-    <meta name="msapplication-TileColor" content="#f97316" />
-    <meta name="msapplication-navbutton-color" content="#f97316" />
+    <meta name="theme-color" content="#dc2626" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+    <meta name="msapplication-TileColor" content="#dc2626" />
+    <meta name="msapplication-navbutton-color" content="#dc2626" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     
     <!-- PWA & Mobile -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Frete Rápido" />
-    <meta name="application-name" content="Frete Rápido" />
+    <meta name="apple-mobile-web-app-title" content="Plantão PRO" />
+    <meta name="application-name" content="Plantão PRO" />
     <meta name="format-detection" content="telephone=no" />
+    <meta name="HandheldFriendly" content="true" />
+    
+    <!-- Safe Area for Notch Devices -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     
     <!-- Icons -->
     <link rel="icon" type="image/png" href="/pwa-192x192.png">
     <link rel="apple-touch-icon" href="/pwa-192x192.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/pwa-192x192.png" />
-    <link rel="mask-icon" href="/favicon.ico" color="#f97316" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/pwa-192x192.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="/pwa-192x192.png" />
+    <link rel="mask-icon" href="/favicon.ico" color="#dc2626" />
+    
+    <!-- Splash Screens for iOS -->
+    <link rel="apple-touch-startup-image" href="/splash-mobile.png" media="(device-width: 375px)" />
+    <link rel="apple-touch-startup-image" href="/splash-wide.png" media="(device-width: 768px)" />
     
     <!-- Open Graph / Social -->
-    <meta property="og:title" content="Frete Rápido - Chamou, chegou.">
+    <meta property="og:title" content="Plantão PRO - Gestão de Escalas">
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://freterapido.app" />
+    <meta property="og:url" content="https://plantaopro.app" />
     <meta property="og:image" content="/og-image.png" />
     <meta property="og:locale" content="pt_BR" />
-    <meta property="og:site_name" content="Frete Rápido" />
-    <meta property="og:description" content="Marketplace de frete, mudança e transporte de objetos. Conectando clientes e prestadores com agilidade e praticidade.">
+    <meta property="og:site_name" content="Plantão PRO" />
+    <meta property="og:description" content="Sistema completo de gestão de plantões e escalas para agentes.">
     
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Frete Rápido - Chamou, chegou.">
-    <meta name="twitter:description" content="Marketplace de frete, mudança e transporte de objetos. Conectando clientes e prestadores com agilidade e praticidade.">
+    <meta name="twitter:title" content="Plantão PRO - Gestão de Escalas">
+    <meta name="twitter:description" content="Sistema completo de gestão de plantões e escalas para agentes.">
     <meta name="twitter:image" content="/og-image.png" />
     
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://jzifwltgjnhwklfqluey.supabase.co" />
     
     <!-- DNS Prefetch -->
-    <link rel="dns-prefetch" href="https://chwhnfzuppmefururvii.supabase.co" />
-</head>
+    <link rel="dns-prefetch" href="https://jzifwltgjnhwklfqluey.supabase.co" />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    
+    <!-- Prefetch critical resources -->
+    <link rel="prefetch" href="/pwa-512x512.png" />
+    
+    <!-- Critical CSS for initial load -->
+    <style>
+      /* Prevent FOUC */
+      html { background: #0a0a0a; }
+      body { margin: 0; min-height: 100vh; }
+      #root { min-height: 100vh; }
+      
+      /* Loading skeleton */
+      .initial-loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0a0a0a;
+        z-index: 9999;
+      }
+      .initial-loader .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(220, 38, 38, 0.2);
+        border-top-color: #dc2626;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
+      /* Safe area padding for notch devices */
+      .safe-area-top { padding-top: env(safe-area-inset-top); }
+      .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+  </head>
 
   <body>
+    <!-- Initial loader shown before React hydrates -->
+    <div id="initial-loader" class="initial-loader">
+      <div class="spinner"></div>
+    </div>
+    
     <div id="root"></div>
+    
+    <script>
+      // Remove initial loader once app is ready
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var loader = document.getElementById('initial-loader');
+          if (loader) {
+            loader.style.opacity = '0';
+            loader.style.transition = 'opacity 0.3s';
+            setTimeout(function() { loader.remove(); }, 300);
+          }
+        }, 100);
+      });
+      
+      // Register service worker early
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js').catch(function() {});
+        });
+      }
+    </script>
+    
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
