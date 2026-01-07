@@ -1,7 +1,6 @@
 import { useEffect, useState, forwardRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
-import { useAudio } from '@/contexts/AudioContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -106,7 +105,6 @@ const getTeamColor = (team: string | null) => {
 
 const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
   const { master, signOut, isLoading } = usePlantaoAuth();
-  const { stopMusicImmediately } = useAudio();
   const navigate = useNavigate();
   
   const [agents, setAgents] = useState<AgentWithDetails[]>([]);
@@ -168,11 +166,6 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
       navigate('/');
     }
   }, [isLoading, master, navigate]);
-
-  // Stop music when entering admin panel
-  useEffect(() => {
-    stopMusicImmediately();
-  }, [stopMusicImmediately]);
 
   useEffect(() => {
     if (master) {
