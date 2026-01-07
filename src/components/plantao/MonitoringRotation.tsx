@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
 interface RotationSlot {
@@ -197,15 +198,22 @@ const MonitoringRotation = () => {
 
             <div className="space-y-2">
               <Label className="text-xs">Qtd. Agentes</Label>
-              <Input
-                type="number"
-                min={1}
-                max={10}
-                value={agentCount}
-                onChange={(e) => setAgentCount(parseInt(e.target.value) || 1)}
-                className="text-center"
+              <Select 
+                value={agentCount.toString()} 
+                onValueChange={(value) => setAgentCount(parseInt(value))}
                 disabled={isCalculated}
-              />
+              >
+                <SelectTrigger className="w-full bg-background">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border z-50">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num} {num === 1 ? 'agente' : 'agentes'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
