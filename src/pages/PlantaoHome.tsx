@@ -299,13 +299,14 @@ const PlantaoHome = () => {
         {isMusicPlaying ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
       </button>
 
-      {/* About Button */}
+      {/* About Button - Discrete */}
       <button
         onClick={() => setShowAbout(true)}
-        className="fixed bottom-4 left-4 z-50 p-3 rounded-full bg-muted/80 hover:bg-muted text-foreground shadow-lg transition-all duration-300 hover:scale-110"
-        title="Sobre o sistema"
+        className="fixed bottom-4 left-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/60 hover:bg-muted/80 text-muted-foreground hover:text-foreground text-xs transition-all duration-300 backdrop-blur-sm"
+        title="Sobre o aplicativo"
       >
-        <Info className="w-5 h-5" />
+        <Info className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">Sobre</span>
       </button>
 
       {/* Background Image */}
