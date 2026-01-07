@@ -74,6 +74,8 @@ const ShiftCalendar = () => {
   const [isEditShiftDialogOpen, setIsEditShiftDialogOpen] = useState(false);
   const [isDayOffDialogOpen, setIsDayOffDialogOpen] = useState(false);
   const [isOvertimeDialogOpen, setIsOvertimeDialogOpen] = useState(false);
+  const [isOvertimeViewDialogOpen, setIsOvertimeViewDialogOpen] = useState(false);
+  const [viewingOvertime, setViewingOvertime] = useState<OvertimeEntry | null>(null);
   const [editingNote, setEditingNote] = useState<CalendarNote | null>(null);
   const [formData, setFormData] = useState({ title: '', content: '', color: 'blue', is_reminder: false });
   const [newFirstShiftDate, setNewFirstShiftDate] = useState<string>('');
@@ -197,6 +199,14 @@ const ShiftCalendar = () => {
     setEditingNote(null);
     setFormData({ title: '', content: '', color: 'blue', is_reminder: false });
     
+    // Check if there's an overtime entry for this date - show view dialog
+    const existingOvertime = getOvertime(date);
+    if (existingOvertime) {
+      setViewingOvertime(existingOvertime);
+      setIsOvertimeViewDialogOpen(true);
+      return;
+    }
+    
     // Check if there's already a day off
     const existingDayOff = getDayOff(date);
     if (existingDayOff) {
@@ -208,6 +218,22 @@ const ShiftCalendar = () => {
     }
     
     setIsDialogOpen(true);
+  };
+
+  const handleEditOvertimeFromView = () => {
+    if (!viewingOvertime) return;
+    const overtimeDate = parseDateOnly(viewingOvertime.date);
+    setSelectedDate(overtimeDate);
+    setSelectedOvertime(viewingOvertime);
+    setOvertimeForm({ 
+      hours: viewingOvertime.hours_worked.toString(), 
+      description: viewingOvertime.description || '',
+      shiftType: viewingOvertime.shift_type || 'day',
+      scheduledTime: viewingOvertime.scheduled_time || '',
+      hourValue: viewingOvertime.hour_value?.toString() || '15.75'
+    });
+    setIsOvertimeViewDialogOpen(false);
+    setIsOvertimeDialogOpen(true);
   };
 
   const handleOpenDayOffDialog = () => {
@@ -1157,6 +1183,108 @@ const ShiftCalendar = () => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+      {/* Overtime View Dialog */}
+      <Dialog open={isOvertimeViewDialogOpen} onOpenChange={setIsOvertimeViewDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Banknote className="w-5 h-5 text-cyan-500" />
+              Detalhes do Banco de Horas
+            </DialogTitle>
+          </DialogHeader>
+
+          {viewingOvertime && (
+            <div className="space-y-4">
+              {/* Date Display */}
+              <div className="p-3 rounded-lg bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/40">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-cyan-400" />
+                  <span className="font-medium capitalize">
+                    {format(parseDateOnly(viewingOvertime.date), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </span>
+                </div>
+              </div>
+
+              {/* BH Details Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 rounded-lg bg-muted/30 border border-border">
+                  <span className="text-xs text-muted-foreground">Horas Trabalhadas</span>
+                  <div className="font-bold text-xl text-cyan-400">{viewingOvertime.hours_worked}h</div>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/30 border border-border">
+                  <span className="text-xs text-muted-foreground">Turno</span>
+                  <div className="font-bold text-lg flex items-center gap-1">
+                    {viewingOvertime.shift_type === 'night' ? (
+                      <><Moon className="w-4 h-4 text-indigo-400" /> Noturno</>
+                    ) : (
+                      <><Sun className="w-4 h-4 text-amber-400" /> Diurno</>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Schedule Times */}
+              {viewingOvertime.scheduled_time && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 rounded-lg bg-muted/30 border border-border">
+                    <span className="text-xs text-muted-foreground">Horário de Início</span>
+                    <div className="font-bold text-lg">{viewingOvertime.scheduled_time}</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/30 border border-border">
+                    <span className="text-xs text-muted-foreground">Término (estimado)</span>
+                    <div className="font-bold text-lg">
+                      {(() => {
+                        const [h, m] = viewingOvertime.scheduled_time!.split(':').map(Number);
+                        const hoursToAdd = viewingOvertime.hours_worked || 0;
+                        const totalMinutes = h * 60 + m + hoursToAdd * 60;
+                        const endHours = Math.floor(totalMinutes / 60) % 24;
+                        const endMinutes = Math.floor(totalMinutes % 60);
+                        return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              {viewingOvertime.description && (
+                <div className="p-3 rounded-lg bg-muted/30 border border-border">
+                  <span className="text-xs text-muted-foreground">Descrição</span>
+                  <div className="font-medium mt-1">{viewingOvertime.description}</div>
+                </div>
+              )}
+
+              {/* Value Summary */}
+              <div className="p-4 rounded-lg bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/30">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-muted-foreground text-sm">Valor/hora:</span>
+                  <span className="font-medium">R$ {(viewingOvertime.hour_value || 15.75).toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-cyan-500/20">
+                  <span className="font-semibold">Valor Total:</span>
+                  <span className="font-bold text-cyan-400 text-2xl">
+                    R$ {(viewingOvertime.total_value || (viewingOvertime.hours_worked * (viewingOvertime.hour_value || 15.75))).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => setIsOvertimeViewDialogOpen(false)}>
+                  Fechar
+                </Button>
+                <Button 
+                  className="flex-1 bg-cyan-600 hover:bg-cyan-700"
+                  onClick={handleEditOvertimeFromView}
+                >
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Editar
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
