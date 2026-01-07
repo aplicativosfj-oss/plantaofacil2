@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import ChatAgentProfile from './ChatAgentProfile';
 
 interface Message {
   id: string;
@@ -67,6 +68,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
   const [selectedTeam, setSelectedTeam] = useState<TeamType | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Initialize selected team with agent's team
@@ -298,8 +300,11 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
                           <div className={`max-w-[80%] ${isOwn ? 'order-2' : 'order-1'}`}>
                             {/* Sender info */}
                             {!isOwn && (
-                              <div className="flex items-center gap-2 mb-1">
-                                <div className={`w-6 h-6 rounded-full ${getTeamColor(msg.sender?.current_team)} flex items-center justify-center overflow-hidden`}>
+                              <button 
+                                className="flex items-center gap-2 mb-1 hover:opacity-80 transition-opacity cursor-pointer"
+                                onClick={() => setSelectedAgentId(msg.sender_id)}
+                              >
+                                <div className={`w-6 h-6 rounded-full ${getTeamColor(msg.sender?.current_team)} flex items-center justify-center overflow-hidden ring-2 ring-transparent hover:ring-primary/50 transition-all`}>
                                   {msg.sender?.avatar_url ? (
                                     <img src={msg.sender.avatar_url} alt="" className="w-full h-full object-cover" />
                                   ) : (
@@ -308,7 +313,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
                                     </span>
                                   )}
                                 </div>
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-xs text-muted-foreground hover:text-foreground transition-colors">
                                   {msg.sender?.full_name?.split(' ')[0] || 'Desconhecido'}
                                 </span>
                                 {msg.sender?.current_team && (
@@ -316,7 +321,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
                                     {msg.sender.current_team.charAt(0).toUpperCase()}
                                   </Badge>
                                 )}
-                              </div>
+                              </button>
                             )}
                             
                             {/* Message bubble */}
@@ -363,6 +368,15 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
               </TabsContent>
             </Tabs>
           </motion.div>
+
+          {/* Agent Profile Dialog */}
+          {selectedAgentId && (
+            <ChatAgentProfile
+              isOpen={!!selectedAgentId}
+              onClose={() => setSelectedAgentId(null)}
+              agentId={selectedAgentId}
+            />
+          )}
         </>
       )}
     </AnimatePresence>
