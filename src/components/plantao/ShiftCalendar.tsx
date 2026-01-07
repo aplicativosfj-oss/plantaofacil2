@@ -79,6 +79,16 @@ const ShiftCalendar = () => {
   const [overtimeForm, setOvertimeForm] = useState({ hours: '', description: '' });
   const [selectedOvertime, setSelectedOvertime] = useState<OvertimeEntry | null>(null);
 
+  // IMPORTANT: date strings like "2026-01-03" MUST be parsed as local dates.
+  // new Date('YYYY-MM-DD') parses as UTC and shifts the day in Brazil timezone.
+  const parseDateOnly = (value: string) => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [y, m, d] = value.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+    return new Date(value);
+  };
+
   // Fetch notes
   useEffect(() => {
     if (!agent?.id) return;
@@ -149,11 +159,11 @@ const ShiftCalendar = () => {
   const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
   const getNotesForDate = (date: Date) => {
-    return notes.filter(note => isSameDay(new Date(note.note_date), date));
+    return notes.filter(note => isSameDay(parseDateOnly(note.note_date), date));
   };
 
   const isShiftDay = (date: Date) => {
-    return shiftDates.some(shift => isSameDay(new Date(shift.shift_date), date));
+    return shiftDates.some(shift => isSameDay(parseDateOnly(shift.shift_date), date));
   };
 
   const isShiftCompleted = (date: Date) => {
@@ -162,17 +172,17 @@ const ShiftCalendar = () => {
   };
 
   const getDayOff = (date: Date) => {
-    return daysOff.find(dayOff => isSameDay(new Date(dayOff.off_date), date));
+    return daysOff.find(dayOff => isSameDay(parseDateOnly(dayOff.off_date), date));
   };
 
   const getOvertime = (date: Date) => {
-    return overtimeEntries.find(ot => isSameDay(new Date(ot.date), date));
+    return overtimeEntries.find(ot => isSameDay(parseDateOnly(ot.date), date));
   };
 
   // Check if shift can be edited (within 24 hours before first shift date)
   const canEditShift = () => {
     if (!shiftSchedule) return false;
-    const firstShiftDate = new Date(shiftSchedule.first_shift_date);
+    const firstShiftDate = parseDateOnly(shiftSchedule.first_shift_date);
     firstShiftDate.setHours(6, 0, 0, 0); // Shift starts at 06:00
     const hoursUntilShift = differenceInHours(firstShiftDate, new Date());
     return hoursUntilShift > 24;
@@ -332,7 +342,7 @@ const ShiftCalendar = () => {
 
   const handleEditNote = (note: CalendarNote) => {
     setEditingNote(note);
-    setSelectedDate(new Date(note.note_date));
+    setSelectedDate(parseDateOnly(note.note_date));
     setFormData({
       title: note.title,
       content: note.content || '',
@@ -474,9 +484,10 @@ const ShiftCalendar = () => {
   const paddingDays = Array(firstDayOfMonth).fill(null);
 
   // Get upcoming scheduled items
+  const todayStart = startOfDay(new Date());
   const upcomingNotes = notes
-    .filter(note => new Date(note.note_date) >= new Date(new Date().setHours(0, 0, 0, 0)))
-    .sort((a, b) => new Date(a.note_date).getTime() - new Date(b.note_date).getTime());
+    .filter(note => parseDateOnly(note.note_date) >= todayStart)
+    .sort((a, b) => parseDateOnly(a.note_date).getTime() - parseDateOnly(b.note_date).getTime());
 
   return (
     <div className="space-y-6">
@@ -486,7 +497,7 @@ const ShiftCalendar = () => {
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-amber-500" />
             <span className="text-sm">
-              Primeiro plantão: <strong>{format(new Date(shiftSchedule.first_shift_date), "dd/MM/yyyy")}</strong>
+              Primeiro plantão: <strong>{format(parseDateOnly(shiftSchedule.first_shift_date), "dd/MM/yyyy")}</strong>
             </span>
           </div>
           <Button
@@ -675,7 +686,7 @@ const ShiftCalendar = () => {
           ) : (
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {upcomingNotes.map(note => {
-                const noteDate = new Date(note.note_date);
+                const noteDate = parseDateOnly(note.note_date);
                 const isNoteToday = isToday(noteDate);
                 
                 return (
