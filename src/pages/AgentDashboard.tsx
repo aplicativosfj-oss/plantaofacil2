@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Shield, LogOut, Clock, Calendar, Users, DollarSign, 
   Bell, ArrowLeftRight, User, ChevronRight, AlertTriangle,
-  Timer, TrendingUp
+  Timer, TrendingUp, Info
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format, formatDistanceToNow, differenceInHours, differenceInMinutes } from 'date-fns';
@@ -17,6 +17,8 @@ import TeamSelector from '@/components/plantao/TeamSelector';
 import OvertimePanel from '@/components/plantao/OvertimePanel';
 import SwapPanel from '@/components/plantao/SwapPanel';
 import AlertsPanel from '@/components/plantao/AlertsPanel';
+import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
+import plantaoLogo from '@/assets/plantao-logo.png';
 
 interface Shift {
   id: string;
@@ -62,6 +64,7 @@ const AgentDashboard = () => {
   const [pendingSwaps, setPendingSwaps] = useState(0);
   const [activePanel, setActivePanel] = useState<'overview' | 'team' | 'overtime' | 'swaps' | 'alerts'>('overview');
   const [countdown, setCountdown] = useState<string>('');
+  const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !agent) {
@@ -210,19 +213,31 @@ const AgentDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-dark">
+      {/* About Dialog */}
+      <PlantaoAboutDialog isOpen={showAbout} onClose={() => setShowAbout(false)} />
+
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Shield className="w-8 h-8 text-primary" />
+              <img src={plantaoLogo} alt="PlantãoPro" className="h-10 w-auto object-contain" />
               <div>
-                <h1 className="text-xl font-display tracking-wide">PLANTÃO<span className="text-primary">PRO</span></h1>
-                <p className="text-xs text-muted-foreground">Unidade de Feijó/AC</p>
+                <h1 className="text-lg font-display tracking-wide">PLANTÃO<span className="text-primary">PRO</span></h1>
+                <p className="text-xs text-muted-foreground">{agent?.unit || 'Unidade não definida'}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowAbout(true)}
+                title="Sobre"
+              >
+                <Info className="w-5 h-5" />
+              </Button>
+
               <Button
                 variant="ghost"
                 size="icon"
