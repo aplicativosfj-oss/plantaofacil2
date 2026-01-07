@@ -49,7 +49,7 @@ const App = () => {
 
     // Se ainda estiver pegando arquivos antigos (PWA/service worker), limpamos UMA vez
     // para remover qualquer cache "vinculado" de versões/projetos anteriores.
-    const CACHE_RESET_KEY = 'plantaopro_cache_reset_v1';
+    const CACHE_RESET_KEY = 'plantaopro_cache_reset_v2';
     if (localStorage.getItem(CACHE_RESET_KEY) !== '1') {
       localStorage.setItem(CACHE_RESET_KEY, '1');
       (async () => {
@@ -71,21 +71,33 @@ const App = () => {
       return;
     }
 
-    // Bloquear definitivamente qualquer tentativa de tocar músicas de background
-    // (mantém sons curtos como clique/notificação)
-    const allowedAudioSubstrings = ['/audio/click.mp3', '/audio/notification.mp3'];
+    // Bloquear definitivamente qualquer tentativa de tocar MÚSICA de background
+    // (deixa passar áudios normais do app, mas nunca permite faixas de música nem áudio em loop)
+    const blockedMusicSubstrings = [
+      '/audio/peso-do-ritmo',
+      '/audio/peso-neon',
+      '/audio/background',
+      '/audio/background-music',
+      '/audio/gym-pro-funk',
+      '/audio/cidade-vigilancia',
+    ];
 
     const originalPlay = HTMLMediaElement.prototype.play;
+
+    const shouldBlockAudio = (el: HTMLMediaElement, src: string) => {
+      // nunca permitir áudio em loop (isso vira "música de fundo")
+      if ((el as HTMLAudioElement).loop) return true;
+      return blockedMusicSubstrings.some((s) => src.includes(s));
+    };
 
     HTMLMediaElement.prototype.play = function (this: HTMLMediaElement, ...args: any[]) {
       try {
         const tag = (this.tagName || '').toUpperCase();
         const src = (this.currentSrc || (this as any).src || '').toString();
 
-        // Só bloqueia ÁUDIO (não vídeo). E só permite SFX conhecidos.
+        // Áudio: bloqueia apenas música de background (e qualquer loop)
         if (tag === 'AUDIO') {
-          const isAllowed = allowedAudioSubstrings.some((s) => src.includes(s));
-          if (!isAllowed) {
+          if (shouldBlockAudio(this, src)) {
             try {
               this.pause();
               this.currentTime = 0;
@@ -93,10 +105,76 @@ const App = () => {
             return Promise.resolve();
           }
         }
+
+        // Vídeo: se não tiver controles (ex: splash/background), sempre mudo
+        if (tag === 'VIDEO') {
+          try {
+            const videoEl = this as HTMLVideoElement;
+            if (!videoEl.controls) {
+              videoEl.muted = true;
+              videoEl.volume = 0;
+            }
+          } catch {}
+        }
       } catch {}
 
       return (originalPlay as any).apply(this, args);
     };
+
+    // Reforço: parar qualquer <audio> já tocando que seja música (ou loop)
+    try {
+      document.querySelectorAll('audio').forEach((el) => {
+        const media = el as HTMLAudioElement;
+        const src = (media.currentSrc || (media as any).src || '').toString();
+        if (shouldBlockAudio(media, src)) {
+          try {
+            media.pause();
+            media.currentTime = 0;
+          } catch {}
+        }
+      });
+
+      // Reforço: garantir que vídeos de fundo (sem controles) fiquem mudos
+      document.querySelectorAll('video').forEach((el) => {
+        const video = el as HTMLVideoElement;
+        try {
+          if (!video.controls) {
+            video.muted = true;
+            video.volume = 0;
+          }
+        } catch {}
+      });
+    } catch {}
+
+    // Observa elementos adicionados dinamicamente (ex: modais, splash, etc.)
+    const mo = new MutationObserver(() => {
+      try {
+        document.querySelectorAll('audio').forEach((el) => {
+          const media = el as HTMLAudioElement;
+          const src = (media.currentSrc || (media as any).src || '').toString();
+          if (shouldBlockAudio(media, src)) {
+            try {
+              media.pause();
+              media.currentTime = 0;
+            } catch {}
+          }
+        });
+        document.querySelectorAll('video').forEach((el) => {
+          const video = el as HTMLVideoElement;
+          try {
+            if (!video.controls) {
+              video.muted = true;
+              video.volume = 0;
+            }
+          } catch {}
+        });
+      } catch {}
+    });
+
+    try {
+      mo.observe(document.documentElement, { childList: true, subtree: true });
+    } catch {}
+
 
     // Register for online/offline events
     const handleOnline = () => {
@@ -107,6 +185,10 @@ const App = () => {
     window.addEventListener('online', handleOnline);
     return () => {
       window.removeEventListener('online', handleOnline);
+      try {
+        // @ts-ignore
+        mo?.disconnect?.();
+      } catch {}
       HTMLMediaElement.prototype.play = originalPlay;
     };
   }, []);

@@ -29,6 +29,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
     const attemptPlay = async () => {
       try {
         video.muted = true; // Sempre mudo para garantir autoplay
+        video.volume = 0;
         await video.play();
         setNeedsUserInteraction(false);
       } catch (err) {
@@ -73,8 +74,9 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
     if (!video) return;
 
     try {
-      // Com gesto do usuário, podemos tocar normalmente
-      video.muted = false;
+      // Mesmo com gesto do usuário, NÃO permitir áudio (evita música do vídeo)
+      video.muted = true;
+      video.volume = 0;
       await video.play();
       setNeedsUserInteraction(false);
     } catch (err) {
