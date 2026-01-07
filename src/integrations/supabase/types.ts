@@ -199,6 +199,38 @@ export type Database = {
           },
         ]
       }
+      agent_presence: {
+        Row: {
+          agent_id: string
+          device_info: string | null
+          id: string
+          is_online: boolean | null
+          last_seen: string | null
+        }
+        Insert: {
+          agent_id: string
+          device_info?: string | null
+          id?: string
+          is_online?: boolean | null
+          last_seen?: string | null
+        }
+        Update: {
+          agent_id?: string
+          device_info?: string | null
+          id?: string
+          is_online?: boolean | null
+          last_seen?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_presence_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: true
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agents: {
         Row: {
           avatar_url: string | null
@@ -255,6 +287,104 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      calendar_notes: {
+        Row: {
+          agent_id: string
+          color: string | null
+          content: string | null
+          created_at: string | null
+          id: string
+          is_reminder: boolean | null
+          note_date: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          agent_id: string
+          color?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          is_reminder?: boolean | null
+          note_date: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          agent_id?: string
+          color?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          is_reminder?: boolean | null
+          note_date?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_notes_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          channel_type: string
+          content: string
+          created_at: string | null
+          id: string
+          is_deleted: boolean | null
+          is_edited: boolean | null
+          reply_to: string | null
+          sender_id: string
+          team_channel: Database["public"]["Enums"]["team_type"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          channel_type: string
+          content: string
+          created_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          is_edited?: boolean | null
+          reply_to?: string | null
+          sender_id: string
+          team_channel?: Database["public"]["Enums"]["team_type"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          channel_type?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          is_edited?: boolean | null
+          reply_to?: string | null
+          sender_id?: string
+          team_channel?: Database["public"]["Enums"]["team_type"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deleted_items_trash: {
         Row: {
@@ -1663,6 +1793,44 @@ export type Database = {
           },
         ]
       }
+      shift_schedules: {
+        Row: {
+          agent_id: string
+          created_at: string | null
+          first_shift_date: string
+          id: string
+          is_locked: boolean | null
+          shift_pattern: string
+          updated_at: string | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string | null
+          first_shift_date: string
+          id?: string
+          is_locked?: boolean | null
+          shift_pattern?: string
+          updated_at?: string | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string | null
+          first_shift_date?: string
+          id?: string
+          is_locked?: boolean | null
+          shift_pattern?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_schedules_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: true
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_swaps: {
         Row: {
           compensation_date: string
@@ -2206,6 +2374,17 @@ export type Database = {
         Returns: string
       }
       generate_license_key: { Args: { prefix?: string }; Returns: string }
+      generate_shift_dates: {
+        Args: {
+          p_first_date: string
+          p_months_ahead?: number
+          p_pattern?: string
+        }
+        Returns: {
+          is_working: boolean
+          shift_date: string
+        }[]
+      }
       generate_student_id: { Args: never; Returns: string }
       get_current_agent_id: { Args: never; Returns: string }
       get_current_profile_id: { Args: never; Returns: string }

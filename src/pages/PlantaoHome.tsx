@@ -519,6 +519,35 @@ const PlantaoHome = () => {
                     </motion.div>
                   )}
                 </AnimatePresence>
+
+                {/* Admin Access - Stylized */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="mt-6 pt-4 border-t border-primary/10"
+                >
+                  <button
+                    onClick={() => {
+                      setShowMasterLogin(true);
+                      setShowAuthPanel(true);
+                    }}
+                    className="w-full group relative overflow-hidden"
+                  >
+                    <div className="flex items-center justify-center gap-3 py-3 px-4 rounded-lg border border-dashed border-primary/20 hover:border-primary/40 transition-all duration-300 bg-gradient-to-r from-transparent via-primary/5 to-transparent">
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                      <Crown className="w-4 h-4 text-amber-500/60 group-hover:text-amber-500 transition-colors" />
+                      <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
+                        Acesso Administrativo
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <div className="w-1 h-1 rounded-full bg-amber-500/40 group-hover:bg-amber-500 transition-colors" />
+                        <div className="w-1 h-1 rounded-full bg-amber-500/40 group-hover:bg-amber-500 transition-colors delay-75" />
+                        <div className="w-1 h-1 rounded-full bg-amber-500/40 group-hover:bg-amber-500 transition-colors delay-150" />
+                      </div>
+                    </div>
+                  </button>
+                </motion.div>
               </motion.div>
 
               {/* Decorative scan line effect */}
