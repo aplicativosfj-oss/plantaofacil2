@@ -1,44 +1,24 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const EFFECTS_KEY = 'plantao_effects_enabled';
 
+// Controla APENAS efeitos visuais (sem áudio)
 export const usePlantaoEffects = () => {
   const [effectsEnabled, setEffectsEnabled] = useState(() => {
     const stored = localStorage.getItem(EFFECTS_KEY);
-    return stored !== 'false'; // Enabled by default
+    return stored !== 'false'; // enabled by default
   });
-  
-  const clickSoundRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    // Pre-load click sound
-    clickSoundRef.current = new Audio('/audio/click.mp3');
-    clickSoundRef.current.volume = 0.3;
-    clickSoundRef.current.preload = 'auto';
-    
-    return () => {
-      if (clickSoundRef.current) {
-        clickSoundRef.current.pause();
-        clickSoundRef.current = null;
-      }
-    };
-  }, []);
 
   useEffect(() => {
     localStorage.setItem(EFFECTS_KEY, String(effectsEnabled));
   }, [effectsEnabled]);
 
-  const playClickSound = useCallback(() => {
-    if (!effectsEnabled || !clickSoundRef.current) return;
-    
-    // Clone and play to allow overlapping sounds
-    const sound = clickSoundRef.current.cloneNode() as HTMLAudioElement;
-    sound.volume = 0.3;
-    sound.play().catch(() => {});
-  }, [effectsEnabled]);
+  // Mantemos a API para não quebrar chamadas existentes,
+  // mas sem tocar nenhum som (pedido do usuário).
+  const playClickSound = useCallback(() => {}, []);
 
   const toggleEffects = useCallback(() => {
-    setEffectsEnabled(prev => !prev);
+    setEffectsEnabled((prev) => !prev);
   }, []);
 
   return {
@@ -50,3 +30,4 @@ export const usePlantaoEffects = () => {
 };
 
 export default usePlantaoEffects;
+

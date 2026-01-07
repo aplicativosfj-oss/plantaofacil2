@@ -238,26 +238,17 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem(SFX_STORAGE_KEY, String(newEnabled));
   }, [isSfxEnabled]);
 
-  // Efeitos sonoros sutis - apenas cliques habilitados
+  // Efeitos sonoros sutis - apenas clique (sem notificações / timers)
   const playClickSound = useCallback(() => {
     if (isSfxEnabled) createSinisterClick();
   }, [isSfxEnabled]);
   const playHoverSound = useCallback(() => {}, []);
-  const playNotificationSound = useCallback(() => {
-    if (isSfxEnabled) createNotificationSound();
-  }, [isSfxEnabled]);
-  const playSuccessSound = useCallback(() => {
-    if (isSfxEnabled) createSuccessSound();
-  }, [isSfxEnabled]);
-  const playTimerSound = useCallback(() => {
-    if (isSfxEnabled) createTimerSound();
-  }, [isSfxEnabled]);
-  const playTickSound = useCallback(() => {
-    if (isSfxEnabled) createTickSound();
-  }, [isSfxEnabled]);
-  const playCountdownBeep = useCallback(() => {
-    if (isSfxEnabled) createCountdownBeep();
-  }, [isSfxEnabled]);
+  const playNotificationSound = useCallback(() => {}, []);
+  const playSuccessSound = useCallback(() => {}, []);
+  const playTimerSound = useCallback(() => {}, []);
+  const playTickSound = useCallback(() => {}, []);
+  const playCountdownBeep = useCallback(() => {}, []);
+
 
   return (
     <AudioContextData.Provider
