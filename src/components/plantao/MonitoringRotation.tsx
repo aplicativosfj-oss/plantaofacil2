@@ -22,7 +22,7 @@ interface RotationSlot {
 }
 
 const MonitoringRotation = () => {
-  const [startTime, setStartTime] = useState('18:00');
+  const [startTime, setStartTime] = useState('22:00');
   const [endTime, setEndTime] = useState('06:00');
   const [agentCount, setAgentCount] = useState(4);
   const [rotationSlots, setRotationSlots] = useState<RotationSlot[]>([]);
