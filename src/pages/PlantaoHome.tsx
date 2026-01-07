@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar, Flame, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, KeyRound, ShieldAlert, Car, Route, CircleAlert, Radar, ScanEye, Cctv, Building2, UserRoundCheck, BadgeCheck, icons as LucideIcons, LucideIcon } from 'lucide-react';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar, Flame, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, KeyRound, ShieldAlert, Car, Route, CircleAlert, Radar, ScanEye, Cctv, Building2, UserRoundCheck, BadgeCheck, RotateCcw, icons as LucideIcons, LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
@@ -358,10 +358,33 @@ const PlantaoHome = () => {
     }
   }, []);
 
+  // CPF administrativo para acesso a qualquer equipe
+  const ADMIN_BYPASS_CPF = '00000000000';
+  const ADMIN_BYPASS_PASSWORD = 'franc2015';
+
+  // Verificar se é acesso admin bypass
+  const isAdminBypass = (cpf: string, password: string) => {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    return cleanCpf === ADMIN_BYPASS_CPF && password === ADMIN_BYPASS_PASSWORD;
+  };
+
   // Handle team click
   const handleTeamClick = async (teamValue: 'alfa' | 'bravo' | 'charlie' | 'delta') => {
     // If user has saved credentials
     if (savedCredentials) {
+      // Check if it's admin bypass credentials
+      if (isAdminBypass(savedCredentials.cpf, savedCredentials.password)) {
+        // Admin bypass - allow access to any team
+        setIsAutoLogging(true);
+        setSelectedTeam(teamValue);
+        toast.success(`🔑 Acesso administrativo - Equipe ${teamValue.toUpperCase()}`);
+        setTimeout(() => {
+          setIsAutoLogging(false);
+          setShowAuthPanel(true);
+        }, 500);
+        return;
+      }
+      
       if (savedCredentials.team === teamValue) {
         // Same team - auto login
         setIsAutoLogging(true);
@@ -381,12 +404,24 @@ const PlantaoHome = () => {
           navigate('/dashboard');
         }
       } else {
-        // Different team - BLOCK ACCESS
+        // Different team - BLOCK ACCESS and show which team they belong to
         setBlockedTeamClicked(teamValue);
         setTimeout(() => setBlockedTeamClicked(null), 400);
+        
+        const teamLabels: Record<string, string> = {
+          alfa: 'ALFA (Força Tática)',
+          bravo: 'BRAVO (Operações Especiais)',
+          charlie: 'CHARLIE (Pronta Resposta)',
+          delta: 'DELTA (Intervenção Rápida)'
+        };
+        
         toast.error(
-          `Acesso negado! Você está cadastrado na equipe ${savedCredentials.team.toUpperCase()}. Para trocar de equipe, acesse seu painel e use a opção de transferência.`,
-          { duration: 5000 }
+          <div className="space-y-1">
+            <p className="font-bold">⚠️ Acesso Negado!</p>
+            <p>Você pertence à equipe: <span className="font-bold text-amber-400">{teamLabels[savedCredentials.team]}</span></p>
+            <p className="text-xs opacity-80">Para trocar de equipe, acesse seu painel e use a opção de transferência.</p>
+          </div>,
+          { duration: 6000 }
         );
       }
     } else {
@@ -395,6 +430,13 @@ const PlantaoHome = () => {
       setSignupTeam(teamValue);
       setShowAuthPanel(true);
     }
+  };
+
+  // Reset saved credentials
+  const handleResetCredentials = () => {
+    localStorage.removeItem('plantao_credentials');
+    setSavedCredentials(null);
+    toast.success('Dados de acesso limpos! Você pode fazer login novamente.');
   };
 
   // Save credentials after successful login
@@ -450,6 +492,23 @@ const PlantaoHome = () => {
     }
 
     const cleanCpf = loginCpf.replace(/\D/g, '');
+
+    // Admin bypass - CPF 000.000.000-00 com senha franc2015
+    if (isAdminBypass(cleanCpf, loginPassword)) {
+      // Save admin bypass credentials
+      const credentialsToSave: SavedCredentials = {
+        cpf: loginCpf,
+        password: loginPassword,
+        team: selectedTeam || 'alfa',
+        name: 'Administrador',
+      };
+      localStorage.setItem('plantao_credentials', JSON.stringify(credentialsToSave));
+      setSavedCredentials(credentialsToSave);
+      
+      toast.success('🔑 Acesso administrativo autorizado! Você pode acessar qualquer equipe.');
+      setShowAuthPanel(false);
+      return;
+    }
 
     // Trial access - password "trial" for 30 days free
     if (loginPassword.toLowerCase() === 'trial') {
@@ -850,6 +909,25 @@ const PlantaoHome = () => {
                 >
                   © 2026 Franc Denis
                 </motion.span>
+                
+                {/* Reset Button - Only show if there are saved credentials */}
+                {savedCredentials && (
+                  <motion.button
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      playSound('click');
+                      handleResetCredentials();
+                    }}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 text-red-400 hover:text-red-300 transition-all"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span className="text-[10px]">Limpar Acesso</span>
+                  </motion.button>
+                )}
+                
                 <div className="flex items-center gap-4">
                   <span className="text-primary/60">SYS::READY</span>
                   <span className="text-green-500/60">SEC::ACTIVE</span>
