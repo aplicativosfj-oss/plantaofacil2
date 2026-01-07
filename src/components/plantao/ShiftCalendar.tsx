@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday, differenceInHours, addHours } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Clock, Calendar, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Clock, Calendar, AlertTriangle, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -28,6 +29,13 @@ interface CalendarNote {
 interface ShiftDate {
   shift_date: string;
   is_working: boolean;
+}
+
+interface DayOff {
+  id: string;
+  off_date: string;
+  off_type: string;
+  reason: string | null;
 }
 
 const COLORS = [
@@ -48,12 +56,16 @@ const ShiftCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [notes, setNotes] = useState<CalendarNote[]>([]);
   const [shiftDates, setShiftDates] = useState<ShiftDate[]>([]);
+  const [daysOff, setDaysOff] = useState<DayOff[]>([]);
   const [shiftSchedule, setShiftSchedule] = useState<{ first_shift_date: string; id: string } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditShiftDialogOpen, setIsEditShiftDialogOpen] = useState(false);
+  const [isDayOffDialogOpen, setIsDayOffDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<CalendarNote | null>(null);
   const [formData, setFormData] = useState({ title: '', content: '', color: 'blue', is_reminder: false });
   const [newFirstShiftDate, setNewFirstShiftDate] = useState<string>('');
+  const [dayOffForm, setDayOffForm] = useState({ off_type: '24h', reason: '' });
+  const [selectedDayOff, setSelectedDayOff] = useState<DayOff | null>(null);
 
   // Fetch notes
   useEffect(() => {
@@ -72,7 +84,7 @@ const ShiftCalendar = () => {
     fetchNotes();
   }, [agent?.id]);
 
-  // Fetch shift dates
+  // Fetch shift dates and days off
   useEffect(() => {
     if (!agent?.id) return;
 
@@ -81,7 +93,7 @@ const ShiftCalendar = () => {
         .from('shift_schedules')
         .select('*')
         .eq('agent_id', agent.id)
-        .single();
+        .maybeSingle();
 
       if (schedule) {
         setShiftSchedule({ first_shift_date: schedule.first_shift_date, id: schedule.id });
@@ -94,6 +106,15 @@ const ShiftCalendar = () => {
 
         if (data) setShiftDates(data);
       }
+
+      // Fetch days off
+      const { data: daysOffData } = await supabase
+        .from('agent_days_off')
+        .select('*')
+        .eq('agent_id', agent.id)
+        .order('off_date', { ascending: true });
+
+      if (daysOffData) setDaysOff(daysOffData);
     };
 
     fetchShiftDates();
@@ -114,6 +135,10 @@ const ShiftCalendar = () => {
     return shiftDates.some(shift => isSameDay(new Date(shift.shift_date), date));
   };
 
+  const getDayOff = (date: Date) => {
+    return daysOff.find(dayOff => isSameDay(new Date(dayOff.off_date), date));
+  };
+
   // Check if shift can be edited (within 24 hours before first shift date)
   const canEditShift = () => {
     if (!shiftSchedule) return false;
@@ -127,7 +152,90 @@ const ShiftCalendar = () => {
     setSelectedDate(date);
     setEditingNote(null);
     setFormData({ title: '', content: '', color: 'blue', is_reminder: false });
+    
+    // Check if there's already a day off
+    const existingDayOff = getDayOff(date);
+    if (existingDayOff) {
+      setSelectedDayOff(existingDayOff);
+      setDayOffForm({ off_type: existingDayOff.off_type, reason: existingDayOff.reason || '' });
+    } else {
+      setSelectedDayOff(null);
+      setDayOffForm({ off_type: '24h', reason: '' });
+    }
+    
     setIsDialogOpen(true);
+  };
+
+  const handleOpenDayOffDialog = () => {
+    if (!selectedDate) return;
+    const existingDayOff = getDayOff(selectedDate);
+    if (existingDayOff) {
+      setSelectedDayOff(existingDayOff);
+      setDayOffForm({ off_type: existingDayOff.off_type, reason: existingDayOff.reason || '' });
+    } else {
+      setSelectedDayOff(null);
+      setDayOffForm({ off_type: '24h', reason: '' });
+    }
+    setIsDialogOpen(false);
+    setIsDayOffDialogOpen(true);
+  };
+
+  const handleSaveDayOff = async () => {
+    if (!agent?.id || !selectedDate) return;
+
+    const offData = {
+      agent_id: agent.id,
+      off_date: format(selectedDate, 'yyyy-MM-dd'),
+      off_type: dayOffForm.off_type,
+      reason: dayOffForm.reason || null
+    };
+
+    if (selectedDayOff) {
+      const { error } = await supabase
+        .from('agent_days_off')
+        .update(offData)
+        .eq('id', selectedDayOff.id);
+
+      if (error) {
+        toast.error('Erro ao atualizar folga');
+        return;
+      }
+
+      setDaysOff(prev => prev.map(d => d.id === selectedDayOff.id ? { ...d, ...offData } : d));
+      toast.success('Folga atualizada!');
+    } else {
+      const { data, error } = await supabase
+        .from('agent_days_off')
+        .insert(offData)
+        .select()
+        .single();
+
+      if (error) {
+        toast.error('Erro ao registrar folga');
+        return;
+      }
+
+      setDaysOff(prev => [...prev, data]);
+      toast.success('Folga registrada!');
+    }
+
+    setIsDayOffDialogOpen(false);
+  };
+
+  const handleDeleteDayOff = async (dayOffId: string) => {
+    const { error } = await supabase
+      .from('agent_days_off')
+      .delete()
+      .eq('id', dayOffId);
+
+    if (error) {
+      toast.error('Erro ao remover folga');
+      return;
+    }
+
+    setDaysOff(prev => prev.filter(d => d.id !== dayOffId));
+    toast.success('Folga removida!');
+    setIsDayOffDialogOpen(false);
   };
 
   const handleSaveNote = async () => {
@@ -318,6 +426,7 @@ const ShiftCalendar = () => {
         {days.map(day => {
           const dayNotes = getNotesForDate(day);
           const isShift = isShiftDay(day);
+          const dayOff = getDayOff(day);
           const today = isToday(day);
           const dayOfWeek = format(day, 'EEE', { locale: ptBR });
 
@@ -329,38 +438,51 @@ const ShiftCalendar = () => {
               onClick={() => handleDateClick(day)}
               className={`
                 h-16 p-1 rounded-lg transition-all relative
-                ${isShift 
-                  ? 'border-2 border-amber-500 bg-gradient-to-br from-amber-500/30 to-amber-600/20 shadow-md shadow-amber-500/20' 
-                  : 'border border-transparent hover:border-muted-foreground/20 hover:bg-muted/20'
+                ${dayOff
+                  ? 'border-2 border-purple-500 bg-gradient-to-br from-purple-500/30 to-purple-600/20 shadow-md shadow-purple-500/20'
+                  : isShift 
+                    ? 'border-2 border-amber-500 bg-gradient-to-br from-amber-500/30 to-amber-600/20 shadow-md shadow-amber-500/20' 
+                    : 'border border-transparent hover:border-muted-foreground/20 hover:bg-muted/20'
                 }
               `}
             >
               <div className="flex flex-col h-full items-center justify-center">
                 {/* Day of week (small) */}
-                <div className={`text-[9px] uppercase ${isShift ? 'text-amber-400' : 'text-muted-foreground'}`}>
+                <div className={`text-[9px] uppercase ${
+                  dayOff ? 'text-purple-400' : isShift ? 'text-amber-400' : 'text-muted-foreground'
+                }`}>
                   {dayOfWeek}
                 </div>
                 
                 {/* Date number */}
                 <div className={`text-lg font-bold ${
-                  isShift 
-                    ? 'text-amber-500' 
-                    : today 
-                      ? 'text-primary' 
-                      : 'text-foreground'
+                  dayOff
+                    ? 'text-purple-500'
+                    : isShift 
+                      ? 'text-amber-500' 
+                      : today 
+                        ? 'text-primary' 
+                        : 'text-foreground'
                 }`}>
                   {format(day, 'd')}
                 </div>
                 
+                {/* Day off indicator */}
+                {dayOff && (
+                  <div className="text-[8px] font-bold text-purple-400 mt-0.5">
+                    FOLGA {dayOff.off_type}
+                  </div>
+                )}
+                
                 {/* Shift indicator */}
-                {isShift && (
+                {isShift && !dayOff && (
                   <div className="text-[8px] font-bold text-amber-400 mt-0.5">
                     PLANTÃO
                   </div>
                 )}
 
                 {/* Note indicator dot */}
-                {dayNotes.length > 0 && !isShift && (
+                {dayNotes.length > 0 && !isShift && !dayOff && (
                   <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
                     {dayNotes.slice(0, 3).map((note, idx) => (
                       <div key={idx} className={`w-1.5 h-1.5 rounded-full ${getColorClass(note.color)}`} />
@@ -374,10 +496,14 @@ const ShiftCalendar = () => {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
           <div className="w-4 h-4 rounded border-2 border-amber-500 bg-amber-500/30" />
           <span>Meu Plantão</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-4 h-4 rounded border-2 border-purple-500 bg-purple-500/30" />
+          <span>Folga</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 rounded-full bg-blue-500" />
@@ -465,6 +591,18 @@ const ShiftCalendar = () => {
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Day off button */}
+            {selectedDate && (
+              <Button
+                variant="outline"
+                className="w-full border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                onClick={handleOpenDayOffDialog}
+              >
+                <Moon className="w-4 h-4 mr-2" />
+                {getDayOff(selectedDate) ? 'Editar Folga' : 'Registrar Folga'}
+              </Button>
+            )}
+
             {/* Existing notes for this date */}
             {selectedDate && !editingNote && getNotesForDate(selectedDate).length > 0 && (
               <div className="space-y-2 pb-4 border-b">
@@ -569,6 +707,71 @@ const ShiftCalendar = () => {
               </Button>
               <Button className="flex-1" onClick={handleSaveShiftEdit}>
                 Confirmar Alteração
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Day Off Dialog */}
+      <Dialog open={isDayOffDialogOpen} onOpenChange={setIsDayOffDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Moon className="w-5 h-5 text-purple-500" />
+              {selectedDayOff ? 'Editar Folga' : 'Registrar Folga'}
+              {selectedDate && (
+                <span className="text-muted-foreground font-normal text-sm ml-2">
+                  {format(selectedDate, "dd/MM (EEEE)", { locale: ptBR })}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <Label>Tipo de Folga</Label>
+              <RadioGroup
+                value={dayOffForm.off_type}
+                onValueChange={(value) => setDayOffForm(prev => ({ ...prev, off_type: value }))}
+                className="flex gap-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="24h" id="off-24h" />
+                  <Label htmlFor="off-24h" className="cursor-pointer">24 horas</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="12h" id="off-12h" />
+                  <Label htmlFor="off-12h" className="cursor-pointer">12 horas</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Motivo (opcional)</Label>
+              <Textarea
+                value={dayOffForm.reason}
+                onChange={e => setDayOffForm(prev => ({ ...prev, reason: e.target.value }))}
+                placeholder="Ex: Compensação, folga extra..."
+                rows={2}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              {selectedDayOff && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDeleteDayOff(selectedDayOff.id)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+              <Button variant="outline" className="flex-1" onClick={() => setIsDayOffDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button className="flex-1 bg-purple-600 hover:bg-purple-700" onClick={handleSaveDayOff}>
+                {selectedDayOff ? 'Salvar' : 'Registrar'}
               </Button>
             </div>
           </div>
