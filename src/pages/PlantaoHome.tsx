@@ -363,15 +363,17 @@ const PlantaoHome = () => {
   const cpfValidation = useAgentCpfValidation(signupCpf.replace(/\D/g, ''));
   const registrationValidation = useAgentRegistrationValidation(signupRegistration);
   
-  // Limpeza profunda dos formulários e credenciais (reset único)
+  // Limpeza profunda dos formulários e credenciais (reset v2 - limpa tudo)
   useEffect(() => {
-    const RESET_KEY = 'plantao_full_reset_v1';
+    const RESET_KEY = 'plantao_full_reset_v2';
     if (!localStorage.getItem(RESET_KEY)) {
       // Limpa todas as credenciais e dados salvos do Plantão
       localStorage.removeItem('plantao_credentials');
       localStorage.removeItem('plantao_master_session');
       localStorage.removeItem('plantao_theme');
       localStorage.removeItem('plantao_biometric_registered');
+      localStorage.removeItem('plantao_intro_shown');
+      localStorage.removeItem('plantao_full_reset_v1');
       sessionStorage.clear();
       localStorage.setItem(RESET_KEY, '1');
     }
