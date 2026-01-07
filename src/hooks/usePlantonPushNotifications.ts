@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+
 interface PlantaoPushSettings {
   enabled: boolean;
   shiftReminders: boolean;
