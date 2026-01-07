@@ -27,7 +27,7 @@ import GlobalChat from '@/components/plantao/GlobalChat';
 import ShiftCalendar from '@/components/plantao/ShiftCalendar';
 import FirstShiftSetup from '@/components/plantao/FirstShiftSetup';
 import OnlineIndicator from '@/components/plantao/OnlineIndicator';
-import plantaoLogo from '@/assets/plantao-logo.png';
+import plantaoLogo from '@/assets/plantao-pro-logo.png';
 
 interface Shift {
   id: string;

@@ -10,10 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save } from 'lucide-react';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import plantaoLogo from '@/assets/plantao-logo.png';
+import plantaoLogo from '@/assets/plantao-pro-logo.png';
 import plantaoBg from '@/assets/plantao-bg.png';
 import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
 import ThemeSelector from '@/components/plantao/ThemeSelector';
@@ -150,6 +150,7 @@ const PlantaoHome = () => {
   const [signupTeam, setSignupTeam] = useState<'alfa' | 'bravo' | 'charlie' | 'delta' | ''>('');
   const [signupPhone, setSignupPhone] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
+  const [signupBirthDate, setSignupBirthDate] = useState('');
   const [signupError, setSignupError] = useState('');
   const [cpfError, setCpfError] = useState('');
 
@@ -959,6 +960,19 @@ const PlantaoHome = () => {
 
                           <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-1">
+                              <Label htmlFor="signup-birthdate" className="flex items-center gap-2 text-xs">
+                                <Calendar className="w-3.5 h-3.5" /> Data Nascimento
+                              </Label>
+                              <Input
+                                id="signup-birthdate"
+                                type="date"
+                                value={signupBirthDate}
+                                onChange={(e) => setSignupBirthDate(e.target.value)}
+                                className="bg-background/50 border-border/50 h-9"
+                              />
+                            </div>
+                            
+                            <div className="space-y-1">
                               <Label htmlFor="signup-city" className="flex items-center gap-2 text-xs">
                                 <MapPin className="w-3.5 h-3.5" /> Cidade *
                               </Label>
@@ -973,22 +987,22 @@ const PlantaoHome = () => {
                                 </SelectContent>
                               </Select>
                             </div>
+                          </div>
 
-                            <div className="space-y-1">
-                              <Label htmlFor="signup-unit" className="flex items-center gap-2 text-xs">
-                                <Building className="w-3.5 h-3.5" /> Unidade *
-                              </Label>
-                              <Select value={signupUnit} onValueChange={setSignupUnit}>
-                                <SelectTrigger className="bg-background/50 border-border/50 h-9">
-                                  <SelectValue placeholder="Selecione" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {UNITS.map((unit) => (
-                                    <SelectItem key={unit} value={unit}>{unit}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="signup-unit" className="flex items-center gap-2 text-xs">
+                              <Building className="w-3.5 h-3.5" /> Unidade *
+                            </Label>
+                            <Select value={signupUnit} onValueChange={setSignupUnit}>
+                              <SelectTrigger className="bg-background/50 border-border/50 h-9">
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {UNITS.map((unit) => (
+                                  <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
 
                           {/* Team Selection - show pre-selected team or selector */}
