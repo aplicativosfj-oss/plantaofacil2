@@ -3,14 +3,47 @@ import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Users, Check } from 'lucide-react';
+import { ArrowLeft, Users, Check, Shield } from 'lucide-react';
 import { toast } from 'sonner';
+import teamsBg from '@/assets/teams-bg.png';
 
 const teams = [
-  { id: 'alfa', name: 'Equipe Alfa', color: 'bg-team-alfa' },
-  { id: 'bravo', name: 'Equipe Bravo', color: 'bg-team-bravo' },
-  { id: 'charlie', name: 'Equipe Charlie', color: 'bg-team-charlie' },
-  { id: 'delta', name: 'Equipe Delta', color: 'bg-team-delta' },
+  { 
+    id: 'alfa', 
+    name: 'Equipe Alfa', 
+    color: 'from-blue-500 to-blue-700',
+    bgColor: 'bg-blue-500/20',
+    borderColor: 'border-blue-500',
+    textColor: 'text-blue-400',
+    icon: '🐺'
+  },
+  { 
+    id: 'bravo', 
+    name: 'Equipe Bravo', 
+    color: 'from-amber-500 to-orange-600',
+    bgColor: 'bg-amber-500/20',
+    borderColor: 'border-amber-500',
+    textColor: 'text-amber-400',
+    icon: '🦅'
+  },
+  { 
+    id: 'charlie', 
+    name: 'Equipe Charlie', 
+    color: 'from-sky-400 to-blue-600',
+    bgColor: 'bg-sky-500/20',
+    borderColor: 'border-sky-500',
+    textColor: 'text-sky-400',
+    icon: '⭐'
+  },
+  { 
+    id: 'delta', 
+    name: 'Equipe Delta', 
+    color: 'from-green-500 to-emerald-600',
+    bgColor: 'bg-green-500/20',
+    borderColor: 'border-green-500',
+    textColor: 'text-green-400',
+    icon: '💀'
+  },
 ];
 
 interface Props {
@@ -47,37 +80,74 @@ const TeamSelector = ({ onBack, onTeamChanged }: Props) => {
 
   return (
     <div className="space-y-4">
-      <Button variant="ghost" onClick={onBack} className="mb-4">
+      <Button variant="ghost" onClick={onBack} className="mb-2">
         <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
       </Button>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" /> Selecionar Equipe
+      {/* Team Banner */}
+      <div className="relative rounded-xl overflow-hidden h-48 mb-6">
+        <img 
+          src={teamsBg} 
+          alt="Equipes" 
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+        <div className="absolute bottom-4 left-4 right-4">
+          <h2 className="text-2xl font-display tracking-wide text-foreground flex items-center gap-2">
+            <Shield className="w-6 h-6 text-primary" />
+            Escolha sua Equipe
+          </h2>
+          <p className="text-sm text-muted-foreground">Selecione a equipe à qual você pertence</p>
+        </div>
+      </div>
+
+      <Card className="border-border/50 bg-card/80 backdrop-blur">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Users className="w-5 h-5" /> Equipes Disponíveis
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {teams.map((team) => (
-            <button
-              key={team.id}
-              onClick={() => handleSelectTeam(team.id)}
-              disabled={loading || agent?.current_team === team.id}
-              className={`w-full p-4 rounded-lg border-2 flex items-center justify-between transition-all ${
-                agent?.current_team === team.id
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-4 h-4 rounded-full ${team.color}`} />
-                <span className="font-medium">{team.name}</span>
-              </div>
-              {agent?.current_team === team.id && <Check className="w-5 h-5 text-primary" />}
-            </button>
-          ))}
+        <CardContent className="grid grid-cols-2 gap-3">
+          {teams.map((team) => {
+            const isSelected = agent?.current_team === team.id;
+            
+            return (
+              <button
+                key={team.id}
+                onClick={() => handleSelectTeam(team.id)}
+                disabled={loading || isSelected}
+                className={`
+                  relative p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 
+                  transition-all duration-300 min-h-[100px]
+                  ${isSelected 
+                    ? `${team.borderColor} ${team.bgColor} ring-2 ring-offset-2 ring-offset-background ring-primary/50` 
+                    : 'border-border/50 hover:border-primary/50 bg-background/50 hover:bg-background/80'
+                  }
+                `}
+              >
+                <span className="text-3xl">{team.icon}</span>
+                <span className={`font-bold text-sm ${isSelected ? team.textColor : 'text-foreground'}`}>
+                  {team.name.replace('Equipe ', '')}
+                </span>
+                {isSelected && (
+                  <div className="absolute top-2 right-2">
+                    <Check className={`w-5 h-5 ${team.textColor}`} />
+                  </div>
+                )}
+                {isSelected && (
+                  <span className="text-xs text-muted-foreground">Atual</span>
+                )}
+              </button>
+            );
+          })}
         </CardContent>
       </Card>
+
+      {agent?.current_team && (
+        <p className="text-center text-sm text-muted-foreground">
+          Você está atualmente na <strong className="text-primary">Equipe {agent.current_team.charAt(0).toUpperCase() + agent.current_team.slice(1)}</strong>
+        </p>
+      )}
     </div>
   );
 };

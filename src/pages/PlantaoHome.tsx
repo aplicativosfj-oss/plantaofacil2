@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle } from 'lucide-react';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import plantaoLogo from '@/assets/plantao-logo.png';
+import plantaoBg from '@/assets/plantao-bg.png';
 
 const formatCPF = (value: string) => {
   const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -100,229 +102,246 @@ const PlantaoHome = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-dark flex flex-col">
-      {/* Header */}
-      <header className="py-6 px-4">
-        <div className="container mx-auto flex items-center justify-center gap-3">
-          <Shield className="w-10 h-10 text-primary" />
-          <h1 className="text-3xl md:text-4xl font-display tracking-wider text-foreground">
-            PLANTÃO<span className="text-primary">PRO</span>
-          </h1>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col relative overflow-hidden">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${plantaoBg})` }}
+      />
+      <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
 
-      {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
-        >
-          <Card className="border-border/50 bg-card/80 backdrop-blur shadow-card">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl font-display tracking-wide">
-                Acesso ao Sistema
-              </CardTitle>
-              <CardDescription>
-                Sistema de Gestão de Plantões - Unidade de Feijó/AC
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent>
-              <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="login">Entrar</TabsTrigger>
-                  <TabsTrigger value="signup">Cadastrar</TabsTrigger>
-                </TabsList>
-                
-                {/* Login Tab */}
-                <TabsContent value="login">
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="login-cpf" className="flex items-center gap-2">
-                        <IdCard className="w-4 h-4" /> CPF
-                      </Label>
-                      <Input
-                        id="login-cpf"
-                        type="text"
-                        placeholder="000.000.000-00"
-                        value={loginCpf}
-                        onChange={(e) => setLoginCpf(formatCPF(e.target.value))}
-                        className="bg-background/50"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="login-password" className="flex items-center gap-2">
-                        <Lock className="w-4 h-4" /> Senha
-                      </Label>
-                      <Input
-                        id="login-password"
-                        type="password"
-                        placeholder="••••••"
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        className="bg-background/50"
-                      />
-                    </div>
+      {/* Content */}
+      <div className="relative z-10 flex flex-col min-h-screen">
+        {/* Header with Logo */}
+        <header className="py-8 px-4">
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="container mx-auto flex flex-col items-center justify-center"
+          >
+            <img 
+              src={plantaoLogo} 
+              alt="PlantãoPro" 
+              className="h-32 md:h-40 w-auto object-contain drop-shadow-2xl"
+            />
+          </motion.div>
+        </header>
 
-                    {loginError && (
-                      <div className="flex items-center gap-2 text-destructive text-sm">
-                        <AlertCircle className="w-4 h-4" />
-                        {loginError}
-                      </div>
-                    )}
-
-                    <Button
-                      type="submit"
-                      className="w-full bg-primary hover:bg-primary/90"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      ) : null}
-                      Entrar
-                    </Button>
-                  </form>
-                </TabsContent>
-
-                {/* Signup Tab */}
-                <TabsContent value="signup">
-                  <form onSubmit={handleSignup} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-name" className="flex items-center gap-2">
-                        <User className="w-4 h-4" /> Nome Completo *
-                      </Label>
-                      <Input
-                        id="signup-name"
-                        type="text"
-                        placeholder="Seu nome completo"
-                        value={signupName}
-                        onChange={(e) => setSignupName(e.target.value)}
-                        className="bg-background/50"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-cpf" className="flex items-center gap-2">
-                        <IdCard className="w-4 h-4" /> CPF *
-                      </Label>
-                      <Input
-                        id="signup-cpf"
-                        type="text"
-                        placeholder="000.000.000-00"
-                        value={signupCpf}
-                        onChange={(e) => setSignupCpf(formatCPF(e.target.value))}
-                        className="bg-background/50"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-registration" className="flex items-center gap-2">
-                        <Shield className="w-4 h-4" /> Matrícula
-                      </Label>
-                      <Input
-                        id="signup-registration"
-                        type="text"
-                        placeholder="Matrícula funcional"
-                        value={signupRegistration}
-                        onChange={(e) => setSignupRegistration(e.target.value)}
-                        className="bg-background/50"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-phone" className="flex items-center gap-2">
-                          <Phone className="w-4 h-4" /> Telefone
+        {/* Main Content */}
+        <main className="flex-1 flex items-center justify-center px-4 py-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="w-full max-w-md"
+          >
+            <Card className="border-primary/20 bg-card/90 backdrop-blur-md shadow-2xl shadow-primary/10">
+              <CardHeader className="text-center pb-4">
+                <CardTitle className="text-xl font-display tracking-wide flex items-center justify-center gap-2">
+                  <Shield className="w-5 h-5 text-primary" />
+                  Acesso ao Sistema
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Gestão de Plantões - Agentes Socioeducativos
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent>
+                <Tabs defaultValue="login" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="login">Entrar</TabsTrigger>
+                    <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+                  </TabsList>
+                  
+                  {/* Login Tab */}
+                  <TabsContent value="login">
+                    <form onSubmit={handleLogin} className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="login-cpf" className="flex items-center gap-2 text-sm">
+                          <IdCard className="w-4 h-4" /> CPF
                         </Label>
                         <Input
-                          id="signup-phone"
-                          type="tel"
-                          placeholder="(00) 00000-0000"
-                          value={signupPhone}
-                          onChange={(e) => setSignupPhone(formatPhone(e.target.value))}
-                          className="bg-background/50"
+                          id="login-cpf"
+                          type="text"
+                          placeholder="000.000.000-00"
+                          value={loginCpf}
+                          onChange={(e) => setLoginCpf(formatCPF(e.target.value))}
+                          className="bg-background/50 border-border/50"
+                        />
+                      </div>
+                      
+                      <div className="space-y-1.5">
+                        <Label htmlFor="login-password" className="flex items-center gap-2 text-sm">
+                          <Lock className="w-4 h-4" /> Senha
+                        </Label>
+                        <Input
+                          id="login-password"
+                          type="password"
+                          placeholder="••••••"
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
+                          className="bg-background/50 border-border/50"
                         />
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-email" className="flex items-center gap-2">
-                          <Mail className="w-4 h-4" /> Email
+                      {loginError && (
+                        <div className="flex items-center gap-2 text-destructive text-sm">
+                          <AlertCircle className="w-4 h-4" />
+                          {loginError}
+                        </div>
+                      )}
+
+                      <Button
+                        type="submit"
+                        className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : null}
+                        Entrar
+                      </Button>
+                    </form>
+                  </TabsContent>
+
+                  {/* Signup Tab */}
+                  <TabsContent value="signup">
+                    <form onSubmit={handleSignup} className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="signup-name" className="flex items-center gap-2 text-sm">
+                          <User className="w-4 h-4" /> Nome Completo *
                         </Label>
                         <Input
-                          id="signup-email"
-                          type="email"
-                          placeholder="seu@email.com"
-                          value={signupEmail}
-                          onChange={(e) => setSignupEmail(e.target.value)}
-                          className="bg-background/50"
+                          id="signup-name"
+                          type="text"
+                          placeholder="Seu nome completo"
+                          value={signupName}
+                          onChange={(e) => setSignupName(e.target.value)}
+                          className="bg-background/50 border-border/50"
                         />
                       </div>
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password" className="flex items-center gap-2">
-                        <Lock className="w-4 h-4" /> Senha *
-                      </Label>
-                      <Input
-                        id="signup-password"
-                        type="password"
-                        placeholder="Mínimo 6 caracteres"
-                        value={signupPassword}
-                        onChange={(e) => setSignupPassword(e.target.value)}
-                        className="bg-background/50"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-confirm-password" className="flex items-center gap-2">
-                        <Lock className="w-4 h-4" /> Confirmar Senha *
-                      </Label>
-                      <Input
-                        id="signup-confirm-password"
-                        type="password"
-                        placeholder="Repita a senha"
-                        value={signupConfirmPassword}
-                        onChange={(e) => setSignupConfirmPassword(e.target.value)}
-                        className="bg-background/50"
-                      />
-                    </div>
-
-                    {signupError && (
-                      <div className="flex items-center gap-2 text-destructive text-sm">
-                        <AlertCircle className="w-4 h-4" />
-                        {signupError}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="signup-cpf" className="flex items-center gap-2 text-sm">
+                          <IdCard className="w-4 h-4" /> CPF *
+                        </Label>
+                        <Input
+                          id="signup-cpf"
+                          type="text"
+                          placeholder="000.000.000-00"
+                          value={signupCpf}
+                          onChange={(e) => setSignupCpf(formatCPF(e.target.value))}
+                          className="bg-background/50 border-border/50"
+                        />
                       </div>
-                    )}
 
-                    <Button
-                      type="submit"
-                      className="w-full bg-primary hover:bg-primary/90"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      ) : null}
-                      Criar Conta
-                    </Button>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="signup-registration" className="flex items-center gap-2 text-sm">
+                          <Shield className="w-4 h-4" /> Matrícula
+                        </Label>
+                        <Input
+                          id="signup-registration"
+                          type="text"
+                          placeholder="Matrícula funcional"
+                          value={signupRegistration}
+                          onChange={(e) => setSignupRegistration(e.target.value)}
+                          className="bg-background/50 border-border/50"
+                        />
+                      </div>
 
-                    <p className="text-xs text-muted-foreground text-center">
-                      * Campos obrigatórios
-                    </p>
-                  </form>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </main>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="signup-phone" className="flex items-center gap-2 text-sm">
+                            <Phone className="w-4 h-4" /> Telefone
+                          </Label>
+                          <Input
+                            id="signup-phone"
+                            type="tel"
+                            placeholder="(00) 00000-0000"
+                            value={signupPhone}
+                            onChange={(e) => setSignupPhone(formatPhone(e.target.value))}
+                            className="bg-background/50 border-border/50"
+                          />
+                        </div>
 
-      {/* Footer */}
-      <footer className="py-4 text-center text-muted-foreground text-sm">
-        <p>Agentes Socioeducativos - Unidade de Feijó/AC</p>
-      </footer>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="signup-email" className="flex items-center gap-2 text-sm">
+                            <Mail className="w-4 h-4" /> Email
+                          </Label>
+                          <Input
+                            id="signup-email"
+                            type="email"
+                            placeholder="seu@email.com"
+                            value={signupEmail}
+                            onChange={(e) => setSignupEmail(e.target.value)}
+                            className="bg-background/50 border-border/50"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="signup-password" className="flex items-center gap-2 text-sm">
+                          <Lock className="w-4 h-4" /> Senha *
+                        </Label>
+                        <Input
+                          id="signup-password"
+                          type="password"
+                          placeholder="Mínimo 6 caracteres"
+                          value={signupPassword}
+                          onChange={(e) => setSignupPassword(e.target.value)}
+                          className="bg-background/50 border-border/50"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="signup-confirm-password" className="flex items-center gap-2 text-sm">
+                          <Lock className="w-4 h-4" /> Confirmar Senha *
+                        </Label>
+                        <Input
+                          id="signup-confirm-password"
+                          type="password"
+                          placeholder="Repita a senha"
+                          value={signupConfirmPassword}
+                          onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                          className="bg-background/50 border-border/50"
+                        />
+                      </div>
+
+                      {signupError && (
+                        <div className="flex items-center gap-2 text-destructive text-sm">
+                          <AlertCircle className="w-4 h-4" />
+                          {signupError}
+                        </div>
+                      )}
+
+                      <Button
+                        type="submit"
+                        className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : null}
+                        Criar Conta
+                      </Button>
+
+                      <p className="text-xs text-muted-foreground text-center">
+                        * Campos obrigatórios
+                      </p>
+                    </form>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </main>
+
+        {/* Footer */}
+        <footer className="py-4 text-center text-muted-foreground text-xs">
+          <p>Unidade de Feijó/AC • PlantãoPro v1.0</p>
+        </footer>
+      </div>
     </div>
   );
 };
