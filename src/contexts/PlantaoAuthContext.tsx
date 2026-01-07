@@ -283,16 +283,18 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
         return { error: 'CPF inválido' };
       }
 
-      // Check if CPF already exists
+      // Check if CPF already exists as agent
       const { data: existingAgent } = await supabase
         .from('agents')
         .select('id')
         .eq('cpf', cleanCpf)
-        .single();
+        .maybeSingle();
 
       if (existingAgent) {
-        return { error: 'CPF já cadastrado no sistema' };
+        return { error: 'CPF já cadastrado como agente' };
       }
+      
+      // Note: CPF can exist in master_credentials - admins can also be agents
 
       const email = `${cleanCpf}@plantaopro.local`;
       const redirectUrl = `${window.location.origin}/`;
