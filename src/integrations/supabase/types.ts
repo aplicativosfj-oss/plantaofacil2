@@ -158,6 +158,44 @@ export type Database = {
           },
         ]
       }
+      agent_days_off: {
+        Row: {
+          agent_id: string
+          created_at: string
+          id: string
+          off_date: string
+          off_type: string
+          reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          id?: string
+          off_date: string
+          off_type?: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          id?: string
+          off_date?: string
+          off_type?: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_days_off_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_licenses: {
         Row: {
           activated_at: string | null
