@@ -484,6 +484,11 @@ const PlantaoHome = () => {
       return;
     }
 
+    if (signupRegistration.length !== 9 || !/^\d{9}$/.test(signupRegistration)) {
+      setSignupError('Matrícula deve ter exatamente 9 dígitos numéricos');
+      return;
+    }
+
     if (signupPassword !== signupConfirmPassword) {
       setSignupError('As senhas não conferem');
       return;
@@ -498,7 +503,7 @@ const PlantaoHome = () => {
       cpf: signupCpf,
       password: signupPassword,
       full_name: signupName.toUpperCase(), // Converter para maiúsculo
-      registration_number: signupRegistration.toUpperCase(), // Converter para maiúsculo
+      registration_number: signupRegistration, // Já é numérico, não precisa converter
       city: signupCity,
       unit: signupUnit,
       current_team: signupTeam,
@@ -1064,14 +1069,19 @@ const PlantaoHome = () => {
 
                           <div className="space-y-1">
                             <Label htmlFor="signup-registration" className="flex items-center gap-2 text-xs">
-                              <Shield className="w-3.5 h-3.5" /> Matrícula *
+                              <Shield className="w-3.5 h-3.5" /> Matrícula * (9 dígitos)
                             </Label>
                             <Input
                               id="signup-registration"
                               type="text"
-                              placeholder="Matrícula funcional"
+                              inputMode="numeric"
+                              placeholder="000000000"
+                              maxLength={9}
                               value={signupRegistration}
-                              onChange={(e) => setSignupRegistration(e.target.value)}
+                              onChange={(e) => {
+                                const numericOnly = e.target.value.replace(/\D/g, '').slice(0, 9);
+                                setSignupRegistration(numericOnly);
+                              }}
                               className="bg-background/50 border-border/50 h-9"
                             />
                           </div>
