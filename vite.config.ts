@@ -7,6 +7,20 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig(({ mode }) => ({
   build: {
     chunkSizeWarningLimit: 3000,
+    target: 'esnext',
+    minify: 'esbuild',
+    cssMinify: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-popover', '@radix-ui/react-tabs', '@radix-ui/react-select'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-utils': ['date-fns', 'clsx', 'tailwind-merge'],
+          'vendor-query': ['@tanstack/react-query'],
+        },
+      },
+    },
   },
   server: {
     host: "::",
@@ -17,18 +31,18 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "audio/*", "videos/*"],
+      includeAssets: ["favicon.ico", "pwa-*.png", "audio/*", "videos/*"],
       manifest: {
-        name: "FrancGymPro - Sistema de Academia",
-        short_name: "FrancGymPro",
-        description: "Sistema completo de gerenciamento de academia - Clientes, Instrutores e Administração",
+        name: "Plantão PRO - Gestão de Escalas",
+        short_name: "Plantão PRO",
+        description: "Sistema completo de gestão de plantões e escalas para agentes",
         theme_color: "#dc2626",
         background_color: "#0a0a0a",
         display: "standalone",
         orientation: "portrait-primary",
         scope: "/",
         start_url: "/",
-        categories: ["fitness", "health", "sports"],
+        categories: ["productivity", "business"],
         icons: [
           {
             src: "/pwa-192x192.png",
@@ -66,22 +80,31 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
-        globPatterns: ["**/*.{js,css,html,ico,svg,woff2,woff,ttf,mp3}"],
+        globPatterns: ["**/*.{js,css,html,ico,svg,woff2,woff,ttf,mp3,png,jpg,webp}"],
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api/],
+        navigateFallbackDenylist: [/^\/api/, /^\/supabase/],
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
             handler: "NetworkFirst",
             options: {
               cacheName: "supabase-api-cache",
-              networkTimeoutSeconds: 5,
+              networkTimeoutSeconds: 3,
               expiration: {
-                maxEntries: 200,
+                maxEntries: 500,
                 maxAgeSeconds: 60 * 60 * 24 * 7
               },
               cacheableResponse: {
                 statuses: [0, 200]
+              },
+              backgroundSync: {
+                name: 'supabase-sync-queue',
+                options: {
+                  maxRetentionTime: 24 * 60
+                }
               }
             }
           },
@@ -93,12 +116,26 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "supabase-storage-cache",
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
             urlPattern: /\.(?:png|jpg|jpeg|webp|gif|svg)$/i,
             handler: "CacheFirst",
             options: {
               cacheName: "image-cache",
               expiration: {
-                maxEntries: 100,
+                maxEntries: 200,
                 maxAgeSeconds: 60 * 60 * 24 * 30
               }
             }
@@ -109,14 +146,25 @@ export default defineConfig(({ mode }) => ({
             options: {
               cacheName: "audio-cache",
               expiration: {
-                maxEntries: 20,
+                maxEntries: 30,
                 maxAgeSeconds: 60 * 60 * 24 * 30
               }
             }
           },
           {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            urlPattern: /\.(?:mp4|webm)$/i,
             handler: "CacheFirst",
+            options: {
+              cacheName: "video-cache",
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 7
+              }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: "StaleWhileRevalidate",
             options: {
               cacheName: "google-fonts-stylesheets",
               expiration: {
@@ -137,6 +185,9 @@ export default defineConfig(({ mode }) => ({
             }
           }
         ]
+      },
+      devOptions: {
+        enabled: false
       }
     })
   ].filter(Boolean),
@@ -145,4 +196,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query', 'framer-motion']
+  }
 }));

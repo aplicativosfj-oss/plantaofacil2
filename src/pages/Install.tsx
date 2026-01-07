@@ -1,254 +1,280 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Download, Smartphone, Monitor, Apple, Chrome, Share, ArrowLeft, Check, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { 
+  Download, 
+  Smartphone, 
+  Monitor, 
+  CheckCircle2, 
+  Share, 
+  Plus,
+  Wifi,
+  WifiOff,
+  Zap,
+  Shield,
+  Bell,
+  ArrowLeft,
+  Check
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import logomarca from '@/assets/logomarca.png';
+import { useNavigate } from 'react-router-dom';
+import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 
 interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
+  prompt(): Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-const Install: React.FC = () => {
+const Install = () => {
   const navigate = useNavigate();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
-    // Detect iOS
-    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    setIsIOS(iOS);
-
-    // Detect Android
-    const android = /Android/.test(navigator.userAgent);
-    setIsAndroid(android);
-
     // Check if already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
     }
 
+    // Detect iOS
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    setIsIOS(isIOSDevice);
+
+    // Detect Android
+    setIsAndroid(/Android/.test(navigator.userAgent));
+
     // Listen for install prompt
-    const handleBeforeInstallPrompt = (e: Event) => {
+    const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setIsInstallable(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    // Listen for app installed
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    // Online/offline status
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
-  const handleInstall = async () => {
+  const handleInstallClick = async () => {
     if (!deferredPrompt) return;
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-
+    
     if (outcome === 'accepted') {
       setIsInstalled(true);
     }
-
+    
     setDeferredPrompt(null);
-    setIsInstallable(false);
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background p-4">
-      <div className="container mx-auto max-w-2xl py-8">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/')}
-          className="mb-6"
-        >
-          <ArrowLeft size={18} className="mr-2" />
-          Voltar
-        </Button>
+  const features = [
+    {
+      icon: Zap,
+      title: 'Acesso Rápido',
+      description: 'Abra direto da tela inicial, sem navegador'
+    },
+    {
+      icon: WifiOff,
+      title: 'Funciona Offline',
+      description: 'Use mesmo sem conexão com internet'
+    },
+    {
+      icon: Bell,
+      title: 'Notificações',
+      description: 'Receba alertas de plantões e trocas'
+    },
+    {
+      icon: Shield,
+      title: 'Seguro',
+      description: 'Seus dados protegidos localmente'
+    }
+  ];
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/95 p-4">
+      <div className="max-w-lg mx-auto">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Instalar App</h1>
+            <p className="text-sm text-muted-foreground">
+              Plantão PRO na sua tela inicial
+            </p>
+          </div>
+        </div>
+
+        {/* Logo */}
+        <div className="text-center mb-6">
           <img 
-            src={logomarca} 
-            alt="FrancGymPro" 
-            className="w-24 h-24 mx-auto mb-4 object-contain"
+            src={plantaoLogo} 
+            alt="Plantão PRO" 
+            className="w-24 h-24 mx-auto object-contain"
           />
-          <h1 className="text-3xl font-bebas text-primary tracking-wider mb-2">
-            INSTALAR FRANCGYMPRO
-          </h1>
-          <p className="text-muted-foreground">
-            Instale o app no seu dispositivo para acesso rápido
-          </p>
+        </div>
+
+        {/* Online Status */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg mb-6 ${
+            isOnline ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
+          }`}
+        >
+          {isOnline ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
+          <span className="text-sm font-medium">
+            {isOnline ? 'Conectado' : 'Modo Offline'}
+          </span>
         </motion.div>
 
+        {/* Install Status */}
         {isInstalled ? (
-          <Card className="bg-green-500/10 border-green-500/30">
-            <CardContent className="p-6 text-center">
-              <Check size={48} className="mx-auto text-green-500 mb-4" />
-              <h2 className="text-xl font-bold text-green-500 mb-2">App Instalado!</h2>
-              <p className="text-muted-foreground">
-                O FrancGymPro já está instalado no seu dispositivo.
-              </p>
-            </CardContent>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-12"
+          >
+            <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+            </div>
+            <h2 className="text-xl font-bold mb-2">App Instalado!</h2>
+            <p className="text-muted-foreground mb-6">
+              O Plantão PRO já está na sua tela inicial
+            </p>
+            <Button onClick={() => navigate('/')} className="gap-2">
+              <Smartphone className="w-4 h-4" />
+              Abrir App
+            </Button>
+          </motion.div>
         ) : (
-          <div className="space-y-4">
-            {/* Direct Install Button (Android/Desktop Chrome) */}
-            {isInstallable && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-              >
-                <Card className="bg-primary/10 border-primary/30">
-                  <CardContent className="p-6">
-                    <Button 
-                      onClick={handleInstall}
-                      className="w-full gap-2 text-lg py-6"
-                      size="lg"
-                    >
-                      <Download size={24} />
-                      Instalar Agora
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-
-            {/* iOS Instructions */}
-            {isIOS && (
-              <Card className="bg-card/80 border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Apple size={24} className="text-muted-foreground" />
-                    Instalação no iPhone/iPad
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">1</div>
-                    <div>
-                      <p className="font-medium">Toque no botão Compartilhar</p>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Share size={14} /> Na barra inferior do Safari
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">2</div>
-                    <div>
-                      <p className="font-medium">Selecione "Adicionar à Tela de Início"</p>
-                      <p className="text-sm text-muted-foreground">Role para baixo no menu se necessário</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">3</div>
-                    <div>
-                      <p className="font-medium">Toque em "Adicionar"</p>
-                      <p className="text-sm text-muted-foreground">O app aparecerá na sua tela inicial</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Android Instructions (if prompt not available) */}
-            {isAndroid && !isInstallable && (
-              <Card className="bg-card/80 border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Smartphone size={24} className="text-green-500" />
-                    Instalação no Android
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 font-bold">1</div>
-                    <div>
-                      <p className="font-medium">Abra o menu do navegador</p>
-                      <p className="text-sm text-muted-foreground">Toque nos 3 pontos no canto superior</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 font-bold">2</div>
-                    <div>
-                      <p className="font-medium">Selecione "Instalar app" ou "Adicionar à tela inicial"</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 font-bold">3</div>
-                    <div>
-                      <p className="font-medium">Confirme a instalação</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Desktop Instructions */}
-            {!isIOS && !isAndroid && !isInstallable && (
-              <Card className="bg-card/80 border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Monitor size={24} className="text-blue-500" />
-                    Instalação no Computador
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <Chrome size={20} className="text-muted-foreground mt-1" />
-                    <div>
-                      <p className="font-medium">Google Chrome</p>
-                      <p className="text-sm text-muted-foreground">
-                        Clique no ícone de instalação na barra de endereços ou no menu (⋮) → "Instalar FrancGymPro"
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Features */}
-            <Card className="bg-card/80 border-border/50">
-              <CardHeader>
-                <CardTitle className="text-lg">Por que instalar?</CardTitle>
+          <>
+            {/* Install Card */}
+            <Card className="mb-6 border-primary/20 bg-primary/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Download className="w-5 h-5 text-primary" />
+                  {isIOS ? 'Instalar no iPhone/iPad' : 'Instalar no Dispositivo'}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2">
-                    <Check size={16} className="text-green-500" />
-                    <span className="text-sm">Acesso rápido direto da tela inicial</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check size={16} className="text-green-500" />
-                    <span className="text-sm">Funciona offline para consultas básicas</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check size={16} className="text-green-500" />
-                    <span className="text-sm">Experiência de app nativo</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check size={16} className="text-green-500" />
-                    <span className="text-sm">Carregamento mais rápido</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check size={16} className="text-green-500" />
-                    <span className="text-sm">Sem ocupar espaço de loja de apps</span>
-                  </li>
-                </ul>
+                {isIOS ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Para instalar no iOS, siga estes passos:
+                    </p>
+                    <ol className="space-y-3 text-sm">
+                      <li className="flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
+                        <span>Toque no botão <Share className="w-4 h-4 inline mx-1" /> Compartilhar</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
+                        <span>Role e toque em <Plus className="w-4 h-4 inline mx-1" /> "Adicionar à Tela de Início"</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
+                        <span>Toque em "Adicionar" no canto superior direito</span>
+                      </li>
+                    </ol>
+                  </div>
+                ) : deferredPrompt ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Instale o app para acesso rápido e uso offline
+                    </p>
+                    <Button onClick={handleInstallClick} className="w-full gap-2" size="lg">
+                      <Download className="w-5 h-5" />
+                      Instalar Agora
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Para instalar, use o menu do navegador:
+                    </p>
+                    <div className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg p-3">
+                      <Monitor className="w-5 h-5 text-muted-foreground" />
+                      <span>Menu ⋮ → "Instalar app" ou "Adicionar à tela inicial"</span>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
-          </div>
+
+            {/* Features Grid */}
+            <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wide">
+              Benefícios do App
+            </h3>
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {features.map((feature, index) => (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className="h-full">
+                    <CardContent className="p-4">
+                      <feature.icon className="w-8 h-8 text-primary mb-2" />
+                      <h4 className="font-medium text-sm mb-1">{feature.title}</h4>
+                      <p className="text-xs text-muted-foreground">{feature.description}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* APK Info */}
+            <Card className="mb-6 bg-muted/30">
+              <CardContent className="p-4">
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Smartphone className="w-4 h-4" />
+                  Quer o APK para Android?
+                </h4>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Para gerar o APK nativo, exporte o projeto para o GitHub e siga as instruções do Capacitor:
+                </p>
+                <ol className="text-xs text-muted-foreground space-y-1">
+                  <li>1. Exporte para GitHub</li>
+                  <li>2. Clone o repositório</li>
+                  <li>3. Execute: <code className="bg-background px-1 rounded">npx cap add android</code></li>
+                  <li>4. Execute: <code className="bg-background px-1 rounded">npx cap open android</code></li>
+                  <li>5. Gere o APK no Android Studio</li>
+                </ol>
+              </CardContent>
+            </Card>
+          </>
         )}
+
+        {/* Back Button */}
+        <div className="text-center">
+          <Button variant="ghost" onClick={() => navigate('/')}>
+            Voltar ao App
+          </Button>
+        </div>
       </div>
     </div>
   );
