@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday, differenceInHours, isBefore, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Clock, Calendar, AlertTriangle, Moon, Banknote, Check, Sun } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Clock, Calendar, AlertTriangle, Moon, Banknote, Check, Sun, TrendingUp, BarChart3 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Area, AreaChart } from 'recharts';
 
 interface CalendarNote {
   id: string;
@@ -548,6 +549,41 @@ const ShiftCalendar = () => {
       count: acc.count + 1
     }), { totalHours: 0, totalValue: 0, count: 0 });
 
+  // Calculate BH evolution data for last 6 months
+  const bhEvolutionData = useMemo(() => {
+    const months: { month: string; monthLabel: string; hours: number; value: number; count: number }[] = [];
+    
+    for (let i = 5; i >= 0; i--) {
+      const targetMonth = subMonths(new Date(), i);
+      const monthKey = format(targetMonth, 'yyyy-MM');
+      const monthLabel = format(targetMonth, 'MMM', { locale: ptBR });
+      
+      const monthData = overtimeEntries
+        .filter(ot => {
+          const otDate = parseDateOnly(ot.date);
+          return format(otDate, 'yyyy-MM') === monthKey;
+        })
+        .reduce((acc, ot) => ({
+          hours: acc.hours + ot.hours_worked,
+          value: acc.value + (ot.total_value || (ot.hours_worked * (ot.hour_value || 15.75))),
+          count: acc.count + 1
+        }), { hours: 0, value: 0, count: 0 });
+      
+      months.push({
+        month: monthKey,
+        monthLabel: monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1),
+        hours: monthData.hours,
+        value: monthData.value,
+        count: monthData.count
+      });
+    }
+    
+    return months;
+  }, [overtimeEntries]);
+
+  // State for chart visibility
+  const [showEvolutionChart, setShowEvolutionChart] = useState(false);
+
   return (
     <div className="space-y-3">
       {/* Edit Shift Button - Compact */}
@@ -792,12 +828,23 @@ const ShiftCalendar = () => {
         >
           <Card className="border-cyan-500/40 bg-gradient-to-br from-cyan-500/10 to-cyan-600/5">
             <CardHeader className="pb-2 pt-3 px-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Banknote className="w-4 h-4 text-cyan-400" />
-                Resumo BH - {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Banknote className="w-4 h-4 text-cyan-400" />
+                  Resumo BH - {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs px-2"
+                  onClick={() => setShowEvolutionChart(!showEvolutionChart)}
+                >
+                  <BarChart3 className="w-3.5 h-3.5 mr-1" />
+                  {showEvolutionChart ? 'Ocultar' : 'Evolução'}
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent className="px-3 pb-3">
+            <CardContent className="px-3 pb-3 space-y-3">
               <div className="grid grid-cols-3 gap-2">
                 <div className="text-center p-2 rounded-lg bg-muted/30">
                   <div className="text-lg font-bold text-cyan-400">{monthlyBHSummary.count}</div>
@@ -812,6 +859,101 @@ const ShiftCalendar = () => {
                   <div className="text-[10px] text-muted-foreground">Valor Total</div>
                 </div>
               </div>
+
+              {/* Evolution Chart */}
+              <AnimatePresence>
+                {showEvolutionChart && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pt-3 border-t border-cyan-500/20">
+                      <div className="flex items-center gap-2 mb-3">
+                        <TrendingUp className="w-4 h-4 text-cyan-400" />
+                        <span className="text-xs font-medium">Evolução dos últimos 6 meses</span>
+                      </div>
+                      
+                      {bhEvolutionData.some(d => d.hours > 0) ? (
+                        <div className="h-40">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={bhEvolutionData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                              <defs>
+                                <linearGradient id="hoursGradient" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4} />
+                                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                                </linearGradient>
+                                <linearGradient id="valueGradient" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.4} />
+                                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                              <XAxis 
+                                dataKey="monthLabel" 
+                                tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.6)' }}
+                                axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                              />
+                              <YAxis 
+                                tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.6)' }}
+                                axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                              />
+                              <Tooltip 
+                                contentStyle={{ 
+                                  backgroundColor: 'rgba(0,0,0,0.8)', 
+                                  border: '1px solid rgba(6,182,212,0.5)',
+                                  borderRadius: '8px',
+                                  fontSize: '12px'
+                                }}
+                                formatter={(value: number, name: string) => {
+                                  if (name === 'hours') return [`${value}h`, 'Horas'];
+                                  if (name === 'value') return [`R$ ${value.toFixed(2)}`, 'Valor'];
+                                  return [value, name];
+                                }}
+                                labelFormatter={(label) => `Mês: ${label}`}
+                              />
+                              <Area 
+                                type="monotone" 
+                                dataKey="hours" 
+                                stroke="#06b6d4" 
+                                strokeWidth={2}
+                                fill="url(#hoursGradient)"
+                                dot={{ fill: '#06b6d4', strokeWidth: 2 }}
+                                activeDot={{ r: 6, fill: '#06b6d4' }}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-muted-foreground text-xs">
+                          <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                          <p>Sem dados de BH para exibir</p>
+                        </div>
+                      )}
+
+                      {/* Monthly comparison */}
+                      {bhEvolutionData.some(d => d.hours > 0) && (
+                        <div className="mt-3 grid grid-cols-6 gap-1">
+                          {bhEvolutionData.map((month, idx) => (
+                            <div 
+                              key={month.month}
+                              className={`text-center p-1.5 rounded-lg text-[10px] ${
+                                format(currentMonth, 'yyyy-MM') === month.month
+                                  ? 'bg-cyan-500/30 border border-cyan-500/50'
+                                  : 'bg-muted/30'
+                              }`}
+                            >
+                              <div className="font-bold text-cyan-400">{month.hours}h</div>
+                              <div className="text-muted-foreground">{month.monthLabel}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </CardContent>
           </Card>
         </motion.div>
