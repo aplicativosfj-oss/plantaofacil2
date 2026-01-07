@@ -128,6 +128,27 @@ const PlantaoMasterDashboard = () => {
   const [leadershipForm, setLeadershipForm] = useState({ full_name: '', phone: '', email: '', notes: '' });
   const [savingLeadership, setSavingLeadership] = useState(false);
   
+  // Navigation filters
+  const [selectedTeamFilter, setSelectedTeamFilter] = useState<string>('all');
+  const [selectedUnitFilter, setSelectedUnitFilter] = useState<string>('all');
+  
+  const UNITS_LIST = [
+    { id: 'all', name: 'Todas Unidades' },
+    { id: 'CS Feijó', name: 'CS Feijó' },
+    { id: 'CS Juruá', name: 'CS Juruá' },
+    { id: 'CS Rio Branco', name: 'CS Rio Branco' },
+    { id: 'CS Purus', name: 'CS Purus' },
+    { id: 'CS Alto Acre', name: 'CS Alto Acre' },
+  ];
+  
+  const TEAMS_LIST = [
+    { id: 'all', name: 'Todas Equipes', color: 'bg-muted' },
+    { id: 'alfa', name: 'Equipe Alfa', color: 'bg-team-alfa' },
+    { id: 'bravo', name: 'Equipe Bravo', color: 'bg-team-bravo' },
+    { id: 'charlie', name: 'Equipe Charlie', color: 'bg-team-charlie' },
+    { id: 'delta', name: 'Equipe Delta', color: 'bg-team-delta' },
+  ];
+  
   // Password change dialog
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -327,12 +348,17 @@ const PlantaoMasterDashboard = () => {
     }
   };
 
-  const filteredAgents = agents.filter(agent =>
-    agent.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    agent.cpf.includes(searchTerm) ||
-    agent.registration_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    agent.current_team?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAgents = agents.filter(agent => {
+    const matchesSearch = agent.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      agent.cpf.includes(searchTerm) ||
+      agent.registration_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      agent.current_team?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesTeam = selectedTeamFilter === 'all' || agent.current_team === selectedTeamFilter;
+    const matchesUnit = selectedUnitFilter === 'all' || agent.unit === selectedUnitFilter;
+    
+    return matchesSearch && matchesTeam && matchesUnit;
+  });
 
   const totalAgents = agents.length;
   const activeAgents = agents.filter(a => a.is_active).length;
@@ -793,7 +819,7 @@ const PlantaoMasterDashboard = () => {
       {/* User Info Bar */}
       <div className="border-b border-border/30 bg-card/50">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
                 <Shield className="w-5 h-5 text-amber-500" />
@@ -803,7 +829,79 @@ const PlantaoMasterDashboard = () => {
                 <p className="text-sm text-muted-foreground">Administrador Master</p>
               </div>
             </div>
+            
+            {/* Navigation Filters */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Unit Filter */}
+              <div className="flex items-center gap-1">
+                <Building2 className="w-4 h-4 text-muted-foreground" />
+                <select
+                  value={selectedUnitFilter}
+                  onChange={(e) => setSelectedUnitFilter(e.target.value)}
+                  className="bg-background border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  {UNITS_LIST.map(unit => (
+                    <option key={unit.id} value={unit.id}>{unit.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Team Filter */}
+              <div className="flex items-center gap-1">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <div className="flex rounded-lg border border-border overflow-hidden">
+                  {TEAMS_LIST.map(team => (
+                    <button
+                      key={team.id}
+                      onClick={() => setSelectedTeamFilter(team.id)}
+                      className={`px-3 py-1.5 text-xs font-medium transition-all ${
+                        selectedTeamFilter === team.id 
+                          ? team.id === 'all' 
+                            ? 'bg-primary text-primary-foreground' 
+                            : `${team.color} text-white`
+                          : 'bg-background hover:bg-muted'
+                      }`}
+                    >
+                      {team.id === 'all' ? 'Todas' : team.id.charAt(0).toUpperCase() + team.id.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
+          
+          {/* Active Filters Display */}
+          {(selectedTeamFilter !== 'all' || selectedUnitFilter !== 'all') && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="mt-3 flex items-center gap-2 flex-wrap"
+            >
+              <span className="text-xs text-muted-foreground">Filtros ativos:</span>
+              {selectedUnitFilter !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  <Building2 className="w-3 h-3" />
+                  {selectedUnitFilter}
+                  <button onClick={() => setSelectedUnitFilter('all')} className="ml-1 hover:text-destructive">×</button>
+                </Badge>
+              )}
+              {selectedTeamFilter !== 'all' && (
+                <Badge className={`gap-1 ${TEAMS_LIST.find(t => t.id === selectedTeamFilter)?.color} text-white`}>
+                  <Users className="w-3 h-3" />
+                  Equipe {selectedTeamFilter.charAt(0).toUpperCase() + selectedTeamFilter.slice(1)}
+                  <button onClick={() => setSelectedTeamFilter('all')} className="ml-1 hover:text-white/60">×</button>
+                </Badge>
+              )}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => { setSelectedTeamFilter('all'); setSelectedUnitFilter('all'); }}
+                className="text-xs h-6"
+              >
+                Limpar filtros
+              </Button>
+            </motion.div>
+          )}
         </div>
       </div>
 
