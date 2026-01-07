@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Users, MessageCircle, Globe, ChevronDown, Mic, MicOff } from 'lucide-react';
+import { X, Send, Users, MessageCircle, Globe, ChevronDown, Play, Pause, FileText, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +18,17 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import ChatAgentProfile from './ChatAgentProfile';
 import EmojiPicker from './EmojiPicker';
+import ChatMediaAttachment from './ChatMediaAttachment';
+import ChatMediaPreview from './ChatMediaPreview';
 import useChatSounds from '@/hooks/useChatSounds';
+import useChatMedia from '@/hooks/useChatMedia';
+
+interface MediaItem {
+  type: 'audio' | 'image' | 'document';
+  url: string;
+  duration?: number;
+  fileName?: string;
+}
 
 interface Message {
   id: string;
@@ -63,6 +73,92 @@ const getTeamLabel = (team: string | null) => {
   return found ? found.label : 'Equipe';
 };
 
+// Audio message component
+const AudioMessage: React.FC<{ content: string }> = ({ content }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const audioData = content.match(/\[AUDIO:([^\]]+)\]/);
+  if (!audioData) return <span>{content}</span>;
+
+  const audioUrl = audioData[1];
+  const textContent = content.replace(/\[AUDIO:[^\]]+\]/, '').trim();
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2 bg-background/30 rounded-full px-2 py-1">
+        <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} className="hidden" />
+        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={togglePlay}>
+          {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+        </Button>
+        <Volume2 className="w-3 h-3" />
+        <span className="text-xs">Áudio</span>
+      </div>
+      {textContent && <p>{textContent}</p>}
+    </div>
+  );
+};
+
+// Image message component
+const ImageMessage: React.FC<{ content: string }> = ({ content }) => {
+  const imageData = content.match(/\[IMAGE:([^\]]+)\]/);
+  if (!imageData) return <span>{content}</span>;
+
+  const imageUrl = imageData[1];
+  const textContent = content.replace(/\[IMAGE:[^\]]+\]/, '').trim();
+
+  return (
+    <div className="space-y-1">
+      <img src={imageUrl} alt="Imagem" className="max-w-full rounded-lg max-h-48 object-cover" />
+      {textContent && <p>{textContent}</p>}
+    </div>
+  );
+};
+
+// Document message component
+const DocumentMessage: React.FC<{ content: string }> = ({ content }) => {
+  const docData = content.match(/\[DOC:([^|]+)\|([^\]]+)\]/);
+  if (!docData) return <span>{content}</span>;
+
+  const docUrl = docData[1];
+  const fileName = docData[2];
+  const textContent = content.replace(/\[DOC:[^\]]+\]/, '').trim();
+
+  return (
+    <div className="space-y-1">
+      <a 
+        href={docUrl} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 bg-blue-500/20 rounded-lg px-3 py-2 hover:bg-blue-500/30 transition-colors"
+      >
+        <FileText className="w-4 h-4 text-blue-400" />
+        <span className="text-xs truncate max-w-[150px]">{fileName}</span>
+      </a>
+      {textContent && <p>{textContent}</p>}
+    </div>
+  );
+};
+
+// Message content renderer
+const MessageContent: React.FC<{ content: string }> = ({ content }) => {
+  if (content.includes('[AUDIO:')) return <AudioMessage content={content} />;
+  if (content.includes('[IMAGE:')) return <ImageMessage content={content} />;
+  if (content.includes('[DOC:')) return <DocumentMessage content={content} />;
+  return <span className="whitespace-pre-wrap break-words">{content}</span>;
+};
+
 const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
   const { agent } = usePlantaoAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -72,10 +168,43 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { playMessageSent, playMessageReceived, playEmojiSound, playErrorSound } = useChatSounds();
+  
+  const { 
+    playMessageSent, 
+    playMessageReceived, 
+    playEmojiSound, 
+    playErrorSound,
+    playNotification,
+    playTypingSound 
+  } = useChatSounds();
+
+  const {
+    isRecording,
+    formattedDuration,
+    startRecording,
+    stopRecording,
+    cancelRecording,
+    pickImage,
+    pickDocument
+  } = useChatMedia({
+    onAudioReady: (audioUrl, duration) => {
+      setMediaItems(prev => [...prev, { type: 'audio', url: audioUrl, duration }]);
+      playNotification();
+    },
+    onImageReady: (imageUrl) => {
+      setMediaItems(prev => [...prev, { type: 'image', url: imageUrl }]);
+      playNotification();
+    },
+    onDocumentReady: (docUrl, fileName) => {
+      setMediaItems(prev => [...prev, { type: 'document', url: docUrl, fileName }]);
+      playNotification();
+    },
+    playRecordingSound: playTypingSound,
+    playStopSound: playNotification
+  });
 
   // Initialize selected team with agent's team
   useEffect(() => {
@@ -127,7 +256,6 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
 
     fetchMessages();
 
-    // Subscribe to new messages with improved handling
     const channel = supabase
       .channel(`team-chat-${agent.id}-${activeTab}-${selectedTeam}`)
       .on('postgres_changes', {
@@ -137,7 +265,6 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
       }, async (payload) => {
         console.log('New team message received:', payload);
         
-        // Fetch the sender info for the new message
         const { data: senderData } = await supabase
           .from('agents')
           .select('full_name, avatar_url, current_team')
@@ -149,19 +276,16 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
           sender: senderData
         } as Message;
 
-        // Check if message matches current filter
         const matchesFilter = 
           (activeTab === 'team' && newMsg.recipient_team === selectedTeam) ||
           (activeTab === 'all' && newMsg.is_broadcast);
 
         if (matchesFilter) {
           setMessages(prev => {
-            // Avoid duplicates
             if (prev.some(m => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
 
-          // Play sound for messages from others
           if (newMsg.sender_id !== agent?.id) {
             playMessageReceived();
           }
@@ -181,15 +305,36 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
     scrollToBottom();
   }, [messages]);
 
+  const handleRemoveMedia = (index: number) => {
+    setMediaItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleClearMedia = () => {
+    setMediaItems([]);
+  };
+
   const handleSend = async () => {
-    if (!newMessage.trim() || !agent) return;
+    if ((!newMessage.trim() && mediaItems.length === 0) || !agent) return;
 
     setSending(true);
 
     try {
+      // Build content with media
+      let content = newMessage.trim();
+      
+      for (const item of mediaItems) {
+        if (item.type === 'audio') {
+          content += ` [AUDIO:${item.url}]`;
+        } else if (item.type === 'image') {
+          content += ` [IMAGE:${item.url}]`;
+        } else if (item.type === 'document') {
+          content += ` [DOC:${item.url}|${item.fileName}]`;
+        }
+      }
+
       const messageData = {
         sender_id: agent.id,
-        content: newMessage.trim(),
+        content: content.trim(),
         recipient_team: activeTab === 'team' ? selectedTeam : null,
         is_broadcast: activeTab === 'all',
       };
@@ -206,6 +351,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
       }
 
       setNewMessage('');
+      setMediaItems([]);
       playMessageSent();
     } finally {
       setSending(false);
@@ -222,13 +368,6 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
   const handleEmojiSelect = (emoji: string) => {
     setNewMessage(prev => prev + emoji);
     inputRef.current?.focus();
-  };
-
-  const handleVoiceRecord = () => {
-    setIsRecording(!isRecording);
-    if (!isRecording) {
-      toast.info('🎤 Gravação de voz em breve!', { duration: 2000 });
-    }
   };
 
   if (!agent) return null;
@@ -375,7 +514,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
                               }`}
                               whileHover={{ scale: 1.02 }}
                             >
-                              <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                              <MessageContent content={msg.content} />
                             </motion.div>
                             
                             {/* Time */}
@@ -392,8 +531,26 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
 
                 {/* Input */}
                 <div className="p-4 border-t border-border">
+                  {/* Media Preview */}
+                  <ChatMediaPreview 
+                    items={mediaItems}
+                    onRemove={handleRemoveMedia}
+                    onClear={handleClearMedia}
+                  />
+                  
                   <div className="flex gap-2 items-center">
                     <EmojiPicker onEmojiSelect={handleEmojiSelect} onPlaySound={playEmojiSound} />
+                    
+                    <ChatMediaAttachment
+                      isRecording={isRecording}
+                      recordingDuration={formattedDuration}
+                      onStartRecording={startRecording}
+                      onStopRecording={stopRecording}
+                      onCancelRecording={cancelRecording}
+                      onPickImage={pickImage}
+                      onPickDocument={pickDocument}
+                      disabled={sending}
+                    />
                     
                     <Input
                       ref={inputRef}
@@ -402,22 +559,12 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
                       onKeyPress={handleKeyPress}
                       placeholder={`Mensagem para ${activeTab === 'team' ? `Equipe ${currentTeamLabel}` : 'Todos'}...`}
                       className="flex-1"
-                      disabled={sending}
+                      disabled={sending || isRecording}
                     />
-
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleVoiceRecord}
-                      className={`h-9 w-9 ${isRecording ? 'text-destructive animate-pulse' : 'text-muted-foreground'}`}
-                    >
-                      {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                    </Button>
 
                     <Button 
                       onClick={handleSend} 
-                      disabled={!newMessage.trim() || sending}
+                      disabled={(!newMessage.trim() && mediaItems.length === 0) || sending || isRecording}
                       size="icon"
                     >
                       <Send className="w-4 h-4" />
