@@ -361,7 +361,21 @@ const PlantaoHome = () => {
   // Real-time validation hooks
   const cpfValidation = useAgentCpfValidation(signupCpf.replace(/\D/g, ''));
   const registrationValidation = useAgentRegistrationValidation(signupRegistration);
+  
+  // Limpeza profunda dos formulários e credenciais (reset único)
   useEffect(() => {
+    const RESET_KEY = 'plantao_full_reset_v1';
+    if (!localStorage.getItem(RESET_KEY)) {
+      // Limpa todas as credenciais e dados salvos do Plantão
+      localStorage.removeItem('plantao_credentials');
+      localStorage.removeItem('plantao_master_session');
+      localStorage.removeItem('plantao_theme');
+      localStorage.removeItem('plantao_biometric_registered');
+      sessionStorage.clear();
+      localStorage.setItem(RESET_KEY, '1');
+    }
+    
+    // Carrega credenciais salvas (se existirem após reset)
     const stored = localStorage.getItem('plantao_credentials');
     if (stored) {
       try {
