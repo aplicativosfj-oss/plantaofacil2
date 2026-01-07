@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Star, Heart, Award, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import plantaoLogo from '@/assets/plantao-logo.png';
+import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 
 interface WelcomeDialogProps {
   isOpen: boolean;
@@ -20,6 +20,21 @@ const WelcomeDialog: React.FC<WelcomeDialogProps> = ({
   onChangePassword 
 }) => {
   const firstName = agentName.split(' ')[0];
+  const [isClosing, setIsClosing] = useState(false);
+
+  // Auto-close after 5 seconds (only if not first login)
+  useEffect(() => {
+    if (isOpen && !isFirstLogin) {
+      const timer = setTimeout(() => {
+        setIsClosing(true);
+        setTimeout(() => {
+          onClose();
+          setIsClosing(false);
+        }, 500); // Wait for exit animation
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, isFirstLogin, onClose]);
 
   return (
     <AnimatePresence>

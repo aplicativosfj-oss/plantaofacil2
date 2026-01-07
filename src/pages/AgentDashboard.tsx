@@ -29,7 +29,7 @@ import FirstShiftSetup from '@/components/plantao/FirstShiftSetup';
 import OnlineIndicator from '@/components/plantao/OnlineIndicator';
 import LicenseCounter from '@/components/plantao/LicenseCounter';
 import LicenseExpiredOverlay from '@/components/plantao/LicenseExpiredOverlay';
-import plantaoLogo from '@/assets/plantao-pro-logo.png';
+import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 
 interface Shift {
   id: string;
@@ -84,11 +84,16 @@ const AgentDashboard = () => {
   const [hasShiftSchedule, setHasShiftSchedule] = useState<boolean | null>(null);
   const [isLicenseExpired, setIsLicenseExpired] = useState(false);
 
-  // Show welcome on first load
+  // Show welcome only on first access of the day
   useEffect(() => {
-    if (agent && !sessionStorage.getItem('welcomeShown')) {
-      setShowWelcome(true);
-      sessionStorage.setItem('welcomeShown', 'true');
+    if (agent) {
+      const today = new Date().toDateString();
+      const lastWelcomeDate = localStorage.getItem('plantao_welcome_date');
+      
+      if (lastWelcomeDate !== today) {
+        setShowWelcome(true);
+        localStorage.setItem('plantao_welcome_date', today);
+      }
     }
   }, [agent]);
 
