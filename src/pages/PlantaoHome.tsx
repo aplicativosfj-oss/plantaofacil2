@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap } from 'lucide-react';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoLogo from '@/assets/plantao-logo.png';
@@ -57,10 +57,10 @@ const UNITS = ['CS Feijó', 'CS Juruá', 'CS Rio Branco', 'CS Sena', 'CS Brasil�
 const CITIES = ['Feijó', 'Rio Branco', 'Cruzeiro do Sul', 'Tarauacá', 'Sena Madureira'];
 
 const TEAMS = [
-  { value: 'alfa', label: 'Equipe Alfa', icon: '🐺', color: 'from-blue-600 to-blue-800', bgColor: 'bg-blue-500/20', borderColor: 'border-blue-500', textColor: 'text-blue-400' },
-  { value: 'bravo', label: 'Equipe Bravo', icon: '🦅', color: 'from-amber-500 to-orange-600', bgColor: 'bg-amber-500/20', borderColor: 'border-amber-500', textColor: 'text-amber-400' },
-  { value: 'charlie', label: 'Equipe Charlie', icon: '⭐', color: 'from-emerald-500 to-green-600', bgColor: 'bg-emerald-500/20', borderColor: 'border-emerald-500', textColor: 'text-emerald-400' },
-  { value: 'delta', label: 'Equipe Delta', icon: '💀', color: 'from-red-500 to-rose-600', bgColor: 'bg-red-500/20', borderColor: 'border-red-500', textColor: 'text-red-400' },
+  { value: 'alfa', label: 'Equipe Alfa', icon: Shield, color: 'from-blue-600 to-blue-800', bgColor: 'bg-blue-500/20', borderColor: 'border-blue-500', textColor: 'text-blue-400', subtitle: 'Força Tática' },
+  { value: 'bravo', label: 'Equipe Bravo', icon: Star, color: 'from-amber-500 to-orange-600', bgColor: 'bg-amber-500/20', borderColor: 'border-amber-500', textColor: 'text-amber-400', subtitle: 'Operações Especiais' },
+  { value: 'charlie', label: 'Equipe Charlie', icon: Target, color: 'from-emerald-500 to-green-600', bgColor: 'bg-emerald-500/20', borderColor: 'border-emerald-500', textColor: 'text-emerald-400', subtitle: 'Pronta Resposta' },
+  { value: 'delta', label: 'Equipe Delta', icon: Crosshair, color: 'from-red-500 to-rose-600', bgColor: 'bg-red-500/20', borderColor: 'border-red-500', textColor: 'text-red-400', subtitle: 'Intervenção Rápida' },
 ] as const;
 
 // Radar scan effect component
@@ -358,13 +358,12 @@ const PlantaoHome = () => {
                   >
                     <div className={`absolute inset-0 bg-gradient-to-br ${team.color} opacity-10`} />
                     <div className="relative flex flex-col items-center gap-2">
-                      <span className="text-4xl">{team.icon}</span>
+                      <team.icon className={`w-10 h-10 ${team.textColor}`} />
                       <span className={`font-bold text-sm ${team.textColor}`}>
                         {team.label}
                       </span>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Users className="w-3 h-3" />
-                        <span>Equipe Operacional</span>
+                        <span>{team.subtitle}</span>
                       </div>
                     </div>
                     
@@ -698,7 +697,7 @@ const PlantaoHome = () => {
                                 {TEAMS.map((team) => (
                                   <SelectItem key={team.value} value={team.value}>
                                     <span className="flex items-center gap-2">
-                                      <span>{team.icon}</span>
+                                      <team.icon className={`w-4 h-4 ${team.textColor}`} />
                                       {team.label}
                                     </span>
                                   </SelectItem>

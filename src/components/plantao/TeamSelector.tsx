@@ -3,7 +3,7 @@ import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Users, Check, Shield } from 'lucide-react';
+import { ArrowLeft, Users, Check, Shield, Star, Target, Crosshair } from 'lucide-react';
 import { toast } from 'sonner';
 import teamsBg from '@/assets/teams-bg.png';
 import plantaoLogo from '@/assets/plantao-logo.png';
@@ -16,7 +16,8 @@ const teams = [
     bgColor: 'bg-blue-500/20',
     borderColor: 'border-blue-500',
     textColor: 'text-blue-400',
-    icon: '🐺'
+    icon: Shield,
+    subtitle: 'Força Tática'
   },
   { 
     id: 'bravo', 
@@ -25,25 +26,28 @@ const teams = [
     bgColor: 'bg-amber-500/20',
     borderColor: 'border-amber-500',
     textColor: 'text-amber-400',
-    icon: '🦅'
+    icon: Star,
+    subtitle: 'Operações Especiais'
   },
   { 
     id: 'charlie', 
     name: 'Equipe Charlie', 
-    color: 'from-sky-400 to-blue-600',
-    bgColor: 'bg-sky-500/20',
-    borderColor: 'border-sky-500',
-    textColor: 'text-sky-400',
-    icon: '⭐'
+    color: 'from-emerald-500 to-green-600',
+    bgColor: 'bg-emerald-500/20',
+    borderColor: 'border-emerald-500',
+    textColor: 'text-emerald-400',
+    icon: Target,
+    subtitle: 'Pronta Resposta'
   },
   { 
     id: 'delta', 
     name: 'Equipe Delta', 
-    color: 'from-green-500 to-emerald-600',
-    bgColor: 'bg-green-500/20',
-    borderColor: 'border-green-500',
-    textColor: 'text-green-400',
-    icon: '💀'
+    color: 'from-red-500 to-rose-600',
+    bgColor: 'bg-red-500/20',
+    borderColor: 'border-red-500',
+    textColor: 'text-red-400',
+    icon: Crosshair,
+    subtitle: 'Intervenção Rápida'
   },
 ];
 
@@ -129,17 +133,18 @@ const TeamSelector = ({ onBack, onTeamChanged }: Props) => {
                   }
                 `}
               >
-                <span className="text-3xl">{team.icon}</span>
+                <team.icon className={`w-8 h-8 ${isSelected ? team.textColor : 'text-muted-foreground'}`} />
                 <span className={`font-bold text-sm ${isSelected ? team.textColor : 'text-foreground'}`}>
                   {team.name.replace('Equipe ', '')}
                 </span>
+                <span className="text-[10px] text-muted-foreground">{team.subtitle}</span>
                 {isSelected && (
                   <div className="absolute top-2 right-2">
                     <Check className={`w-5 h-5 ${team.textColor}`} />
                   </div>
                 )}
                 {isSelected && (
-                  <span className="text-xs text-muted-foreground">Atual</span>
+                  <span className="text-xs text-muted-foreground mt-1">Atual</span>
                 )}
               </button>
             );
