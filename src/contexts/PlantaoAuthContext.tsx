@@ -2,8 +2,14 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { supabase } from '@/integrations/supabase/client';
 import type { Session, User } from '@supabase/supabase-js';
 
-export type UserRole = 'admin' | 'agent';
+export type UserRole = 'admin' | 'agent' | 'master';
 export type TeamType = 'alfa' | 'bravo' | 'charlie' | 'delta' | null;
+
+interface MasterInfo {
+  id: string;
+  username: string;
+  full_name: string | null;
+}
 
 interface AgentProfile {
   id: string;
@@ -26,8 +32,10 @@ interface PlantaoAuthContextType {
   session: Session | null;
   agent: AgentProfile | null;
   role: UserRole | null;
+  master: MasterInfo | null;
   isLoading: boolean;
   signIn: (cpf: string, password: string) => Promise<{ error: string | null }>;
+  signInMaster: (username: string, password: string) => Promise<{ error: string | null }>;
   signUp: (data: SignUpData) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshAgent: () => Promise<void>;
@@ -40,6 +48,7 @@ interface SignUpData {
   registration_number: string;
   city: string;
   unit: string;
+  current_team: TeamType;
   phone?: string;
   email?: string;
 }
@@ -51,6 +60,7 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [session, setSession] = useState<Session | null>(null);
   const [agent, setAgent] = useState<AgentProfile | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
+  const [master, setMaster] = useState<MasterInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const clearAuthState = useCallback(() => {
@@ -58,6 +68,8 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setSession(null);
     setAgent(null);
     setRole(null);
+    setMaster(null);
+    sessionStorage.removeItem('masterSession');
   }, []);
 
   const fetchAgentProfile = useCallback(async (userId: string) => {
@@ -124,7 +136,28 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, [user?.id, fetchAgentProfile]);
 
+  // Check for master session on load
   useEffect(() => {
+    const storedMaster = sessionStorage.getItem('masterSession');
+    if (storedMaster) {
+      try {
+        const parsed = JSON.parse(storedMaster) as MasterInfo;
+        setMaster(parsed);
+        setRole('master');
+        setIsLoading(false);
+      } catch {
+        sessionStorage.removeItem('masterSession');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    // Skip if master is logged in
+    if (master) {
+      setIsLoading(false);
+      return;
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
@@ -152,7 +185,7 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     });
 
     return () => subscription.unsubscribe();
-  }, [clearAuthState, hydrateUserContext]);
+  }, [clearAuthState, hydrateUserContext, master]);
 
   const signIn = useCallback(async (cpf: string, password: string): Promise<{ error: string | null }> => {
     try {
@@ -195,6 +228,49 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setIsLoading(false);
     }
   }, [hydrateUserContext]);
+
+  const signInMaster = useCallback(async (username: string, password: string): Promise<{ error: string | null }> => {
+    try {
+      setIsLoading(true);
+
+      const { data, error } = await supabase.rpc('validate_master_credentials', {
+        p_username: username,
+        p_password: password
+      });
+
+      if (error) {
+        console.error('Master login error:', error);
+        return { error: 'Erro ao validar credenciais' };
+      }
+
+      if (!data || data.length === 0) {
+        return { error: 'Usuário não encontrado' };
+      }
+
+      const credential = data[0];
+      
+      if (!credential.is_valid) {
+        return { error: 'Senha incorreta' };
+      }
+
+      const masterInfo: MasterInfo = {
+        id: credential.id,
+        username: credential.username,
+        full_name: credential.full_name
+      };
+
+      sessionStorage.setItem('masterSession', JSON.stringify(masterInfo));
+      setMaster(masterInfo);
+      setRole('master');
+
+      return { error: null };
+    } catch (err) {
+      console.error('Master SignIn error:', err);
+      return { error: 'Erro ao fazer login' };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const signUp = useCallback(async (data: SignUpData): Promise<{ error: string | null }> => {
     try {
@@ -253,6 +329,8 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
         registration_number: data.registration_number,
         city: data.city,
         unit: data.unit,
+        current_team: data.current_team,
+        team_joined_at: data.current_team ? new Date().toISOString() : null,
         phone: data.phone || null,
         email: data.email || null,
       });
@@ -289,11 +367,18 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const signOut = useCallback(async () => {
     try {
-      await supabase.auth.signOut();
+      if (master) {
+        // Clear master session
+        sessionStorage.removeItem('masterSession');
+        setMaster(null);
+        setRole(null);
+      } else {
+        await supabase.auth.signOut();
+      }
     } finally {
       clearAuthState();
     }
-  }, [clearAuthState]);
+  }, [clearAuthState, master]);
 
   return (
     <PlantaoAuthContext.Provider value={{
@@ -301,8 +386,10 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
       session,
       agent,
       role,
+      master,
       isLoading,
       signIn,
+      signInMaster,
       signUp,
       signOut,
       refreshAgent,

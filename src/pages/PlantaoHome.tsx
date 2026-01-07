@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, Volume2, VolumeX, MapPin, Building, Info } from 'lucide-react';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, Volume2, VolumeX, MapPin, Building, Info, Users, Crown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoLogo from '@/assets/plantao-logo.png';
@@ -77,18 +77,32 @@ const CITIES = [
   'Sena Madureira',
 ];
 
+// Equipes disponíveis
+const TEAMS = [
+  { value: 'alfa', label: 'Equipe Alfa' },
+  { value: 'bravo', label: 'Equipe Bravo' },
+  { value: 'charlie', label: 'Equipe Charlie' },
+  { value: 'delta', label: 'Equipe Delta' },
+] as const;
+
 const PlantaoHome = () => {
-  const { signIn, signUp, isLoading } = usePlantaoAuth();
+  const { signIn, signInMaster, signUp, isLoading } = usePlantaoAuth();
   const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  const [showMasterLogin, setShowMasterLogin] = useState(false);
   
   // Login state
   const [loginCpf, setLoginCpf] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  
+  // Master login state
+  const [masterUsername, setMasterUsername] = useState('');
+  const [masterPassword, setMasterPassword] = useState('');
+  const [masterError, setMasterError] = useState('');
   
   // Signup state
   const [signupCpf, setSignupCpf] = useState('');
@@ -98,6 +112,7 @@ const PlantaoHome = () => {
   const [signupRegistration, setSignupRegistration] = useState('');
   const [signupCity, setSignupCity] = useState('');
   const [signupUnit, setSignupUnit] = useState('');
+  const [signupTeam, setSignupTeam] = useState<'alfa' | 'bravo' | 'charlie' | 'delta' | ''>('');
   const [signupPhone, setSignupPhone] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupError, setSignupError] = useState('');
@@ -204,8 +219,8 @@ const PlantaoHome = () => {
     e.preventDefault();
     setSignupError('');
     
-    // Validate required fields
-    if (!signupCpf || !signupPassword || !signupName || !signupRegistration || !signupCity || !signupUnit) {
+    // Validate required fields including team
+    if (!signupCpf || !signupPassword || !signupName || !signupRegistration || !signupCity || !signupUnit || !signupTeam) {
       setSignupError('Preencha todos os campos obrigatórios');
       return;
     }
@@ -233,6 +248,7 @@ const PlantaoHome = () => {
       registration_number: signupRegistration,
       city: signupCity,
       unit: signupUnit,
+      current_team: signupTeam,
       phone: signupPhone.replace(/\D/g, '') || undefined,
       email: signupEmail || undefined,
     });
@@ -241,6 +257,25 @@ const PlantaoHome = () => {
       setSignupError(error);
     } else {
       toast.success('Cadastro realizado com sucesso!');
+      stopMusicAndNavigate();
+    }
+  };
+
+  const handleMasterLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMasterError('');
+    
+    if (!masterUsername || !masterPassword) {
+      setMasterError('Preencha usuário e senha');
+      return;
+    }
+
+    const { error } = await signInMaster(masterUsername, masterPassword);
+    
+    if (error) {
+      setMasterError(error);
+    } else {
+      toast.success('Login master realizado!');
       stopMusicAndNavigate();
     }
   };
@@ -372,6 +407,77 @@ const PlantaoHome = () => {
                         ) : null}
                         Entrar
                       </Button>
+
+                      <div className="relative my-3">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-border/50" />
+                        </div>
+                        <div className="relative flex justify-center text-xs">
+                          <span className="bg-card px-2 text-muted-foreground">ou</span>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-9 text-xs border-amber-500/50 text-amber-500 hover:bg-amber-500/10"
+                        onClick={() => setShowMasterLogin(!showMasterLogin)}
+                      >
+                        <Crown className="w-3.5 h-3.5 mr-2" />
+                        {showMasterLogin ? 'Voltar ao login normal' : 'Acesso Administrador'}
+                      </Button>
+
+                      {showMasterLogin && (
+                        <form onSubmit={handleMasterLogin} className="space-y-2 mt-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                          <div className="space-y-1">
+                            <Label htmlFor="master-username" className="flex items-center gap-2 text-xs text-amber-500">
+                              <User className="w-3.5 h-3.5" /> Usuário Master
+                            </Label>
+                            <Input
+                              id="master-username"
+                              type="text"
+                              placeholder="Digite o usuário"
+                              value={masterUsername}
+                              onChange={(e) => setMasterUsername(e.target.value)}
+                              className="bg-background/50 border-amber-500/30 h-9"
+                            />
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <Label htmlFor="master-password" className="flex items-center gap-2 text-xs text-amber-500">
+                              <Lock className="w-3.5 h-3.5" /> Senha Master
+                            </Label>
+                            <Input
+                              id="master-password"
+                              type="password"
+                              placeholder="••••••"
+                              value={masterPassword}
+                              onChange={(e) => setMasterPassword(e.target.value)}
+                              className="bg-background/50 border-amber-500/30 h-9"
+                            />
+                          </div>
+
+                          {masterError && (
+                            <div className="flex items-center gap-2 text-destructive text-xs">
+                              <AlertCircle className="w-3.5 h-3.5" />
+                              {masterError}
+                            </div>
+                          )}
+
+                          <Button
+                            type="submit"
+                            className="w-full bg-amber-500 hover:bg-amber-600 text-black h-9"
+                            disabled={isLoading}
+                          >
+                            {isLoading ? (
+                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            ) : (
+                              <Crown className="w-4 h-4 mr-2" />
+                            )}
+                            Entrar como Administrador
+                          </Button>
+                        </form>
+                      )}
                     </form>
                   </TabsContent>
 
@@ -455,6 +561,37 @@ const PlantaoHome = () => {
                             </SelectContent>
                           </Select>
                         </div>
+                      </div>
+
+                      {/* Seleção de Equipe - OBRIGATÓRIO */}
+                      <div className="space-y-1">
+                        <Label htmlFor="signup-team" className="flex items-center gap-2 text-xs">
+                          <Users className="w-3.5 h-3.5" /> Equipe *
+                        </Label>
+                        <Select value={signupTeam} onValueChange={(v) => setSignupTeam(v as typeof signupTeam)}>
+                          <SelectTrigger className={`bg-background/50 border-border/50 h-9 ${!signupTeam ? 'border-amber-500/50' : 'border-primary/50'}`}>
+                            <SelectValue placeholder="Selecione sua equipe" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TEAMS.map((team) => (
+                              <SelectItem key={team.value} value={team.value}>
+                                <span className="flex items-center gap-2">
+                                  <span className={`w-2 h-2 rounded-full ${
+                                    team.value === 'alfa' ? 'bg-red-500' :
+                                    team.value === 'bravo' ? 'bg-blue-500' :
+                                    team.value === 'charlie' ? 'bg-green-500' : 'bg-amber-500'
+                                  }`} />
+                                  {team.label}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {!signupTeam && (
+                          <p className="text-amber-500 text-[10px] flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" /> Selecione sua equipe para continuar
+                          </p>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
