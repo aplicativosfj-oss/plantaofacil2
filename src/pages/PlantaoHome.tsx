@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { usePlantaoTheme } from '@/contexts/PlantaoThemeContext';
 import { useBiometricAuth } from '@/hooks/useBiometricAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -65,8 +66,14 @@ const validateCPF = (cpf: string): boolean => {
   return true;
 };
 
-const UNITS = ['CS Feijó', 'CS Juruá', 'CS Rio Branco', 'CS Sena', 'CS Brasiléia'];
-const CITIES = ['Feijó', 'Rio Branco', 'Cruzeiro do Sul', 'Tarauacá', 'Sena Madureira'];
+const UNITS = [
+  { id: 'cs-feijo', name: 'CS Feijó', active: true },
+  { id: 'cs-jurua', name: 'CS Juruá', active: false },
+  { id: 'cs-rio-branco', name: 'CS Rio Branco', active: false },
+  { id: 'cs-purus', name: 'CS Purus', active: false },
+  { id: 'cs-alto-acre', name: 'CS Alto Acre', active: false },
+];
+const CITIES = ['Feijó', 'Rio Branco', 'Cruzeiro do Sul', 'Tarauacá', 'Sena Madureira', 'Brasileia'];
 
 // Mapa de ícones para uso dinâmico
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -307,6 +314,8 @@ const PlantaoHome = () => {
   const [isAutoLogging, setIsAutoLogging] = useState(false);
   const [blockedTeamClicked, setBlockedTeamClicked] = useState<string | null>(null);
   const [rememberPassword, setRememberPassword] = useState(true);
+  const [selectedUnit, setSelectedUnit] = useState('CS Feijó');
+  const [showUnitSelector, setShowUnitSelector] = useState(false);
 
   // Login state
   const [loginCpf, setLoginCpf] = useState('');
@@ -733,6 +742,88 @@ const PlantaoHome = () => {
                   )}
                 </AnimatePresence>
 
+              </motion.div>
+
+              {/* Unit Selector Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                className="w-full max-w-md mt-4"
+              >
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Building2 className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                    Unidade Socioeducativa
+                  </span>
+                </div>
+                
+                <motion.button
+                  onClick={() => setShowUnitSelector(!showUnitSelector)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full p-3 rounded-xl bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-md border border-primary/20 hover:border-primary/40 transition-all duration-300 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/20">
+                      <MapPin className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-semibold text-sm">{selectedUnit}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {UNITS.find(u => u.name === selectedUnit)?.active ? 'Sistema Ativo' : 'Em breve'}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${showUnitSelector ? 'rotate-90' : ''}`} />
+                </motion.button>
+                
+                <AnimatePresence>
+                  {showUnitSelector && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-2 overflow-hidden"
+                    >
+                      <div className="bg-card/90 backdrop-blur-md rounded-xl border border-border/50 p-2 space-y-1">
+                        {UNITS.map((unit) => (
+                          <motion.button
+                            key={unit.id}
+                            onClick={() => {
+                              setSelectedUnit(unit.name);
+                              setShowUnitSelector(false);
+                              if (!unit.active) {
+                                toast.info(`🚧 ${unit.name}: Funcionalidade não disponível para sua unidade ainda. Aguarde novidades!`, { duration: 4000 });
+                              }
+                            }}
+                            whileHover={{ x: 4 }}
+                            className={`w-full p-2 rounded-lg flex items-center justify-between transition-colors ${
+                              selectedUnit === unit.name 
+                                ? 'bg-primary/20 border border-primary/30' 
+                                : 'hover:bg-muted/50'
+                            } ${!unit.active ? 'opacity-60' : ''}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Building2 className={`w-4 h-4 ${selectedUnit === unit.name ? 'text-primary' : 'text-muted-foreground'}`} />
+                              <span className={`text-sm ${selectedUnit === unit.name ? 'font-semibold text-primary' : ''}`}>
+                                {unit.name}
+                              </span>
+                            </div>
+                            {selectedUnit === unit.name && (
+                              <CheckCircle className="w-4 h-4 text-primary" />
+                            )}
+                            {!unit.active && selectedUnit !== unit.name && (
+                              <span className="text-[10px] text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded">
+                                Em breve
+                              </span>
+                            )}
+                          </motion.button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
 
               {/* Decorative scan line effect */}
@@ -1172,7 +1263,7 @@ const PlantaoHome = () => {
                               </SelectTrigger>
                               <SelectContent>
                                 {UNITS.map((unit) => (
-                                  <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                                  <SelectItem key={unit.id} value={unit.name}>{unit.name}</SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
