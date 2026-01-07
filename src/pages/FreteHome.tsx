@@ -12,7 +12,6 @@ import ParticlesBackground from '@/components/ParticlesBackground';
 import FreteAnimatedLogo from '@/components/frete/FreteAnimatedLogo';
 import AudioVisualizer from '@/components/AudioVisualizer';
 import SportThemeSelector from '@/components/SportThemeSelector';
-import MiniMusicPlayer from '@/components/MiniMusicPlayer';
 import HoverEffectsToggle from '@/components/HoverEffectsToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAudio } from '@/contexts/AudioContext';
@@ -178,9 +177,6 @@ const FreteHome: React.FC = () => {
 
         {/* Hover Effects Toggle - bottom left */}
         <HoverEffectsToggle />
-
-        {/* Mini Music Player - above footer */}
-        <MiniMusicPlayer />
 
         {/* Footer */}
         <motion.footer
