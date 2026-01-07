@@ -7,13 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, ArrowLeftRight, CalendarIcon, Send, Clock, User, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowLeftRight, CalendarIcon, Send, Clock, User, CheckCircle, XCircle, Loader2, Calendar as CalendarDays, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 import plantaoLogo from '@/assets/plantao-logo.png';
 
 interface Props { 
@@ -51,6 +53,12 @@ const SwapPanel = ({ onBack, agentId, agentTeam }: Props) => {
   const [pendingForMe, setPendingForMe] = useState<SwapRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+  const [showSummary, setShowSummary] = useState(false);
+  const [lastCreatedSwap, setLastCreatedSwap] = useState<{
+    originalDate: Date;
+    compensationDate: Date;
+    agent: Agent | null;
+  } | null>(null);
 
   useEffect(() => {
     fetchAgents();
@@ -133,6 +141,15 @@ const SwapPanel = ({ onBack, agentId, agentTeam }: Props) => {
       toast.error('Erro ao criar solicitação de permuta');
       console.error(error);
     } else {
+      // Store swap details for summary
+      const selectedAgent = agents.find(a => a.id === selectedAgentId) || null;
+      setLastCreatedSwap({
+        originalDate: originalDate,
+        compensationDate: compensationDate,
+        agent: selectedAgent
+      });
+      setShowSummary(true);
+      
       toast.success('Solicitação de permuta enviada!');
       setOriginalDate(undefined);
       setCompensationDate(undefined);
@@ -141,6 +158,21 @@ const SwapPanel = ({ onBack, agentId, agentTeam }: Props) => {
       fetchSwapRequests();
     }
     setLoading(false);
+  };
+
+  const getTeamColor = (team: string | null) => {
+    switch (team) {
+      case 'alfa': return 'bg-blue-500';
+      case 'bravo': return 'bg-amber-500';
+      case 'charlie': return 'bg-emerald-500';
+      case 'delta': return 'bg-red-500';
+      default: return 'bg-muted';
+    }
+  };
+
+  const getTeamName = (team: string | null) => {
+    if (!team) return 'Sem equipe';
+    return `Equipe ${team.charAt(0).toUpperCase() + team.slice(1)}`;
   };
 
   const handleRespondSwap = async (swapId: string, accept: boolean) => {
@@ -181,6 +213,85 @@ const SwapPanel = ({ onBack, agentId, agentTeam }: Props) => {
 
   return (
     <div className="space-y-4">
+      {/* Summary Dialog */}
+      <Dialog open={showSummary} onOpenChange={setShowSummary}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-500">
+              <CheckCircle className="w-5 h-5" />
+              Permuta Solicitada!
+            </DialogTitle>
+          </DialogHeader>
+
+          {lastCreatedSwap && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
+            >
+              {/* Agent Info */}
+              <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white ${getTeamColor(lastCreatedSwap.agent?.current_team || null)}`}>
+                  <User className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-lg">{lastCreatedSwap.agent?.full_name || 'Agente'}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {getTeamName(lastCreatedSwap.agent?.current_team || null)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Dates Summary */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Original Date */}
+                <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CalendarDays className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-medium text-primary">SEU PLANTÃO</span>
+                  </div>
+                  <p className="text-xl font-bold">
+                    {format(lastCreatedSwap.originalDate, 'dd/MM', { locale: ptBR })}
+                  </p>
+                  <p className="text-sm font-medium capitalize">
+                    {format(lastCreatedSwap.originalDate, 'EEEE', { locale: ptBR })}
+                  </p>
+                </div>
+
+                {/* Compensation Date */}
+                <div className="p-4 rounded-lg bg-accent/10 border border-accent/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ArrowLeftRight className="w-4 h-4 text-accent" />
+                    <span className="text-xs font-medium text-accent">COMPENSAÇÃO</span>
+                  </div>
+                  <p className="text-xl font-bold">
+                    {format(lastCreatedSwap.compensationDate, 'dd/MM', { locale: ptBR })}
+                  </p>
+                  <p className="text-sm font-medium capitalize">
+                    {format(lastCreatedSwap.compensationDate, 'EEEE', { locale: ptBR })}
+                  </p>
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="flex items-center justify-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                <Clock className="w-4 h-4 text-yellow-500" />
+                <span className="text-sm text-yellow-500 font-medium">Aguardando resposta do agente</span>
+              </div>
+
+              <Button className="w-full" onClick={() => setShowSummary(false)}>
+                Entendido
+              </Button>
+            </motion.div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={onBack}><ArrowLeft className="w-4 h-4 mr-2" /> Voltar</Button>
         <img src={plantaoLogo} alt="PlantãoPro" className="h-8 w-auto object-contain opacity-70" />
@@ -367,22 +478,43 @@ const SwapPanel = ({ onBack, agentId, agentTeam }: Props) => {
           ) : (
             <div className="space-y-3">
               {myRequests.map((swap) => (
-                <div key={swap.id} className="p-3 rounded-lg bg-muted/50 border">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium flex items-center gap-2">
-                        <ArrowLeftRight className="w-4 h-4" />
-                        Permuta com {swap.requested?.full_name || 'Agente'}
-                      </p>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        <span>{format(new Date(swap.original_shift_date), "dd/MM", { locale: ptBR })}</span>
-                        <span className="mx-2">→</span>
-                        <span>{format(new Date(swap.compensation_date), "dd/MM", { locale: ptBR })}</span>
+                <motion.div 
+                  key={swap.id} 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="p-4 rounded-lg bg-muted/50 border hover:border-primary/30 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white ${getTeamColor(swap.requested?.current_team || null)}`}>
+                          <User className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{swap.requested?.full_name || 'Agente'}</p>
+                          <p className="text-xs text-muted-foreground">{getTeamName(swap.requested?.current_team || null)}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 mt-3">
+                        <div className="p-2 rounded bg-background/50">
+                          <p className="text-[10px] text-muted-foreground uppercase">Seu Plantão</p>
+                          <p className="font-medium">{format(new Date(swap.original_shift_date), "dd/MM", { locale: ptBR })}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{format(new Date(swap.original_shift_date), "EEEE", { locale: ptBR })}</p>
+                        </div>
+                        <div className="p-2 rounded bg-background/50">
+                          <p className="text-[10px] text-muted-foreground uppercase">Compensação</p>
+                          <p className="font-medium">{format(new Date(swap.compensation_date), "dd/MM", { locale: ptBR })}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{format(new Date(swap.compensation_date), "EEEE", { locale: ptBR })}</p>
+                        </div>
                       </div>
                     </div>
-                    {getStatusBadge(swap.status)}
+                    
+                    <div className="shrink-0">
+                      {getStatusBadge(swap.status)}
+                    </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
