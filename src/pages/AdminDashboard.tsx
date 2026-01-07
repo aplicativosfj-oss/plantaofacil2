@@ -9,7 +9,6 @@ import {
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useAudio } from '@/contexts/AudioContext';
-import MusicToggle from '@/components/MusicToggle';
 import AppFooter from '@/components/AppFooter';
 import AboutDialog from '@/components/AboutDialog';
 import LicenseTimer from '@/components/LicenseTimer';
@@ -274,7 +273,6 @@ const AdminDashboard: React.FC = () => {
           {profile && <ProfileCompletionPrompt />}
         </Suspense>
 
-        <MusicToggle />
         <div className="px-4"><AppFooter /></div>
       </div>
       

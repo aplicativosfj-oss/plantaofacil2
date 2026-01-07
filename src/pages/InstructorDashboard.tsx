@@ -9,7 +9,6 @@ import { supabase } from '@/integrations/supabase/client';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useAudio } from '@/contexts/AudioContext';
-import MusicToggle from '@/components/MusicToggle';
 import AppFooter from '@/components/AppFooter';
 import AboutDialog from '@/components/AboutDialog';
 import LicenseTimer from '@/components/LicenseTimer';
@@ -305,7 +304,6 @@ const InstructorDashboard: React.FC = () => {
           />
         </Suspense>
         
-        <MusicToggle />
         <div className="px-4">
           <AppFooter />
         </div>
