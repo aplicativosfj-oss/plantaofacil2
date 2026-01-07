@@ -505,24 +505,34 @@ const AgentDashboard = () => {
             {/* Team Members Card */}
             <TeamMembersCard />
 
-            {/* Team Selection */}
+            {/* Team Management */}
             <Card 
-              className="cursor-pointer hover:border-primary/50 transition-colors"
+              className={`cursor-pointer transition-colors border-2 ${
+                agent.current_team 
+                  ? `border-${agent.current_team === 'alfa' ? 'blue' : agent.current_team === 'bravo' ? 'amber' : agent.current_team === 'charlie' ? 'emerald' : 'red'}-500/30 hover:border-primary/50`
+                  : 'border-warning/50 hover:border-warning'
+              }`}
               onClick={() => setActivePanel('team')}
             >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Users className={`w-6 h-6 ${getTeamTextColor(agent.current_team)}`} />
+                    <div className={`p-2 rounded-lg ${agent.current_team ? getTeamColor(agent.current_team) : 'bg-warning/20'}`}>
+                      {agent.current_team ? (
+                        <Users className="w-6 h-6 text-white" />
+                      ) : (
+                        <AlertTriangle className="w-6 h-6 text-warning" />
+                      )}
+                    </div>
                     <div>
                       <p className="font-medium">
                         {agent.current_team 
-                          ? `Gerenciar Equipe`
+                          ? `Equipe ${agent.current_team.charAt(0).toUpperCase() + agent.current_team.slice(1)}`
                           : 'Selecionar Equipe'}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {agent.current_team 
-                          ? `Desde ${agent.team_joined_at ? format(new Date(agent.team_joined_at), 'dd/MM/yyyy') : 'N/A'}`
+                          ? 'Transferir ou desvincular'
                           : 'Vincule-se a uma equipe'}
                       </p>
                     </div>

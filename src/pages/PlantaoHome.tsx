@@ -106,8 +106,6 @@ const TeamButton = ({ team, index, isUserTeam, isBlocked, isBlockedClicked, isAu
   const TeamIcon = getTeamIcon(team.value, themeConfig);
   
   const handlePress = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (isBlocked) return;
-    
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -374,13 +372,12 @@ const PlantaoHome = () => {
           navigate('/dashboard');
         }
       } else {
-        // Different team - show panel but with warning
-        setSelectedTeam(teamValue);
-        setSignupTeam(teamValue);
-        setShowAuthPanel(true);
-        toast.warning(
-          `Você pertence à equipe ${savedCredentials.team.toUpperCase()}. Apenas visualização permitida.`,
-          { duration: 4000 }
+        // Different team - BLOCK ACCESS
+        setBlockedTeamClicked(teamValue);
+        setTimeout(() => setBlockedTeamClicked(null), 400);
+        toast.error(
+          `Acesso negado! Você está cadastrado na equipe ${savedCredentials.team.toUpperCase()}. Para trocar de equipe, acesse seu painel e use a opção de transferência.`,
+          { duration: 5000 }
         );
       }
     } else {
