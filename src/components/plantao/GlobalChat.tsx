@@ -1,17 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Send, Users, MessageSquare, Globe, Shield, Star, Target, Crosshair, User } from 'lucide-react';
+import { Send, Users, MessageSquare, Globe, Shield, Star, Target, Crosshair, User, Mic, MicOff, Image, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import useChatSounds from '@/hooks/useChatSounds';
+import EmojiPicker from './EmojiPicker';
 
 interface ChatMessage {
   id: string;
@@ -58,20 +60,26 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { playMessageSent, playMessageReceived, playEmojiSound, playErrorSound } = useChatSounds();
 
   // Fetch messages
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !agent?.id) return;
 
     const fetchMessages = async () => {
-      const query = supabase
+      const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
         .order('created_at', { ascending: true })
         .limit(100);
 
-      const { data } = await query;
+      if (error) {
+        console.error('Error fetching messages:', error);
+        return;
+      }
 
       if (data) {
         // Fetch sender info for each message
@@ -94,14 +102,15 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
 
     fetchMessages();
 
-    // Subscribe to new messages
+    // Subscribe to new messages with improved handling
     const channel = supabase
-      .channel('chat-messages')
+      .channel(`chat-messages-global-${agent.id}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'chat_messages'
       }, async (payload) => {
+        console.log('New chat message received:', payload);
         const newMsg = payload.new as ChatMessage;
         
         // Fetch sender info
@@ -111,14 +120,28 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
           .eq('id', newMsg.sender_id)
           .single();
 
-        setMessages(prev => [...prev, { ...newMsg, sender }]);
+        const messageWithSender = { ...newMsg, sender };
+        
+        setMessages(prev => {
+          // Avoid duplicates
+          if (prev.some(m => m.id === newMsg.id)) return prev;
+          return [...prev, messageWithSender];
+        });
+
+        // Play sound for messages from others
+        if (newMsg.sender_id !== agent?.id) {
+          playMessageReceived();
+        }
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Chat subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up chat subscription');
       supabase.removeChannel(channel);
     };
-  }, [isOpen]);
+  }, [isOpen, agent?.id, playMessageReceived]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -142,12 +165,28 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
     const { error } = await supabase.from('chat_messages').insert(messageData);
 
     if (error) {
+      console.error('Error sending message:', error);
       toast.error('Erro ao enviar mensagem');
+      playErrorSound();
     } else {
       setNewMessage('');
+      playMessageSent();
     }
 
     setIsLoading(false);
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setNewMessage(prev => prev + emoji);
+    inputRef.current?.focus();
+  };
+
+  const handleVoiceRecord = () => {
+    // Toggle recording state (placeholder for voice recording feature)
+    setIsRecording(!isRecording);
+    if (!isRecording) {
+      toast.info('🎤 Gravação de voz em breve!', { duration: 2000 });
+    }
   };
 
   const filteredMessages = messages.filter(m => {
@@ -161,7 +200,7 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
         <SheetHeader className="p-4 border-b">
           <SheetTitle className="flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-primary" />
-            Chat
+            Chat Global
           </SheetTitle>
         </SheetHeader>
 
@@ -188,15 +227,16 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
                       <p className="text-xs">Seja o primeiro a enviar!</p>
                     </div>
                   ) : (
-                    filteredMessages.map((message, index) => {
+                    filteredMessages.map((message) => {
                       const isOwn = message.sender_id === agent?.id;
                       const TeamIcon = getTeamIcon(message.sender?.current_team || null);
 
                       return (
                         <motion.div
                           key={message.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ type: 'spring', damping: 20, stiffness: 300 }}
                           className={`flex gap-2 ${isOwn ? 'flex-row-reverse' : ''}`}
                         >
                           <Avatar className="w-8 h-8 flex-shrink-0">
@@ -215,15 +255,18 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
                                 {format(new Date(message.created_at), 'HH:mm', { locale: ptBR })}
                               </span>
                             </div>
-                            <div className={`
-                              px-3 py-2 rounded-2xl text-sm
-                              ${isOwn 
-                                ? 'bg-primary text-primary-foreground rounded-br-md' 
-                                : 'bg-muted rounded-bl-md'
-                              }
-                            `}>
+                            <motion.div 
+                              className={`
+                                px-3 py-2 rounded-2xl text-sm
+                                ${isOwn 
+                                  ? 'bg-primary text-primary-foreground rounded-br-md' 
+                                  : 'bg-muted rounded-bl-md'
+                                }
+                              `}
+                              whileHover={{ scale: 1.02 }}
+                            >
                               {message.content}
-                            </div>
+                            </motion.div>
                           </div>
                         </motion.div>
                       );
@@ -240,14 +283,29 @@ const GlobalChat = ({ isOpen, onClose }: GlobalChatProps) => {
                   e.preventDefault();
                   handleSendMessage();
                 }}
-                className="flex gap-2"
+                className="flex gap-2 items-center"
               >
+                <EmojiPicker onEmojiSelect={handleEmojiSelect} onPlaySound={playEmojiSound} />
+                
                 <Input
+                  ref={inputRef}
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder={`Mensagem para ${activeTab === 'general' ? 'todos' : 'sua equipe'}...`}
                   disabled={isLoading}
+                  className="flex-1"
                 />
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleVoiceRecord}
+                  className={`h-9 w-9 ${isRecording ? 'text-destructive animate-pulse' : 'text-muted-foreground'}`}
+                >
+                  {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                </Button>
+
                 <Button type="submit" size="icon" disabled={isLoading || !newMessage.trim()}>
                   <Send className="w-4 h-4" />
                 </Button>

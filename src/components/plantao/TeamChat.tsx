@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Users, MessageCircle, Globe, ChevronDown } from 'lucide-react';
+import { X, Send, Users, MessageCircle, Globe, ChevronDown, Mic, MicOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 import ChatAgentProfile from './ChatAgentProfile';
+import EmojiPicker from './EmojiPicker';
+import useChatSounds from '@/hooks/useChatSounds';
 
 interface Message {
   id: string;
@@ -69,7 +72,10 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { playMessageSent, playMessageReceived, playEmojiSound, playErrorSound } = useChatSounds();
 
   // Initialize selected team with agent's team
   useEffect(() => {
@@ -109,6 +115,10 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
 
       const { data, error } = await query;
 
+      if (error) {
+        console.error('Error fetching messages:', error);
+      }
+
       if (data && !error) {
         setMessages(data as Message[]);
       }
@@ -117,14 +127,16 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
 
     fetchMessages();
 
-    // Subscribe to new messages
+    // Subscribe to new messages with improved handling
     const channel = supabase
-      .channel('team-chat')
+      .channel(`team-chat-${agent.id}-${activeTab}-${selectedTeam}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'agent_messages',
       }, async (payload) => {
+        console.log('New team message received:', payload);
+        
         // Fetch the sender info for the new message
         const { data: senderData } = await supabase
           .from('agents')
@@ -137,19 +149,33 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
           sender: senderData
         } as Message;
 
-        // Only add if it matches current filter
-        if (activeTab === 'team' && newMsg.recipient_team === selectedTeam) {
-          setMessages(prev => [...prev, newMsg]);
-        } else if (activeTab === 'all' && newMsg.is_broadcast) {
-          setMessages(prev => [...prev, newMsg]);
+        // Check if message matches current filter
+        const matchesFilter = 
+          (activeTab === 'team' && newMsg.recipient_team === selectedTeam) ||
+          (activeTab === 'all' && newMsg.is_broadcast);
+
+        if (matchesFilter) {
+          setMessages(prev => {
+            // Avoid duplicates
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
+
+          // Play sound for messages from others
+          if (newMsg.sender_id !== agent?.id) {
+            playMessageReceived();
+          }
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Team chat subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up team chat subscription');
       supabase.removeChannel(channel);
     };
-  }, [isOpen, agent, activeTab, selectedTeam]);
+  }, [isOpen, agent, activeTab, selectedTeam, playMessageReceived]);
 
   useEffect(() => {
     scrollToBottom();
@@ -174,10 +200,13 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
 
       if (error) {
         console.error('Error sending message:', error);
+        toast.error('Erro ao enviar mensagem');
+        playErrorSound();
         return;
       }
 
       setNewMessage('');
+      playMessageSent();
     } finally {
       setSending(false);
     }
@@ -187,6 +216,18 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setNewMessage(prev => prev + emoji);
+    inputRef.current?.focus();
+  };
+
+  const handleVoiceRecord = () => {
+    setIsRecording(!isRecording);
+    if (!isRecording) {
+      toast.info('🎤 Gravação de voz em breve!', { duration: 2000 });
     }
   };
 
@@ -220,7 +261,7 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
             <div className="flex items-center justify-between p-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <MessageCircle className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-semibold">Chat</h2>
+                <h2 className="text-lg font-semibold">Chat Equipe</h2>
               </div>
               <button
                 onClick={onClose}
@@ -293,8 +334,9 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
                       return (
                         <motion.div
                           key={msg.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ type: 'spring', damping: 20, stiffness: 300 }}
                           className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                         >
                           <div className={`max-w-[80%] ${isOwn ? 'order-2' : 'order-1'}`}>
@@ -325,13 +367,16 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
                             )}
                             
                             {/* Message bubble */}
-                            <div className={`rounded-2xl px-4 py-2 ${
-                              isOwn 
-                                ? 'bg-primary text-primary-foreground rounded-br-sm' 
-                                : 'bg-muted rounded-bl-sm'
-                            }`}>
+                            <motion.div 
+                              className={`rounded-2xl px-4 py-2 ${
+                                isOwn 
+                                  ? 'bg-primary text-primary-foreground rounded-br-sm' 
+                                  : 'bg-muted rounded-bl-sm'
+                              }`}
+                              whileHover={{ scale: 1.02 }}
+                            >
                               <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
-                            </div>
+                            </motion.div>
                             
                             {/* Time */}
                             <p className={`text-[10px] text-muted-foreground mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
@@ -347,8 +392,11 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
 
                 {/* Input */}
                 <div className="p-4 border-t border-border">
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
+                    <EmojiPicker onEmojiSelect={handleEmojiSelect} onPlaySound={playEmojiSound} />
+                    
                     <Input
+                      ref={inputRef}
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
@@ -356,6 +404,17 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
                       className="flex-1"
                       disabled={sending}
                     />
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleVoiceRecord}
+                      className={`h-9 w-9 ${isRecording ? 'text-destructive animate-pulse' : 'text-muted-foreground'}`}
+                    >
+                      {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                    </Button>
+
                     <Button 
                       onClick={handleSend} 
                       disabled={!newMessage.trim() || sending}
