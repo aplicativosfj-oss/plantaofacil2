@@ -15,6 +15,12 @@ interface ThemeConfig {
   name: string;
   subtitle: string;
   icon: string; // emoji for simplicity
+  teamIcons: {
+    alfa: string;
+    bravo: string;
+    charlie: string;
+    delta: string;
+  };
   colors: {
     primary: string;
     accent: string;
@@ -39,6 +45,12 @@ export const PLANTAO_THEMES: Record<PlantaoThemeType, ThemeConfig> = {
     name: 'Operações Táticas',
     subtitle: 'Ação e patrulhamento',
     icon: '🛡️',
+    teamIcons: {
+      alfa: 'Shield',
+      bravo: 'Star',
+      charlie: 'Target',
+      delta: 'Crosshair',
+    },
     colors: {
       primary: '210 80% 45%',
       accent: '152 60% 40%',
@@ -61,6 +73,12 @@ export const PLANTAO_THEMES: Record<PlantaoThemeType, ThemeConfig> = {
     name: 'Resgate & Incêndio',
     subtitle: 'Emergência e salvamento',
     icon: '🔥',
+    teamIcons: {
+      alfa: 'Flame',
+      bravo: 'Siren',
+      charlie: 'Truck',
+      delta: 'AlertTriangle',
+    },
     colors: {
       primary: '0 75% 50%',
       accent: '35 95% 55%',
@@ -83,6 +101,12 @@ export const PLANTAO_THEMES: Record<PlantaoThemeType, ThemeConfig> = {
     name: 'Atendimento Móvel',
     subtitle: 'Primeiros socorros',
     icon: '⚕️',
+    teamIcons: {
+      alfa: 'Ambulance',
+      bravo: 'HeartPulse',
+      charlie: 'Stethoscope',
+      delta: 'Activity',
+    },
     colors: {
       primary: '35 95% 50%',
       accent: '0 70% 50%',
@@ -105,6 +129,12 @@ export const PLANTAO_THEMES: Record<PlantaoThemeType, ThemeConfig> = {
     name: 'Custódia',
     subtitle: 'Controle e escolta',
     icon: '⛓️',
+    teamIcons: {
+      alfa: 'Lock',
+      bravo: 'KeyRound',
+      charlie: 'ShieldAlert',
+      delta: 'Handcuffs',
+    },
     colors: {
       primary: '220 15% 45%',
       accent: '35 60% 45%',
@@ -127,6 +157,12 @@ export const PLANTAO_THEMES: Record<PlantaoThemeType, ThemeConfig> = {
     name: 'Patrulha Viária',
     subtitle: 'Rondas e fiscalização',
     icon: '🚧',
+    teamIcons: {
+      alfa: 'Car',
+      bravo: 'TrafficCone',
+      charlie: 'Route',
+      delta: 'CircleAlert',
+    },
     colors: {
       primary: '145 70% 40%',
       accent: '45 90% 50%',
@@ -149,6 +185,12 @@ export const PLANTAO_THEMES: Record<PlantaoThemeType, ThemeConfig> = {
     name: 'Sentinela',
     subtitle: 'Monitoramento e apoio',
     icon: '🛰️',
+    teamIcons: {
+      alfa: 'Eye',
+      bravo: 'Radar',
+      charlie: 'ScanEye',
+      delta: 'Cctv',
+    },
     colors: {
       primary: '270 60% 50%',
       accent: '200 70% 50%',
@@ -171,6 +213,12 @@ export const PLANTAO_THEMES: Record<PlantaoThemeType, ThemeConfig> = {
     name: 'Guarda Urbana',
     subtitle: 'Proteção comunitária',
     icon: '🏙️',
+    teamIcons: {
+      alfa: 'Building2',
+      bravo: 'UserRoundCheck',
+      charlie: 'MapPin',
+      delta: 'BadgeCheck',
+    },
     colors: {
       primary: '200 75% 45%',
       accent: '170 60% 45%',

@@ -18,7 +18,7 @@ const ThemeSelector = ({ trigger }: ThemeSelectorProps) => {
 
   const handleSelectTheme = (themeId: PlantaoThemeType) => {
     setTheme(themeId);
-    playSound('click');
+    // Não toca som ao trocar tema
   };
 
   const themes = Object.values(PLANTAO_THEMES);

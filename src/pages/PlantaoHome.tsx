@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar } from 'lucide-react';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar, Flame, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, KeyRound, ShieldAlert, Car, Route, CircleAlert, Radar, ScanEye, Cctv, Building2, UserRoundCheck, BadgeCheck, icons as LucideIcons, LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoLogo from '@/assets/plantao-pro-logo.png';
@@ -68,11 +68,24 @@ const validateCPF = (cpf: string): boolean => {
 const UNITS = ['CS Feijó', 'CS Juruá', 'CS Rio Branco', 'CS Sena', 'CS Brasiléia'];
 const CITIES = ['Feijó', 'Rio Branco', 'Cruzeiro do Sul', 'Tarauacá', 'Sena Madureira'];
 
+// Mapa de ícones para uso dinâmico
+const ICON_MAP: Record<string, LucideIcon> = {
+  Shield, Star, Target, Crosshair, Flame, Siren, Truck, AlertTriangle,
+  Ambulance, HeartPulse, Stethoscope, Activity, Lock, KeyRound, ShieldAlert,
+  Car, Route, CircleAlert, Eye, Radar, ScanEye, Cctv, Building2, UserRoundCheck, MapPin, BadgeCheck
+};
+
+// Função para obter ícone baseado no tema
+const getTeamIcon = (teamValue: string, themeConfig: any): LucideIcon => {
+  const iconName = themeConfig.teamIcons[teamValue];
+  return ICON_MAP[iconName] || Shield;
+};
+
 const TEAMS = [
-  { value: 'alfa', label: 'Equipe Alfa', icon: Shield, color: 'from-blue-600 to-blue-800', bgColor: 'bg-blue-500/20', borderColor: 'border-blue-500', textColor: 'text-blue-400', subtitle: 'Força Tática' },
-  { value: 'bravo', label: 'Equipe Bravo', icon: Star, color: 'from-amber-500 to-orange-600', bgColor: 'bg-amber-500/20', borderColor: 'border-amber-500', textColor: 'text-amber-400', subtitle: 'Operações Especiais' },
-  { value: 'charlie', label: 'Equipe Charlie', icon: Target, color: 'from-emerald-500 to-green-600', bgColor: 'bg-emerald-500/20', borderColor: 'border-emerald-500', textColor: 'text-emerald-400', subtitle: 'Pronta Resposta' },
-  { value: 'delta', label: 'Equipe Delta', icon: Crosshair, color: 'from-red-500 to-rose-600', bgColor: 'bg-red-500/20', borderColor: 'border-red-500', textColor: 'text-red-400', subtitle: 'Intervenção Rápida' },
+  { value: 'alfa', label: 'Equipe Alfa', color: 'from-blue-600 to-blue-800', bgColor: 'bg-team-alfa/20', borderColor: 'border-team-alfa', textColor: 'text-team-alfa', subtitle: 'Força Tática' },
+  { value: 'bravo', label: 'Equipe Bravo', color: 'from-amber-500 to-orange-600', bgColor: 'bg-team-bravo/20', borderColor: 'border-team-bravo', textColor: 'text-team-bravo', subtitle: 'Operações Especiais' },
+  { value: 'charlie', label: 'Equipe Charlie', color: 'from-emerald-500 to-green-600', bgColor: 'bg-team-charlie/20', borderColor: 'border-team-charlie', textColor: 'text-team-charlie', subtitle: 'Pronta Resposta' },
+  { value: 'delta', label: 'Equipe Delta', color: 'from-red-500 to-rose-600', bgColor: 'bg-team-delta/20', borderColor: 'border-team-delta', textColor: 'text-team-delta', subtitle: 'Intervenção Rápida' },
 ] as const;
 
 // Scanning line effect
@@ -518,7 +531,10 @@ const PlantaoHome = () => {
                             ) : isUserTeam ? (
                               <Fingerprint className={`w-6 h-6 ${team.textColor}`} />
                             ) : (
-                              <team.icon className={`w-6 h-6 ${team.textColor}`} />
+                              (() => {
+                                const TeamIcon = getTeamIcon(team.value, themeConfig);
+                                return <TeamIcon className={`w-6 h-6 ${team.textColor}`} />;
+                              })()
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -1016,18 +1032,19 @@ const PlantaoHome = () => {
                                 {(() => {
                                   const team = TEAMS.find(t => t.value === selectedTeam);
                                   if (!team) return null;
-                                  return (
-                                    <>
-                                      <div className={`p-1.5 rounded ${team.bgColor}`}>
-                                        <team.icon className={`w-4 h-4 ${team.textColor}`} />
-                                      </div>
-                                      <span className={`font-bold text-sm ${team.textColor}`}>
-                                        {team.label}
-                                      </span>
-                                      <CheckCircle className="w-4 h-4 text-green-500 ml-auto" />
-                                    </>
-                                  );
-                                })()}
+                                      const TeamIcon = getTeamIcon(team.value, themeConfig);
+                                      return (
+                                        <>
+                                          <div className={`p-1.5 rounded ${team.bgColor}`}>
+                                            <TeamIcon className={`w-4 h-4 ${team.textColor}`} />
+                                          </div>
+                                          <span className={`font-bold text-sm ${team.textColor}`}>
+                                            {team.label}
+                                          </span>
+                                          <CheckCircle className="w-4 h-4 text-green-500 ml-auto" />
+                                        </>
+                                      );
+                                    })()}
                               </div>
                             ) : (
                               <Select value={signupTeam} onValueChange={(v) => setSignupTeam(v as typeof signupTeam)}>
@@ -1035,14 +1052,17 @@ const PlantaoHome = () => {
                                   <SelectValue placeholder="Selecione sua equipe" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {TEAMS.map((team) => (
-                                    <SelectItem key={team.value} value={team.value}>
-                                      <span className="flex items-center gap-2">
-                                        <team.icon className={`w-4 h-4 ${team.textColor}`} />
-                                        {team.label}
-                                      </span>
-                                    </SelectItem>
-                                  ))}
+                                  {TEAMS.map((team) => {
+                                    const TeamIcon = getTeamIcon(team.value, themeConfig);
+                                    return (
+                                      <SelectItem key={team.value} value={team.value}>
+                                        <span className="flex items-center gap-2">
+                                          <TeamIcon className={`w-4 h-4 ${team.textColor}`} />
+                                          {team.label}
+                                        </span>
+                                      </SelectItem>
+                                    );
+                                  })}
                                 </SelectContent>
                               </Select>
                             )}
