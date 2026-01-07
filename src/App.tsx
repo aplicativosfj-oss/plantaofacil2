@@ -42,34 +42,27 @@ const PageLoader = () => (
   </div>
 );
 
+// Synchronous cache reset check - BEFORE component renders
+const CACHE_RESET_KEY = 'plantaopro_cache_reset_v3';
+if (typeof window !== 'undefined' && localStorage.getItem(CACHE_RESET_KEY) !== '1') {
+  localStorage.setItem(CACHE_RESET_KEY, '1');
+  // Clear caches synchronously where possible, then reload
+  if ('caches' in window) {
+    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
+  }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs => 
+      Promise.all(regs.map(r => r.unregister()))
+    ).catch(() => {});
+  }
+  // Small delay to let cleanup finish before reload
+  setTimeout(() => window.location.reload(), 100);
+}
+
 const App = () => {
   // Clear expired cache on app start
   useEffect(() => {
     clearExpiredCache();
-
-    // Se ainda estiver pegando arquivos antigos (PWA/service worker), limpamos UMA vez
-    // para remover qualquer cache "vinculado" de versões/projetos anteriores.
-    const CACHE_RESET_KEY = 'plantaopro_cache_reset_v2';
-    if (localStorage.getItem(CACHE_RESET_KEY) !== '1') {
-      localStorage.setItem(CACHE_RESET_KEY, '1');
-      (async () => {
-        try {
-          if ('serviceWorker' in navigator) {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(regs.map((r) => r.unregister()));
-          }
-          if ('caches' in window) {
-            const keys = await caches.keys();
-            await Promise.all(keys.map((k) => caches.delete(k)));
-          }
-        } catch {
-          // ignore
-        } finally {
-          window.location.reload();
-        }
-      })();
-      return;
-    }
 
     // Bloquear definitivamente qualquer tentativa de tocar MÚSICA de background
     // (deixa passar áudios normais do app, mas nunca permite faixas de música nem áudio em loop)
