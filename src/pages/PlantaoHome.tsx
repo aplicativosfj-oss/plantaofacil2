@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { Button } from '@/components/ui/button';
@@ -6,12 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield } from 'lucide-react';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, Volume2, VolumeX } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoLogo from '@/assets/plantao-logo.png';
 import plantaoBg from '@/assets/plantao-bg.png';
-
 const formatCPF = (value: string) => {
   const digits = value.replace(/\D/g, '').slice(0, 11);
   if (digits.length <= 3) return digits;
@@ -30,6 +29,8 @@ const formatPhone = (value: string) => {
 const PlantaoHome = () => {
   const { signIn, signUp, isLoading } = usePlantaoAuth();
   const navigate = useNavigate();
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   
   // Login state
   const [loginCpf, setLoginCpf] = useState('');
@@ -45,6 +46,17 @@ const PlantaoHome = () => {
   const [signupPhone, setSignupPhone] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupError, setSignupError] = useState('');
+
+  const toggleMusic = () => {
+    if (audioRef.current) {
+      if (isMusicPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsMusicPlaying(!isMusicPlaying);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,8 +113,22 @@ const PlantaoHome = () => {
     }
   };
 
-  return (
+    return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
+      {/* Background Audio */}
+      <audio ref={audioRef} loop>
+        <source src="/audio/cidade-vigilancia.mp3" type="audio/mpeg" />
+      </audio>
+
+      {/* Music Toggle Button */}
+      <button
+        onClick={toggleMusic}
+        className="fixed bottom-4 right-4 z-50 p-3 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground shadow-lg transition-all duration-300 hover:scale-110"
+        title={isMusicPlaying ? 'Pausar música' : 'Tocar música'}
+      >
+        {isMusicPlaying ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+      </button>
+
       {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
