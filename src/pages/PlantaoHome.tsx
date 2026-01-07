@@ -63,47 +63,40 @@ const TEAMS = [
   { value: 'delta', label: 'Equipe Delta', icon: Crosshair, color: 'from-red-500 to-rose-600', bgColor: 'bg-red-500/20', borderColor: 'border-red-500', textColor: 'text-red-400', subtitle: 'Intervenção Rápida' },
 ] as const;
 
-// Radar scan effect component
-const RadarScan = () => (
-  <div className="absolute inset-0 overflow-hidden pointer-events-none">
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-primary/20">
-      <motion.div
-        className="absolute inset-0 rounded-full"
-        style={{
-          background: 'conic-gradient(from 0deg, transparent 0deg, hsl(var(--primary) / 0.3) 30deg, transparent 60deg)',
-        }}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-      />
+// Scanning line effect
+const ScanLine = () => (
+  <motion.div
+    className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary/60 to-transparent pointer-events-none z-20"
+    animate={{ top: ['0%', '100%', '0%'] }}
+    transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+  />
+);
+
+// Corner brackets decoration
+const CornerBrackets = () => (
+  <>
+    <div className="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-primary/50" />
+    <div className="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-primary/50" />
+    <div className="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-primary/50" />
+    <div className="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-primary/50" />
+  </>
+);
+
+// Tactical HUD element
+const HUDElement = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+  <div className={`relative ${className}`}>
+    <div className="absolute -left-1 top-0 bottom-0 w-[2px] bg-primary/50" />
+    <div className="pl-3 text-xs font-mono text-primary/80 uppercase tracking-widest">
+      {children}
     </div>
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full border border-primary/10" />
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] rounded-full border border-primary/5" />
   </div>
 );
 
-// Floating particles for security theme
-const SecurityParticles = () => (
-  <div className="absolute inset-0 overflow-hidden pointer-events-none">
-    {[...Array(15)].map((_, i) => (
-      <motion.div
-        key={i}
-        className="absolute w-1 h-1 bg-primary/40 rounded-full"
-        style={{
-          left: `${Math.random() * 100}%`,
-          top: `${Math.random() * 100}%`,
-        }}
-        animate={{
-          y: [0, -30, 0],
-          opacity: [0.2, 0.8, 0.2],
-          scale: [1, 1.5, 1],
-        }}
-        transition={{
-          duration: 3 + Math.random() * 2,
-          repeat: Infinity,
-          delay: Math.random() * 2,
-        }}
-      />
-    ))}
+// Pulsing alert indicator
+const AlertPulse = () => (
+  <div className="relative flex items-center justify-center">
+    <div className="absolute w-3 h-3 bg-green-500/30 rounded-full animate-ping" />
+    <div className="w-2 h-2 bg-green-500 rounded-full" />
   </div>
 );
 
@@ -260,21 +253,24 @@ const PlantaoHome = () => {
 
       {/* Background Effects */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
         style={{ backgroundImage: `url(${plantaoBg})` }}
       />
-      <RadarScan />
-      <SecurityParticles />
+      <ScanLine />
+      <CornerBrackets />
       
       {/* Grid overlay */}
       <div 
-        className="absolute inset-0 opacity-5"
+        className="absolute inset-0 opacity-[0.03]"
         style={{
-          backgroundImage: `linear-gradient(hsl(var(--primary) / 0.3) 1px, transparent 1px),
-                           linear-gradient(90deg, hsl(var(--primary) / 0.3) 1px, transparent 1px)`,
-          backgroundSize: '50px 50px'
+          backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px),
+                           linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
+          backgroundSize: '40px 40px'
         }}
       />
+
+      {/* Vignette effect */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
 
       <AnimatePresence mode="wait">
         {!showAuthPanel ? (
@@ -286,99 +282,136 @@ const PlantaoHome = () => {
             exit={{ opacity: 0, y: -20 }}
             className="relative z-10 flex flex-col min-h-screen"
           >
-            {/* Header */}
-            <header className="py-4 px-4">
-              <motion.div 
-                initial={{ opacity: 0, y: -30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="container mx-auto flex flex-col items-center justify-center"
+            {/* Top HUD Bar */}
+            <header className="py-3 px-4 border-b border-primary/20">
+              <div className="container mx-auto flex items-center justify-between">
+                <HUDElement>Sistema</HUDElement>
+                <div className="flex items-center gap-2">
+                  <AlertPulse />
+                  <span className="text-xs font-mono text-green-400 uppercase">Online</span>
+                </div>
+                <HUDElement>v1.0</HUDElement>
+              </div>
+            </header>
+
+            {/* Main Content */}
+            <main className="flex-1 flex flex-col items-center justify-center px-4 py-6">
+              {/* Logo */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="relative mb-6"
               >
+                <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
                 <img 
                   src={plantaoLogo} 
                   alt="PlantãoPro" 
-                  className="h-20 md:h-24 w-auto object-contain drop-shadow-2xl"
+                  className="relative h-24 md:h-28 w-auto object-contain drop-shadow-2xl"
                 />
-                
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="flex items-center gap-2 mt-2 text-primary/80"
-                >
-                  <Radio className="w-3 h-3 animate-pulse" />
-                  <span className="text-xs font-medium tracking-wider uppercase">Sistema Ativo</span>
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                </motion.div>
               </motion.div>
-            </header>
 
-            {/* Teams Showcase - Compact */}
-            <main className="flex-1 flex flex-col items-center justify-center px-4 py-4">
+              {/* Title */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-center mb-4"
+                className="text-center mb-6"
               >
-                <h1 className="text-xl md:text-2xl font-display font-bold text-foreground mb-1">
-                  Gestão de Plantões
+                <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground tracking-wider">
+                  PLANTÃO<span className="text-primary">PRO</span>
                 </h1>
-                <p className="text-muted-foreground text-xs">
-                  Agentes Socioeducativos
+                <p className="text-muted-foreground text-xs font-mono uppercase tracking-widest mt-1">
+                  Gestão de Plantões • Segurança
                 </p>
               </motion.div>
 
-              {/* Teams Grid - Compact */}
+              {/* Teams Grid - Tactical Style */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="grid grid-cols-4 gap-2 max-w-sm w-full mb-6"
+                className="w-full max-w-md mb-8"
               >
-                {TEAMS.map((team, index) => (
-                  <motion.div
-                    key={team.value}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 + index * 0.05 }}
-                    whileHover={{ scale: 1.08 }}
-                    className={`
-                      relative p-3 rounded-lg border ${team.borderColor} ${team.bgColor}
-                      backdrop-blur-sm cursor-default
-                    `}
-                  >
-                    <div className="flex flex-col items-center gap-1">
-                      <team.icon className={`w-6 h-6 ${team.textColor}`} />
-                      <span className={`font-bold text-[10px] ${team.textColor}`}>
-                        {team.label.replace('Equipe ', '')}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
+                <div className="text-center mb-3">
+                  <span className="text-[10px] font-mono text-primary/60 uppercase tracking-widest">
+                    [ Unidades Operacionais ]
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {TEAMS.map((team, index) => (
+                    <motion.div
+                      key={team.value}
+                      initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.4 + index * 0.1 }}
+                      whileHover={{ scale: 1.02 }}
+                      className={`
+                        relative p-4 rounded-none border-l-4 ${team.borderColor}
+                        bg-gradient-to-r from-black/40 to-transparent
+                        backdrop-blur-sm cursor-default group
+                      `}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded ${team.bgColor}`}>
+                          <team.icon className={`w-5 h-5 ${team.textColor}`} />
+                        </div>
+                        <div>
+                          <span className={`font-bold text-sm ${team.textColor} block`}>
+                            {team.label}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground font-mono uppercase">
+                            {team.subtitle}
+                          </span>
+                        </div>
+                      </div>
+                      {/* Status indicator */}
+                      <div className="absolute top-2 right-2 flex items-center gap-1">
+                        <div className={`w-1.5 h-1.5 rounded-full ${team.bgColor} animate-pulse`} />
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               </motion.div>
 
-              {/* CTA Button */}
+              {/* CTA Button - Tactical Style */}
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
+                transition={{ delay: 0.8 }}
+                className="w-full max-w-xs"
               >
-                <Button
-                  size="default"
+                <button
                   onClick={() => setShowAuthPanel(true)}
-                  className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30 px-6 font-semibold group"
+                  className="w-full relative group overflow-hidden"
                 >
-                  <Siren className="w-4 h-4 mr-2 group-hover:animate-pulse" />
-                  Acessar Sistema
-                  <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary group-hover:from-primary group-hover:to-primary/80 transition-all duration-300" />
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.1)_50%,transparent_75%)] bg-[length:200%_200%] animate-shimmer" />
+                  </div>
+                  <div className="relative px-8 py-4 flex items-center justify-center gap-3 text-primary-foreground font-bold uppercase tracking-wider">
+                    <Shield className="w-5 h-5" />
+                    <span>Acessar Sistema</span>
+                    <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                  {/* Corner accents */}
+                  <div className="absolute top-0 left-0 w-3 h-3 border-l-2 border-t-2 border-white/30" />
+                  <div className="absolute top-0 right-0 w-3 h-3 border-r-2 border-t-2 border-white/30" />
+                  <div className="absolute bottom-0 left-0 w-3 h-3 border-l-2 border-b-2 border-white/30" />
+                  <div className="absolute bottom-0 right-0 w-3 h-3 border-r-2 border-b-2 border-white/30" />
+                </button>
               </motion.div>
             </main>
 
-            {/* Footer */}
-            <footer className="py-3 text-center text-muted-foreground text-[10px]">
-              <p>PlantãoPro v1.0 • Developed by Franc Denis</p>
+            {/* Bottom HUD Bar */}
+            <footer className="py-2 px-4 border-t border-primary/20">
+              <div className="container mx-auto flex items-center justify-between text-[10px] font-mono text-muted-foreground">
+                <span>© 2024 Franc Denis</span>
+                <div className="flex items-center gap-4">
+                  <span className="text-primary/60">SYS::READY</span>
+                  <span className="text-green-500/60">SEC::ACTIVE</span>
+                </div>
+              </div>
             </footer>
           </motion.div>
         ) : (
