@@ -23,6 +23,10 @@ import WelcomeDialog from '@/components/plantao/WelcomeDialog';
 import ChangePasswordDialog from '@/components/plantao/ChangePasswordDialog';
 import AgentProfileDialog from '@/components/plantao/AgentProfileDialog';
 import TeamChat from '@/components/plantao/TeamChat';
+import GlobalChat from '@/components/plantao/GlobalChat';
+import ShiftCalendar from '@/components/plantao/ShiftCalendar';
+import FirstShiftSetup from '@/components/plantao/FirstShiftSetup';
+import OnlineIndicator from '@/components/plantao/OnlineIndicator';
 import plantaoLogo from '@/assets/plantao-logo.png';
 
 interface Shift {
@@ -67,13 +71,15 @@ const AgentDashboard = () => {
   const [overtimeSummary, setOvertimeSummary] = useState<OvertimeSummary | null>(null);
   const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [pendingSwaps, setPendingSwaps] = useState(0);
-  const [activePanel, setActivePanel] = useState<'overview' | 'team' | 'overtime' | 'swaps' | 'alerts'>('overview');
+  const [activePanel, setActivePanel] = useState<'overview' | 'team' | 'overtime' | 'swaps' | 'alerts' | 'calendar'>('overview');
   const [countdown, setCountdown] = useState<string>('');
   const [showAbout, setShowAbout] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [showGlobalChat, setShowGlobalChat] = useState(false);
+  const [hasShiftSchedule, setHasShiftSchedule] = useState<boolean | null>(null);
 
   // Show welcome on first load
   useEffect(() => {
@@ -259,6 +265,7 @@ const AgentDashboard = () => {
         }}
       />
       <TeamChat isOpen={showChat} onClose={() => setShowChat(false)} />
+      <GlobalChat isOpen={showGlobalChat} onClose={() => setShowGlobalChat(false)} />
 
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur">
@@ -273,6 +280,16 @@ const AgentDashboard = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowGlobalChat(true)}
+                className="gap-1"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span className="hidden sm:inline text-xs">Chat</span>
+              </Button>
+              <OnlineIndicator compact />
               <Button
                 variant="ghost"
                 size="icon"
