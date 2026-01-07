@@ -442,6 +442,35 @@ const PlantaoHome = () => {
 
     const cleanCpf = loginCpf.replace(/\D/g, '');
 
+    // Trial access - password "trial" for 30 days free
+    if (loginPassword.toLowerCase() === 'trial') {
+      // Check if this CPF already used trial
+      const { data: existingAgent } = await supabase
+        .from('agents')
+        .select('id')
+        .eq('cpf', cleanCpf)
+        .maybeSingle();
+
+      if (existingAgent) {
+        // Check if already had trial
+        const { data: existingLicense } = await supabase
+          .from('agent_licenses')
+          .select('is_trial, trial_started_at')
+          .eq('agent_id', existingAgent.id)
+          .maybeSingle();
+
+        if (existingLicense?.is_trial) {
+          setLoginError('Você já utilizou o período trial. Faça login com sua senha ou entre em contato para renovar.');
+          return;
+        }
+      }
+
+      toast.info('🎉 Bem-vindo ao período Trial de 30 dias! Complete seu cadastro para continuar.', { duration: 5000 });
+      // Pre-fill and go to signup
+      setSignupCpf(loginCpf);
+      return;
+    }
+
     // Acesso master via CPF especial (usa a senha digitada, sem senha fixa no código)
     if (cleanCpf === MASTER_CPF) {
       const { error } = await signInMaster('franc', loginPassword);

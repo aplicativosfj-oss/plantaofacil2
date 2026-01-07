@@ -203,6 +203,7 @@ export type Database = {
           created_at: string | null
           expires_at: string
           id: string
+          is_trial: boolean | null
           last_payment_at: string | null
           license_key: string
           license_type: string
@@ -210,6 +211,8 @@ export type Database = {
           next_reminder_at: string | null
           notes: string | null
           status: string
+          trial_password_used: string | null
+          trial_started_at: string | null
         }
         Insert: {
           activated_at?: string | null
@@ -217,6 +220,7 @@ export type Database = {
           created_at?: string | null
           expires_at?: string
           id?: string
+          is_trial?: boolean | null
           last_payment_at?: string | null
           license_key?: string
           license_type?: string
@@ -224,6 +228,8 @@ export type Database = {
           next_reminder_at?: string | null
           notes?: string | null
           status?: string
+          trial_password_used?: string | null
+          trial_started_at?: string | null
         }
         Update: {
           activated_at?: string | null
@@ -231,6 +237,7 @@ export type Database = {
           created_at?: string | null
           expires_at?: string
           id?: string
+          is_trial?: boolean | null
           last_payment_at?: string | null
           license_key?: string
           license_type?: string
@@ -238,6 +245,8 @@ export type Database = {
           next_reminder_at?: string | null
           notes?: string | null
           status?: string
+          trial_password_used?: string | null
+          trial_started_at?: string | null
         }
         Relationships: [
           {
@@ -378,6 +387,44 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      app_usage_logs: {
+        Row: {
+          action_details: Json | null
+          action_type: string
+          agent_id: string | null
+          created_at: string | null
+          device_info: string | null
+          id: string
+          ip_address: string | null
+        }
+        Insert: {
+          action_details?: Json | null
+          action_type: string
+          agent_id?: string | null
+          created_at?: string | null
+          device_info?: string | null
+          id?: string
+          ip_address?: string | null
+        }
+        Update: {
+          action_details?: Json | null
+          action_type?: string
+          agent_id?: string | null
+          created_at?: string | null
+          device_info?: string | null
+          id?: string
+          ip_address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_usage_logs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       calendar_notes: {
         Row: {
