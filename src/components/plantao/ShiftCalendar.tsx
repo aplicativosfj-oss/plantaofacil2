@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday, differenceInHours } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday, differenceInHours, isBefore, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Clock, Calendar, AlertTriangle, Moon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Clock, Calendar, AlertTriangle, Moon, Banknote, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -38,6 +38,14 @@ interface DayOff {
   reason: string | null;
 }
 
+interface OvertimeEntry {
+  id: string;
+  date: string;
+  hours_worked: number;
+  description: string | null;
+  total_value: number | null;
+}
+
 const COLORS = [
   { value: 'blue', label: 'Azul', class: 'bg-blue-500' },
   { value: 'green', label: 'Verde', class: 'bg-green-500' },
@@ -57,15 +65,19 @@ const ShiftCalendar = () => {
   const [notes, setNotes] = useState<CalendarNote[]>([]);
   const [shiftDates, setShiftDates] = useState<ShiftDate[]>([]);
   const [daysOff, setDaysOff] = useState<DayOff[]>([]);
+  const [overtimeEntries, setOvertimeEntries] = useState<OvertimeEntry[]>([]);
   const [shiftSchedule, setShiftSchedule] = useState<{ first_shift_date: string; id: string } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditShiftDialogOpen, setIsEditShiftDialogOpen] = useState(false);
   const [isDayOffDialogOpen, setIsDayOffDialogOpen] = useState(false);
+  const [isOvertimeDialogOpen, setIsOvertimeDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<CalendarNote | null>(null);
   const [formData, setFormData] = useState({ title: '', content: '', color: 'blue', is_reminder: false });
   const [newFirstShiftDate, setNewFirstShiftDate] = useState<string>('');
   const [dayOffForm, setDayOffForm] = useState({ off_type: '24h', reason: '' });
   const [selectedDayOff, setSelectedDayOff] = useState<DayOff | null>(null);
+  const [overtimeForm, setOvertimeForm] = useState({ hours: '', description: '' });
+  const [selectedOvertime, setSelectedOvertime] = useState<OvertimeEntry | null>(null);
 
   // Fetch notes
   useEffect(() => {
@@ -84,11 +96,11 @@ const ShiftCalendar = () => {
     fetchNotes();
   }, [agent?.id]);
 
-  // Fetch shift dates and days off
+  // Fetch shift dates, days off, and overtime
   useEffect(() => {
     if (!agent?.id) return;
 
-    const fetchShiftDates = async () => {
+    const fetchData = async () => {
       const { data: schedule } = await supabase
         .from('shift_schedules')
         .select('*')
@@ -115,9 +127,18 @@ const ShiftCalendar = () => {
         .order('off_date', { ascending: true });
 
       if (daysOffData) setDaysOff(daysOffData);
+
+      // Fetch overtime entries
+      const { data: overtimeData } = await supabase
+        .from('overtime_bank')
+        .select('*')
+        .eq('agent_id', agent.id)
+        .order('date', { ascending: true });
+
+      if (overtimeData) setOvertimeEntries(overtimeData);
     };
 
-    fetchShiftDates();
+    fetchData();
   }, [agent?.id]);
 
   const days = eachDayOfInterval({
@@ -135,8 +156,17 @@ const ShiftCalendar = () => {
     return shiftDates.some(shift => isSameDay(new Date(shift.shift_date), date));
   };
 
+  const isShiftCompleted = (date: Date) => {
+    const today = startOfDay(new Date());
+    return isShiftDay(date) && isBefore(date, today);
+  };
+
   const getDayOff = (date: Date) => {
     return daysOff.find(dayOff => isSameDay(new Date(dayOff.off_date), date));
+  };
+
+  const getOvertime = (date: Date) => {
+    return overtimeEntries.find(ot => isSameDay(new Date(ot.date), date));
   };
 
   // Check if shift can be edited (within 24 hours before first shift date)
@@ -353,6 +383,92 @@ const ShiftCalendar = () => {
     setIsEditShiftDialogOpen(false);
   };
 
+  // Overtime handlers
+  const handleOpenOvertimeDialog = () => {
+    if (!selectedDate) return;
+    const existingOvertime = getOvertime(selectedDate);
+    if (existingOvertime) {
+      setSelectedOvertime(existingOvertime);
+      setOvertimeForm({ hours: existingOvertime.hours_worked.toString(), description: existingOvertime.description || '' });
+    } else {
+      setSelectedOvertime(null);
+      setOvertimeForm({ hours: '', description: '' });
+    }
+    setIsDialogOpen(false);
+    setIsOvertimeDialogOpen(true);
+  };
+
+  const handleSaveOvertime = async () => {
+    if (!agent?.id || !selectedDate || !overtimeForm.hours) {
+      toast.error('Informe as horas trabalhadas');
+      return;
+    }
+
+    const hours = parseFloat(overtimeForm.hours);
+    if (isNaN(hours) || hours <= 0) {
+      toast.error('Informe um valor de horas válido');
+      return;
+    }
+
+    const monthYear = format(selectedDate, 'yyyy-MM');
+    const overtimeData = {
+      agent_id: agent.id,
+      date: format(selectedDate, 'yyyy-MM-dd'),
+      hours_worked: hours,
+      description: overtimeForm.description || null,
+      month_year: monthYear,
+      hour_value: 15.75,
+      total_value: hours * 15.75
+    };
+
+    if (selectedOvertime) {
+      const { error } = await supabase
+        .from('overtime_bank')
+        .update(overtimeData)
+        .eq('id', selectedOvertime.id);
+
+      if (error) {
+        toast.error('Erro ao atualizar BH');
+        return;
+      }
+
+      setOvertimeEntries(prev => prev.map(o => o.id === selectedOvertime.id ? { ...o, ...overtimeData } : o));
+      toast.success('BH atualizado!');
+    } else {
+      const { data, error } = await supabase
+        .from('overtime_bank')
+        .insert(overtimeData)
+        .select()
+        .single();
+
+      if (error) {
+        toast.error('Erro ao registrar BH');
+        return;
+      }
+
+      setOvertimeEntries(prev => [...prev, data]);
+      toast.success('BH registrado!');
+    }
+
+    setIsOvertimeDialogOpen(false);
+  };
+
+  const handleDeleteOvertime = async (overtimeId: string) => {
+    const { error } = await supabase
+      .from('overtime_bank')
+      .delete()
+      .eq('id', overtimeId);
+
+    if (error) {
+      toast.error('Erro ao remover BH');
+      return;
+    }
+
+    setOvertimeEntries(prev => prev.filter(o => o.id !== overtimeId));
+    toast.success('BH removido!');
+    setIsOvertimeDialogOpen(false);
+  };
+
   // First day of month padding
   const firstDayOfMonth = startOfMonth(currentMonth).getDay();
   const paddingDays = Array(firstDayOfMonth).fill(null);
@@ -426,63 +542,89 @@ const ShiftCalendar = () => {
         {days.map(day => {
           const dayNotes = getNotesForDate(day);
           const isShift = isShiftDay(day);
+          const shiftCompleted = isShiftCompleted(day);
           const dayOff = getDayOff(day);
+          const overtime = getOvertime(day);
           const today = isToday(day);
           const dayOfWeek = format(day, 'EEE', { locale: ptBR });
 
           return (
             <motion.button
               key={day.toISOString()}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => handleDateClick(day)}
+              whileHover={{ scale: shiftCompleted ? 1 : 1.02 }}
+              whileTap={{ scale: shiftCompleted ? 1 : 0.98 }}
+              onClick={() => !shiftCompleted && handleDateClick(day)}
+              disabled={shiftCompleted}
               className={`
                 h-16 p-1 rounded-lg transition-all relative
-                ${dayOff
-                  ? 'border-2 border-purple-500 bg-gradient-to-br from-purple-500/30 to-purple-600/20 shadow-md shadow-purple-500/20'
-                  : isShift 
-                    ? 'border-2 border-amber-500 bg-gradient-to-br from-amber-500/30 to-amber-600/20 shadow-md shadow-amber-500/20' 
-                    : 'border border-transparent hover:border-muted-foreground/20 hover:bg-muted/20'
+                ${shiftCompleted
+                  ? 'border-2 border-green-600/50 bg-gradient-to-br from-green-800/40 to-green-900/30 opacity-60 cursor-not-allowed'
+                  : overtime
+                    ? 'border-2 border-cyan-500 bg-gradient-to-br from-cyan-500/30 to-cyan-600/20 shadow-md shadow-cyan-500/20'
+                    : dayOff
+                      ? 'border-2 border-purple-500 bg-gradient-to-br from-purple-500/30 to-purple-600/20 shadow-md shadow-purple-500/20'
+                      : isShift 
+                        ? 'border-2 border-amber-500 bg-gradient-to-br from-amber-500/30 to-amber-600/20 shadow-md shadow-amber-500/20' 
+                        : 'border border-transparent hover:border-muted-foreground/20 hover:bg-muted/20'
                 }
               `}
             >
               <div className="flex flex-col h-full items-center justify-center">
                 {/* Day of week (small) */}
                 <div className={`text-[9px] uppercase ${
-                  dayOff ? 'text-purple-400' : isShift ? 'text-amber-400' : 'text-muted-foreground'
+                  shiftCompleted ? 'text-green-500' : overtime ? 'text-cyan-400' : dayOff ? 'text-purple-400' : isShift ? 'text-amber-400' : 'text-muted-foreground'
                 }`}>
                   {dayOfWeek}
                 </div>
                 
                 {/* Date number */}
                 <div className={`text-lg font-bold ${
-                  dayOff
-                    ? 'text-purple-500'
-                    : isShift 
-                      ? 'text-amber-500' 
-                      : today 
-                        ? 'text-primary' 
-                        : 'text-foreground'
+                  shiftCompleted
+                    ? 'text-green-500'
+                    : overtime
+                      ? 'text-cyan-400'
+                      : dayOff
+                        ? 'text-purple-500'
+                        : isShift 
+                          ? 'text-amber-500' 
+                          : today 
+                            ? 'text-primary' 
+                            : 'text-foreground'
                 }`}>
                   {format(day, 'd')}
                 </div>
                 
+                {/* Completed shift indicator */}
+                {shiftCompleted && (
+                  <div className="text-[7px] font-bold text-green-500 mt-0.5 flex items-center gap-0.5">
+                    <Check className="w-2 h-2" />
+                    CUMPRIDO
+                  </div>
+                )}
+
+                {/* Overtime indicator */}
+                {overtime && !shiftCompleted && (
+                  <div className="text-[7px] font-bold text-cyan-400 mt-0.5">
+                    BH {overtime.hours_worked}h
+                  </div>
+                )}
+                
                 {/* Day off indicator */}
-                {dayOff && (
-                  <div className="text-[8px] font-bold text-purple-400 mt-0.5">
+                {dayOff && !shiftCompleted && !overtime && (
+                  <div className="text-[7px] font-bold text-purple-400 mt-0.5">
                     FOLGA {dayOff.off_type}
                   </div>
                 )}
                 
                 {/* Shift indicator */}
-                {isShift && !dayOff && (
-                  <div className="text-[8px] font-bold text-amber-400 mt-0.5">
+                {isShift && !dayOff && !shiftCompleted && !overtime && (
+                  <div className="text-[7px] font-bold text-amber-400 mt-0.5">
                     PLANTÃO
                   </div>
                 )}
 
                 {/* Note indicator dot */}
-                {dayNotes.length > 0 && !isShift && !dayOff && (
+                {dayNotes.length > 0 && !isShift && !dayOff && !shiftCompleted && !overtime && (
                   <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
                     {dayNotes.slice(0, 3).map((note, idx) => (
                       <div key={idx} className={`w-1.5 h-1.5 rounded-full ${getColorClass(note.color)}`} />
@@ -496,18 +638,22 @@ const ShiftCalendar = () => {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
-          <div className="w-4 h-4 rounded border-2 border-amber-500 bg-amber-500/30" />
-          <span>Meu Plantão</span>
+          <div className="w-3 h-3 rounded border-2 border-amber-500 bg-amber-500/30" />
+          <span>Plantão</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-4 h-4 rounded border-2 border-purple-500 bg-purple-500/30" />
+          <div className="w-3 h-3 rounded border-2 border-green-600/50 bg-green-800/40" />
+          <span>Cumprido</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 rounded border-2 border-cyan-500 bg-cyan-500/30" />
+          <span>BH</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 rounded border-2 border-purple-500 bg-purple-500/30" />
           <span>Folga</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-blue-500" />
-          <span>Agendamento</span>
         </div>
       </div>
 
@@ -591,16 +737,28 @@ const ShiftCalendar = () => {
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Day off button */}
+            {/* Quick actions */}
             {selectedDate && (
-              <Button
-                variant="outline"
-                className="w-full border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
-                onClick={handleOpenDayOffDialog}
-              >
-                <Moon className="w-4 h-4 mr-2" />
-                {getDayOff(selectedDate) ? 'Editar Folga' : 'Registrar Folga'}
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
+                  onClick={handleOpenDayOffDialog}
+                >
+                  <Moon className="w-4 h-4 mr-1" />
+                  {getDayOff(selectedDate) ? 'Editar Folga' : 'Folga'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
+                  onClick={handleOpenOvertimeDialog}
+                >
+                  <Banknote className="w-4 h-4 mr-1" />
+                  {getOvertime(selectedDate) ? 'Editar BH' : 'Reg. BH'}
+                </Button>
+              </div>
             )}
 
             {/* Existing notes for this date */}
@@ -772,6 +930,77 @@ const ShiftCalendar = () => {
               </Button>
               <Button className="flex-1 bg-purple-600 hover:bg-purple-700" onClick={handleSaveDayOff}>
                 {selectedDayOff ? 'Salvar' : 'Registrar'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Overtime Dialog */}
+      <Dialog open={isOvertimeDialogOpen} onOpenChange={setIsOvertimeDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Banknote className="w-5 h-5 text-cyan-500" />
+              {selectedOvertime ? 'Editar Banco de Horas' : 'Registrar Banco de Horas'}
+              {selectedDate && (
+                <span className="text-muted-foreground font-normal text-sm ml-2">
+                  {format(selectedDate, "dd/MM (EEEE)", { locale: ptBR })}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Horas Trabalhadas</Label>
+              <Input
+                type="number"
+                step="0.5"
+                min="0.5"
+                max="24"
+                value={overtimeForm.hours}
+                onChange={e => setOvertimeForm(prev => ({ ...prev, hours: e.target.value }))}
+                placeholder="Ex: 4"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Descrição (opcional)</Label>
+              <Textarea
+                value={overtimeForm.description}
+                onChange={e => setOvertimeForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Ex: Reforço escolta, cobertura..."
+                rows={2}
+              />
+            </div>
+
+            {overtimeForm.hours && (
+              <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Valor estimado:</span>
+                  <span className="font-bold text-cyan-400">
+                    R$ {(parseFloat(overtimeForm.hours || '0') * 15.75).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              {selectedOvertime && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDeleteOvertime(selectedOvertime.id)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+              <Button variant="outline" className="flex-1" onClick={() => setIsOvertimeDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button className="flex-1 bg-cyan-600 hover:bg-cyan-700" onClick={handleSaveOvertime}>
+                {selectedOvertime ? 'Salvar' : 'Registrar'}
               </Button>
             </div>
           </div>
