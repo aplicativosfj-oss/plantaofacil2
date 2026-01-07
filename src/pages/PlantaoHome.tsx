@@ -386,22 +386,22 @@ const PlantaoHome = () => {
               </div>
             </header>
 
-            {/* Main Content - Compact */}
-            <main className="flex-1 flex flex-col items-center justify-center px-4">
+            {/* Main Content - Moved Up */}
+            <main className="flex-1 flex flex-col items-center justify-start pt-2 px-4">
               {/* Logo + Title Combined */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
-                className="relative mb-4 text-center"
+                className="relative mb-3 text-center"
               >
                 <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
                 <img 
                   src={plantaoLogo} 
                   alt="PlantãoPro" 
-                  className="relative h-20 md:h-24 w-auto object-contain drop-shadow-2xl mx-auto"
+                  className="relative h-16 md:h-20 w-auto object-contain drop-shadow-2xl mx-auto"
                 />
-                <h1 className="text-xl md:text-2xl font-display font-bold text-foreground tracking-wider mt-2">
+                <h1 className="text-lg md:text-xl font-display font-bold text-foreground tracking-wider mt-1">
                   PLANTÃO<span className="text-primary">PRO</span>
                 </h1>
                 <p className="text-muted-foreground text-[10px] font-mono uppercase tracking-widest mt-0.5">
@@ -409,21 +409,21 @@ const PlantaoHome = () => {
                 </p>
               </motion.div>
 
-              {/* Teams Grid - Compact */}
+              {/* Teams Grid - Larger Buttons */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="w-full max-w-sm"
+                className="w-full max-w-md"
               >
-                <div className="text-center mb-2">
-                  <span className="text-[10px] font-mono text-primary/60 uppercase tracking-widest">
+                <div className="text-center mb-3">
+                  <span className="text-xs font-mono text-primary/60 uppercase tracking-widest">
                     {savedCredentials 
                       ? `[ ${savedCredentials.team.toUpperCase()} ]` 
                       : '[ Selecione sua Equipe ]'}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   {TEAMS.map((team, index) => {
                     const isUserTeam = savedCredentials?.team === team.value;
                     const isBlocked = savedCredentials && !isUserTeam;
@@ -447,7 +447,7 @@ const PlantaoHome = () => {
                         onClick={() => handleTeamClick(team.value)}
                         disabled={isAutoLogging}
                         className={`
-                          relative p-3 rounded-sm border-l-3 text-left
+                          relative p-4 md:p-5 rounded-lg border-l-4 text-left
                           ${isBlockedClicked ? 'border-red-500' : team.borderColor}
                           ${isBlocked 
                             ? 'bg-gradient-to-r from-red-900/20 to-transparent opacity-40 cursor-not-allowed' 
@@ -466,31 +466,31 @@ const PlantaoHome = () => {
                           />
                         )}
                         
-                        <div className="flex items-center gap-2">
-                          <div className={`p-1.5 rounded ${isBlocked ? 'bg-red-500/10' : team.bgColor} transition-colors`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-md ${isBlocked ? 'bg-red-500/10' : team.bgColor} transition-colors`}>
                             {isBlocked ? (
-                              <Ban className="w-4 h-4 text-red-400/60" />
+                              <Ban className="w-6 h-6 text-red-400/60" />
                             ) : isUserTeam ? (
-                              <Fingerprint className={`w-4 h-4 ${team.textColor}`} />
+                              <Fingerprint className={`w-6 h-6 ${team.textColor}`} />
                             ) : (
-                              <team.icon className={`w-4 h-4 ${team.textColor}`} />
+                              <team.icon className={`w-6 h-6 ${team.textColor}`} />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <span className={`font-bold text-xs block ${isBlocked ? 'text-muted-foreground/50' : team.textColor}`}>
+                            <span className={`font-bold text-sm md:text-base block ${isBlocked ? 'text-muted-foreground/50' : team.textColor}`}>
                               {team.label}
                             </span>
-                            <span className={`text-[9px] font-mono uppercase ${isBlocked ? 'text-red-400/40' : 'text-muted-foreground/70'}`}>
+                            <span className={`text-[10px] md:text-xs font-mono uppercase ${isBlocked ? 'text-red-400/40' : 'text-muted-foreground/70'}`}>
                               {isUserTeam ? 'Entrar' : isBlocked ? 'Bloqueado' : team.subtitle}
                             </span>
                           </div>
                           {/* Status indicator */}
                           {isUserTeam ? (
-                            <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                            <CheckCircle className="w-5 h-5 text-green-500" />
                           ) : isBlocked ? (
-                            <Lock className="w-3 h-3 text-red-400/50" />
+                            <Lock className="w-4 h-4 text-red-400/50" />
                           ) : (
-                            <div className={`w-1.5 h-1.5 rounded-full ${team.bgColor} animate-pulse`} />
+                            <div className={`w-2 h-2 rounded-full ${team.bgColor} animate-pulse`} />
                           )}
                         </div>
 
