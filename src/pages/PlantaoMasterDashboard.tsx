@@ -457,22 +457,25 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
   const handleDeleteAgent = async () => {
     if (!deletingAgent) return;
     try {
-      // Delete related data first
-      await supabase.from('agent_presence').delete().eq('agent_id', deletingAgent.id);
-      await supabase.from('agent_licenses').delete().eq('agent_id', deletingAgent.id);
-      await supabase.from('shifts').delete().eq('agent_id', deletingAgent.id);
-      await supabase.from('overtime_bank').delete().eq('agent_id', deletingAgent.id);
-      await supabase.from('agent_alerts').delete().eq('agent_id', deletingAgent.id);
-      await supabase.from('chat_messages').delete().eq('sender_id', deletingAgent.id);
-      await supabase.from('calendar_notes').delete().eq('agent_id', deletingAgent.id);
-      
-      // Delete the agent
-      const { error } = await supabase
-        .from('agents')
-        .delete()
-        .eq('id', deletingAgent.id);
+      // Limpeza completa (inclui usuário de autenticação) pelo CPF
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/plantao-cleanup-agent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ cpf: deletingAgent.cpf }),
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        throw new Error(`cleanup_failed_${response.status}: ${text}`);
+      }
+
       toast.success('Agente excluído com sucesso!');
       setDeletingAgent(null);
       loadData();

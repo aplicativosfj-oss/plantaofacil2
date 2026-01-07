@@ -79,14 +79,14 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .from('agents')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching agent:', error);
         return null;
       }
 
-      return agentData as AgentProfile;
+      return (agentData ?? null) as AgentProfile | null;
     } catch (err) {
       console.error('Error in fetchAgentProfile:', err);
       return null;
@@ -299,8 +299,11 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const email = `${cleanCpf}@plantaopro.local`;
       const redirectUrl = `${window.location.origin}/`;
 
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Tenta criar a conta; se já existir, faz login e completa o perfil.
+      let authUser: User | null = null;
+      let authSession: Session | null = null;
+
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password: data.password,
         options: {
@@ -308,55 +311,101 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
           data: {
             full_name: data.full_name,
             cpf: cleanCpf,
-          }
-        }
+          },
+        },
       });
 
-      if (authError) {
-        console.error('Auth signup error:', authError);
-        if (authError.message.includes('already registered')) {
-          return { error: 'CPF já possui conta cadastrada' };
+      if (signUpError) {
+        console.error('Auth signup error:', signUpError);
+
+        const msg = (signUpError as any)?.message?.toLowerCase?.() ?? '';
+        const code = (signUpError as any)?.code ?? '';
+        const alreadyExists = msg.includes('already registered') || code === 'user_already_exists';
+
+        if (!alreadyExists) {
+          return { error: (signUpError as any)?.message ?? 'Erro ao criar conta' };
         }
-        return { error: authError.message };
+
+        // Conta já existe: tenta login com a senha informada.
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password: data.password,
+        });
+
+        if (signInError || !signInData.session) {
+          return { error: 'CPF já possui conta cadastrada. Use a aba "Entrar".' };
+        }
+
+        authUser = signInData.user;
+        authSession = signInData.session;
+      } else {
+        authUser = signUpData.user ?? null;
+        authSession = signUpData.session ?? null;
       }
 
-      if (!authData.user) {
+      if (!authUser) {
         return { error: 'Erro ao criar conta' };
       }
 
-      // Create agent profile
-      const { error: agentError } = await supabase.from('agents').insert({
-        user_id: authData.user.id,
-        cpf: cleanCpf,
-        full_name: data.full_name.toUpperCase(), // Sempre maiúsculo
-        registration_number: data.registration_number?.toUpperCase() || null, // Sempre maiúsculo
-        city: data.city,
-        unit: data.unit,
-        current_team: data.current_team,
-        team_joined_at: data.current_team ? new Date().toISOString() : null,
-        phone: data.phone || null,
-        email: data.email || null,
-      });
+      // Se por algum motivo o signUp não retornou sessão, tenta logar.
+      if (!authSession) {
+        const { data: signInData } = await supabase.auth.signInWithPassword({
+          email,
+          password: data.password,
+        });
+        authSession = signInData.session ?? null;
+        authUser = signInData.user ?? authUser;
+      }
 
-      if (agentError) {
-        console.error('Agent creation error:', agentError);
-        return { error: 'Erro ao criar perfil do agente' };
+      // Garantir perfil do agente (evita "CPF já existe" quando só a conta auth existia)
+      const { data: existingByUserId, error: existingByUserIdError } = await supabase
+        .from('agents')
+        .select('id')
+        .eq('user_id', authUser.id)
+        .maybeSingle();
+
+      if (existingByUserIdError) {
+        console.error('Error checking existing agent by user_id:', existingByUserIdError);
+      }
+
+      if (!existingByUserId) {
+        const { error: agentError } = await supabase.from('agents').insert({
+          user_id: authUser.id,
+          cpf: cleanCpf,
+          full_name: data.full_name.toUpperCase(), // Sempre maiúsculo
+          registration_number: data.registration_number?.toUpperCase() || null, // Sempre maiúsculo
+          city: data.city,
+          unit: data.unit,
+          current_team: data.current_team,
+          team_joined_at: data.current_team ? new Date().toISOString() : null,
+          phone: data.phone || null,
+          email: data.email || null,
+        });
+
+        if (agentError) {
+          console.error('Agent creation error:', agentError);
+          if ((agentError as any).code === '23505') {
+            return { error: 'CPF já cadastrado como agente' };
+          }
+          return { error: 'Erro ao criar perfil do agente' };
+        }
       }
 
       // Create user role as agent
       const { error: roleError } = await supabase.from('user_roles').insert({
-        user_id: authData.user.id,
+        user_id: authUser.id,
         role: 'client' as const, // Using 'client' from the existing enum, will treat as 'agent'
       });
 
       if (roleError) {
+        // pode falhar por duplicidade; não bloqueia cadastro
         console.error('Role creation error:', roleError);
       }
 
-      if (authData.session) {
-        setSession(authData.session);
-        setUser(authData.user);
-        await hydrateUserContext(authData.session);
+      if (authSession) {
+        setSession(authSession);
+        setUser(authUser);
+        await hydrateUserContext(authSession);
       }
 
       return { error: null };
