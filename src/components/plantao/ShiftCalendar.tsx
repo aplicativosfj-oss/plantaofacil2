@@ -964,56 +964,25 @@ const ShiftCalendar = () => {
             <DialogTitle className="flex items-center gap-2">
               <Banknote className="w-5 h-5 text-cyan-500" />
               {selectedOvertime ? 'Editar Banco de Horas' : 'Registrar Banco de Horas'}
-              {selectedDate && (
-                <span className="text-muted-foreground font-normal text-sm ml-2">
-                  {format(selectedDate, "dd/MM (EEEE)", { locale: ptBR })}
-                </span>
-              )}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Shift Type Selection */}
-            <div className="space-y-3">
-              <Label>Turno</Label>
-              <RadioGroup
-                value={overtimeForm.shiftType}
-                onValueChange={(value) => setOvertimeForm(prev => ({ ...prev, shiftType: value }))}
-                className="flex gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="day" id="shift-day" />
-                  <Label htmlFor="shift-day" className="cursor-pointer flex items-center gap-1.5">
-                    <Sun className="w-4 h-4 text-amber-400" />
-                    Dia (06h-18h)
-                  </Label>
+            {/* Selected Date Display */}
+            {selectedDate && (
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-cyan-400" />
+                  <span className="font-medium">
+                    {format(selectedDate, "dd 'de' MMMM 'de' yyyy (EEEE)", { locale: ptBR })}
+                  </span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="night" id="shift-night" />
-                  <Label htmlFor="shift-night" className="cursor-pointer flex items-center gap-1.5">
-                    <Moon className="w-4 h-4 text-indigo-400" />
-                    Noite (18h-06h)
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
+              </div>
+            )}
 
-            {/* Scheduled Time for Alert */}
+            {/* Hours Worked - Primary field */}
             <div className="space-y-2">
-              <Label>Horário de Início (para alertas)</Label>
-              <Input
-                type="time"
-                value={overtimeForm.scheduledTime}
-                onChange={e => setOvertimeForm(prev => ({ ...prev, scheduledTime: e.target.value }))}
-                placeholder="Ex: 18:00"
-              />
-              <p className="text-xs text-muted-foreground">
-                Você receberá um alerta 1 hora antes do horário informado
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Horas Trabalhadas</Label>
+              <Label className="text-base font-semibold">Quantas horas de BH?</Label>
               <Input
                 type="number"
                 step="0.5"
@@ -1021,8 +990,57 @@ const ShiftCalendar = () => {
                 max="24"
                 value={overtimeForm.hours}
                 onChange={e => setOvertimeForm(prev => ({ ...prev, hours: e.target.value }))}
-                placeholder="Ex: 4"
+                placeholder="Ex: 4, 6, 12..."
+                className="text-lg h-12"
               />
+            </div>
+
+            {/* Shift Type Selection */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Turno</Label>
+              <RadioGroup
+                value={overtimeForm.shiftType}
+                onValueChange={(value) => setOvertimeForm(prev => ({ ...prev, shiftType: value }))}
+                className="grid grid-cols-2 gap-3"
+              >
+                <div className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                  overtimeForm.shiftType === 'day' 
+                    ? 'border-amber-500 bg-amber-500/20' 
+                    : 'border-muted hover:border-muted-foreground/50'
+                }`}>
+                  <RadioGroupItem value="day" id="shift-day" className="sr-only" />
+                  <Label htmlFor="shift-day" className="cursor-pointer flex items-center gap-2">
+                    <Sun className="w-5 h-5 text-amber-400" />
+                    <span>Diurno</span>
+                  </Label>
+                </div>
+                <div className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                  overtimeForm.shiftType === 'night' 
+                    ? 'border-indigo-500 bg-indigo-500/20' 
+                    : 'border-muted hover:border-muted-foreground/50'
+                }`}>
+                  <RadioGroupItem value="night" id="shift-night" className="sr-only" />
+                  <Label htmlFor="shift-night" className="cursor-pointer flex items-center gap-2">
+                    <Moon className="w-5 h-5 text-indigo-400" />
+                    <span>Noturno</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Scheduled Time for Alert */}
+            <div className="space-y-2">
+              <Label className="text-base font-semibold">Horário de Início</Label>
+              <Input
+                type="time"
+                value={overtimeForm.scheduledTime}
+                onChange={e => setOvertimeForm(prev => ({ ...prev, scheduledTime: e.target.value }))}
+                className="h-12"
+              />
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" />
+                O sistema enviará um alerta 1 hora antes deste horário
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -1039,7 +1057,7 @@ const ShiftCalendar = () => {
               <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Valor estimado:</span>
-                  <span className="font-bold text-cyan-400">
+                  <span className="font-bold text-cyan-400 text-lg">
                     R$ {(parseFloat(overtimeForm.hours || '0') * 15.75).toFixed(2)}
                   </span>
                 </div>
@@ -1050,7 +1068,7 @@ const ShiftCalendar = () => {
                     <><Moon className="w-3 h-3 text-indigo-400" /> Turno Noturno</>
                   )}
                   {overtimeForm.scheduledTime && (
-                    <span className="ml-2">• Início: {overtimeForm.scheduledTime}</span>
+                    <span className="ml-2">• Início às {overtimeForm.scheduledTime}</span>
                   )}
                 </div>
               </div>
