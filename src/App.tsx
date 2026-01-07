@@ -64,46 +64,31 @@ const App = () => {
   useEffect(() => {
     clearExpiredCache();
 
-    // Bloquear definitivamente qualquer tentativa de tocar MÚSICA de background
-    // (deixa passar áudios normais do app, mas nunca permite faixas de música nem áudio em loop)
-    const blockedMusicSubstrings = [
-      '/audio/peso-do-ritmo',
-      '/audio/peso-neon',
-      '/audio/background',
-      '/audio/background-music',
-      '/audio/gym-pro-funk',
-      '/audio/cidade-vigilancia',
-    ];
-
+    // Bloqueio de áudio HTML: evita qualquer “música/player” nos painéis.
+    // Sons do app ficam apenas via WebAudio (cliques), e o vídeo de intro pode ter som.
     const originalPlay = HTMLMediaElement.prototype.play;
 
-    const shouldBlockAudio = (el: HTMLMediaElement, src: string) => {
-      // nunca permitir áudio em loop (isso vira "música de fundo")
-      if ((el as HTMLAudioElement).loop) return true;
-      return blockedMusicSubstrings.some((s) => src.includes(s));
-    };
+    const isIntroSplash = (src: string) => src.includes('/video/intro-splash.mp4');
 
     HTMLMediaElement.prototype.play = function (this: HTMLMediaElement, ...args: any[]) {
       try {
         const tag = (this.tagName || '').toUpperCase();
         const src = (this.currentSrc || (this as any).src || '').toString();
 
-        // Áudio: bloqueia apenas música de background (e qualquer loop)
+        // Bloqueia TODO <audio> (inclui players e músicas)
         if (tag === 'AUDIO') {
-          if (shouldBlockAudio(this, src)) {
-            try {
-              this.pause();
-              this.currentTime = 0;
-            } catch {}
-            return Promise.resolve();
-          }
+          try {
+            this.pause();
+            this.currentTime = 0;
+          } catch {}
+          return Promise.resolve();
         }
 
-        // Vídeo: se não tiver controles (ex: splash/background), sempre mudo
+        // Mantém vídeos de fundo mudos, mas libera o vídeo da intro
         if (tag === 'VIDEO') {
           try {
             const videoEl = this as HTMLVideoElement;
-            if (!videoEl.controls) {
+            if (!videoEl.controls && !isIntroSplash(src)) {
               videoEl.muted = true;
               videoEl.volume = 0;
             }
@@ -114,24 +99,22 @@ const App = () => {
       return (originalPlay as any).apply(this, args);
     };
 
-    // Reforço: parar qualquer <audio> já tocando que seja música (ou loop)
+    // Reforço: parar qualquer <audio> já tocando
     try {
       document.querySelectorAll('audio').forEach((el) => {
         const media = el as HTMLAudioElement;
-        const src = (media.currentSrc || (media as any).src || '').toString();
-        if (shouldBlockAudio(media, src)) {
-          try {
-            media.pause();
-            media.currentTime = 0;
-          } catch {}
-        }
+        try {
+          media.pause();
+          media.currentTime = 0;
+        } catch {}
       });
 
       // Reforço: garantir que vídeos de fundo (sem controles) fiquem mudos
       document.querySelectorAll('video').forEach((el) => {
         const video = el as HTMLVideoElement;
+        const src = (video.currentSrc || (video as any).src || '').toString();
         try {
-          if (!video.controls) {
+          if (!video.controls && !isIntroSplash(src)) {
             video.muted = true;
             video.volume = 0;
           }
@@ -144,18 +127,16 @@ const App = () => {
       try {
         document.querySelectorAll('audio').forEach((el) => {
           const media = el as HTMLAudioElement;
-          const src = (media.currentSrc || (media as any).src || '').toString();
-          if (shouldBlockAudio(media, src)) {
-            try {
-              media.pause();
-              media.currentTime = 0;
-            } catch {}
-          }
+          try {
+            media.pause();
+            media.currentTime = 0;
+          } catch {}
         });
         document.querySelectorAll('video').forEach((el) => {
           const video = el as HTMLVideoElement;
+          const src = (video.currentSrc || (video as any).src || '').toString();
           try {
-            if (!video.controls) {
+            if (!video.controls && !isIntroSplash(src)) {
               video.muted = true;
               video.volume = 0;
             }
@@ -167,6 +148,7 @@ const App = () => {
     try {
       mo.observe(document.documentElement, { childList: true, subtree: true });
     } catch {}
+
 
 
     // Register for online/offline events

@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar, Flame, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, KeyRound, ShieldAlert, Car, Route, CircleAlert, Radar, ScanEye, Cctv, Building2, UserRoundCheck, BadgeCheck, RotateCcw, Settings, Volume2, VolumeX, Sparkles, icons as LucideIcons, LucideIcon } from 'lucide-react';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar, Flame, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, KeyRound, ShieldAlert, Car, Route, CircleAlert, Radar, ScanEye, Cctv, Building2, UserRoundCheck, BadgeCheck, RotateCcw, Settings, Sparkles, icons as LucideIcons, LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
@@ -730,28 +730,19 @@ const PlantaoHome = () => {
         <span className="hidden sm:inline">Sobre</span>
       </button>
 
-      {/* Effects Toggle Button */}
+      {/* Effects Toggle Button (apenas efeitos visuais, sem áudio) */}
       <button
         onClick={toggleEffects}
         className={`fixed bottom-4 right-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 backdrop-blur-sm ${
-          effectsEnabled 
-            ? 'bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30' 
+          effectsEnabled
+            ? 'bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30'
             : 'bg-muted/60 hover:bg-muted/80 text-muted-foreground'
         }`}
-        title={effectsEnabled ? 'Desativar efeitos' : 'Ativar efeitos'}
+        title={effectsEnabled ? 'Desativar efeitos visuais' : 'Ativar efeitos visuais'}
       >
-        {effectsEnabled ? (
-          <>
-            <Sparkles className="w-3.5 h-3.5" />
-            <Volume2 className="w-3.5 h-3.5" />
-          </>
-        ) : (
-          <>
-            <Sparkles className="w-3.5 h-3.5 opacity-50" />
-            <VolumeX className="w-3.5 h-3.5 opacity-50" />
-          </>
-        )}
+        <Sparkles className={`w-3.5 h-3.5 ${effectsEnabled ? '' : 'opacity-50'}`} />
       </button>
+
 
       {/* Background Effects */}
       <div 
