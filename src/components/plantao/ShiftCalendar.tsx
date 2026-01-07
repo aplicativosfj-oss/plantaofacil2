@@ -536,6 +536,18 @@ const ShiftCalendar = () => {
     .filter(note => parseDateOnly(note.note_date) >= todayStart)
     .sort((a, b) => parseDateOnly(a.note_date).getTime() - parseDateOnly(b.note_date).getTime());
 
+  // Calculate monthly BH summary
+  const monthlyBHSummary = overtimeEntries
+    .filter(ot => {
+      const otDate = parseDateOnly(ot.date);
+      return format(otDate, 'yyyy-MM') === format(currentMonth, 'yyyy-MM');
+    })
+    .reduce((acc, ot) => ({
+      totalHours: acc.totalHours + ot.hours_worked,
+      totalValue: acc.totalValue + (ot.total_value || (ot.hours_worked * (ot.hour_value || 15.75))),
+      count: acc.count + 1
+    }), { totalHours: 0, totalValue: 0, count: 0 });
+
   return (
     <div className="space-y-3">
       {/* Edit Shift Button - Compact */}
@@ -591,10 +603,10 @@ const ShiftCalendar = () => {
         ))}
       </div>
 
-      {/* Calendar Grid - Compact */}
-      <div className="grid grid-cols-7 gap-0.5">
+      {/* Calendar Grid - Rounded buttons with animations */}
+      <div className="grid grid-cols-7 gap-1.5">
         {paddingDays.map((_, i) => (
-          <div key={`pad-${i}`} className="h-12 bg-muted/10 rounded" />
+          <div key={`pad-${i}`} className="aspect-square bg-muted/10 rounded-xl" />
         ))}
         
         {days.map(day => {
@@ -604,77 +616,143 @@ const ShiftCalendar = () => {
           const dayOff = getDayOff(day);
           const overtime = getOvertime(day);
           const today = isToday(day);
-          const dayOfWeek = format(day, 'EEE', { locale: ptBR });
+
+          // Animation variants for different categories
+          const getAnimationProps = () => {
+            if (shiftCompleted) {
+              return { animate: { opacity: 0.7 } };
+            }
+            if (overtime) {
+              return { 
+                animate: { 
+                  boxShadow: ['0 0 0px rgba(6, 182, 212, 0)', '0 0 12px rgba(6, 182, 212, 0.5)', '0 0 0px rgba(6, 182, 212, 0)']
+                },
+                transition: { duration: 2, repeat: Infinity, ease: 'easeInOut' as const }
+              };
+            }
+            if (dayOff) {
+              return {
+                animate: { 
+                  scale: [1, 1.02, 1]
+                },
+                transition: { duration: 3, repeat: Infinity, ease: 'easeInOut' as const }
+              };
+            }
+            if (isShift) {
+              return {
+                animate: { 
+                  borderColor: ['rgba(245, 158, 11, 0.5)', 'rgba(245, 158, 11, 1)', 'rgba(245, 158, 11, 0.5)']
+                },
+                transition: { duration: 2.5, repeat: Infinity, ease: 'easeInOut' as const }
+              };
+            }
+            return {};
+          };
 
           return (
             <motion.button
               key={day.toISOString()}
-              whileHover={{ scale: shiftCompleted ? 1 : 1.02 }}
-              whileTap={{ scale: shiftCompleted ? 1 : 0.98 }}
+              whileHover={{ scale: shiftCompleted ? 1 : 1.08, y: shiftCompleted ? 0 : -2 }}
+              whileTap={{ scale: shiftCompleted ? 1 : 0.95 }}
               onClick={() => !shiftCompleted && handleDateClick(day)}
               disabled={shiftCompleted}
+              {...getAnimationProps()}
               className={`
-                h-12 p-0.5 rounded transition-all relative
+                aspect-square p-1 rounded-xl transition-all relative overflow-hidden
                 ${shiftCompleted
-                  ? 'border border-green-600/50 bg-gradient-to-br from-green-800/40 to-green-900/30 opacity-60 cursor-not-allowed'
+                  ? 'border-2 border-green-600/50 bg-gradient-to-br from-green-800/40 to-green-900/30 cursor-not-allowed'
                   : overtime
-                    ? 'border border-cyan-500 bg-gradient-to-br from-cyan-500/30 to-cyan-600/20'
+                    ? 'border-2 border-cyan-400 bg-gradient-to-br from-cyan-500/40 to-cyan-600/20 shadow-lg shadow-cyan-500/20'
                     : dayOff
-                      ? 'border border-purple-500 bg-gradient-to-br from-purple-500/30 to-purple-600/20'
+                      ? 'border-2 border-purple-400 bg-gradient-to-br from-purple-500/40 to-purple-600/20 shadow-lg shadow-purple-500/20'
                       : isShift 
-                        ? 'border border-amber-500 bg-gradient-to-br from-amber-500/30 to-amber-600/20' 
-                        : 'border border-transparent hover:border-muted-foreground/20 hover:bg-muted/20'
+                        ? 'border-2 border-amber-400 bg-gradient-to-br from-amber-500/40 to-amber-600/20 shadow-lg shadow-amber-500/20' 
+                        : today
+                          ? 'border-2 border-primary/50 bg-primary/10 shadow-md'
+                          : 'border border-border/30 hover:border-primary/30 hover:bg-muted/30 hover:shadow-md'
                 }
               `}
             >
-              <div className="flex flex-col h-full items-center justify-center">
+              {/* Animated ring for special days */}
+              {(overtime || dayOff || isShift) && !shiftCompleted && (
+                <motion.div 
+                  className={`absolute inset-0 rounded-xl ${
+                    overtime ? 'bg-cyan-400/10' : dayOff ? 'bg-purple-400/10' : 'bg-amber-400/10'
+                  }`}
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              )}
+
+              <div className="flex flex-col h-full items-center justify-center relative z-10">
                 {/* Date number */}
                 <div className={`text-sm font-bold ${
                   shiftCompleted
-                    ? 'text-green-500'
+                    ? 'text-green-400'
                     : overtime
-                      ? 'text-cyan-400'
+                      ? 'text-cyan-300'
                       : dayOff
-                        ? 'text-purple-500'
+                        ? 'text-purple-300'
                         : isShift 
-                          ? 'text-amber-500' 
+                          ? 'text-amber-300' 
                           : today 
-                            ? 'text-primary' 
-                            : 'text-foreground'
+                            ? 'text-primary font-extrabold' 
+                            : 'text-foreground/80'
                 }`}>
                   {format(day, 'd')}
                 </div>
                 
-                {/* Status indicator - Compact */}
+                {/* Status indicator with icons */}
                 {shiftCompleted && (
-                  <div className="text-[6px] font-bold text-green-500 flex items-center">
-                    <Check className="w-2 h-2" />
-                  </div>
+                  <motion.div 
+                    className="text-green-400"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                  >
+                    <Check className="w-3 h-3" />
+                  </motion.div>
                 )}
 
                 {overtime && !shiftCompleted && (
-                  <div className="text-[6px] font-bold text-cyan-400">
+                  <motion.div 
+                    className="text-[8px] font-bold text-cyan-300 bg-cyan-500/30 px-1 rounded"
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
                     BH
-                  </div>
+                  </motion.div>
                 )}
                 
                 {dayOff && !shiftCompleted && !overtime && (
-                  <div className="text-[6px] font-bold text-purple-400">
-                    F
-                  </div>
+                  <motion.div 
+                    className="text-purple-300"
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 4, repeat: Infinity }}
+                  >
+                    <Moon className="w-3 h-3" />
+                  </motion.div>
                 )}
                 
                 {isShift && !dayOff && !shiftCompleted && !overtime && (
-                  <div className="text-[6px] font-bold text-amber-400">
+                  <motion.div 
+                    className="text-[8px] font-bold text-amber-300 bg-amber-500/30 px-1 rounded"
+                    animate={{ opacity: [0.7, 1, 0.7] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
                     P
-                  </div>
+                  </motion.div>
                 )}
 
-                {/* Note indicator dot */}
+                {/* Note indicator dots */}
                 {dayNotes.length > 0 && !isShift && !dayOff && !shiftCompleted && !overtime && (
                   <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
                     {dayNotes.slice(0, 2).map((note, idx) => (
-                      <div key={idx} className={`w-1 h-1 rounded-full ${getColorClass(note.color)}`} />
+                      <motion.div 
+                        key={idx} 
+                        className={`w-1.5 h-1.5 rounded-full ${getColorClass(note.color)}`}
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 2, repeat: Infinity, delay: idx * 0.3 }}
+                      />
                     ))}
                   </div>
                 )}
@@ -684,25 +762,60 @@ const ShiftCalendar = () => {
         })}
       </div>
 
-      {/* Legend - Compact */}
-      <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded border border-amber-500 bg-amber-500/30" />
-          <span>P</span>
+      {/* Legend - More visual */}
+      <div className="flex flex-wrap items-center justify-center gap-3 text-[10px] text-muted-foreground bg-muted/20 rounded-lg p-2">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-md border-2 border-amber-400 bg-amber-500/30" />
+          <span>Plantão</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded border border-green-600/50 bg-green-800/40" />
-          <span>✓</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-md border-2 border-green-500 bg-green-800/40 flex items-center justify-center">
+            <Check className="w-2 h-2 text-green-400" />
+          </div>
+          <span>Concluído</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded border border-cyan-500 bg-cyan-500/30" />
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-md border-2 border-cyan-400 bg-cyan-500/30" />
           <span>BH</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded border border-purple-500 bg-purple-500/30" />
-          <span>F</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-md border-2 border-purple-400 bg-purple-500/30" />
+          <span>Folga</span>
         </div>
       </div>
+
+      {/* Monthly BH Summary */}
+      {monthlyBHSummary.count > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Card className="border-cyan-500/40 bg-gradient-to-br from-cyan-500/10 to-cyan-600/5">
+            <CardHeader className="pb-2 pt-3 px-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Banknote className="w-4 h-4 text-cyan-400" />
+                Resumo BH - {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-3 pb-3">
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center p-2 rounded-lg bg-muted/30">
+                  <div className="text-lg font-bold text-cyan-400">{monthlyBHSummary.count}</div>
+                  <div className="text-[10px] text-muted-foreground">Registros</div>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-muted/30">
+                  <div className="text-lg font-bold text-cyan-400">{monthlyBHSummary.totalHours}h</div>
+                  <div className="text-[10px] text-muted-foreground">Total Horas</div>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-muted/30">
+                  <div className="text-lg font-bold text-green-400">R$ {monthlyBHSummary.totalValue.toFixed(2)}</div>
+                  <div className="text-[10px] text-muted-foreground">Valor Total</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* My Schedule Panel - Compact */}
       <Card className="border-primary/30">
