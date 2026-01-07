@@ -287,89 +287,72 @@ const PlantaoHome = () => {
             className="relative z-10 flex flex-col min-h-screen"
           >
             {/* Header */}
-            <header className="py-8 px-4">
+            <header className="py-4 px-4">
               <motion.div 
                 initial={{ opacity: 0, y: -30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
+                transition={{ duration: 0.6 }}
                 className="container mx-auto flex flex-col items-center justify-center"
               >
-                <motion.div
-                  animate={{ 
-                    boxShadow: ['0 0 20px hsl(var(--primary) / 0.3)', '0 0 40px hsl(var(--primary) / 0.5)', '0 0 20px hsl(var(--primary) / 0.3)']
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="rounded-full p-2"
-                >
-                  <img 
-                    src={plantaoLogo} 
-                    alt="PlantãoPro" 
-                    className="h-32 md:h-40 w-auto object-contain drop-shadow-2xl"
-                  />
-                </motion.div>
+                <img 
+                  src={plantaoLogo} 
+                  alt="PlantãoPro" 
+                  className="h-20 md:h-24 w-auto object-contain drop-shadow-2xl"
+                />
                 
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="flex items-center gap-2 mt-4 text-primary/80"
+                  transition={{ delay: 0.3 }}
+                  className="flex items-center gap-2 mt-2 text-primary/80"
                 >
-                  <Radio className="w-4 h-4 animate-pulse" />
-                  <span className="text-sm font-medium tracking-wider uppercase">Sistema Ativo</span>
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <Radio className="w-3 h-3 animate-pulse" />
+                  <span className="text-xs font-medium tracking-wider uppercase">Sistema Ativo</span>
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
                 </motion.div>
               </motion.div>
             </header>
 
-            {/* Teams Showcase */}
-            <main className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+            {/* Teams Showcase - Compact */}
+            <main className="flex-1 flex flex-col items-center justify-center px-4 py-4">
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="text-center mb-8"
+                transition={{ delay: 0.2 }}
+                className="text-center mb-4"
               >
-                <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-2">
+                <h1 className="text-xl md:text-2xl font-display font-bold text-foreground mb-1">
                   Gestão de Plantões
                 </h1>
-                <p className="text-muted-foreground text-sm">
-                  Agentes Socioeducativos • Controle • Organização
+                <p className="text-muted-foreground text-xs">
+                  Agentes Socioeducativos
                 </p>
               </motion.div>
 
-              {/* Teams Grid */}
+              {/* Teams Grid - Compact */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.5 }}
-                className="grid grid-cols-2 gap-4 max-w-md w-full mb-8"
+                transition={{ delay: 0.3 }}
+                className="grid grid-cols-4 gap-2 max-w-sm w-full mb-6"
               >
                 {TEAMS.map((team, index) => (
                   <motion.div
                     key={team.value}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 + index * 0.1 }}
-                    whileHover={{ scale: 1.05, y: -5 }}
+                    transition={{ delay: 0.4 + index * 0.05 }}
+                    whileHover={{ scale: 1.08 }}
                     className={`
-                      relative p-5 rounded-xl border-2 ${team.borderColor} ${team.bgColor}
-                      backdrop-blur-sm cursor-default overflow-hidden
+                      relative p-3 rounded-lg border ${team.borderColor} ${team.bgColor}
+                      backdrop-blur-sm cursor-default
                     `}
                   >
-                    <div className={`absolute inset-0 bg-gradient-to-br ${team.color} opacity-10`} />
-                    <div className="relative flex flex-col items-center gap-2">
-                      <team.icon className={`w-10 h-10 ${team.textColor}`} />
-                      <span className={`font-bold text-sm ${team.textColor}`}>
-                        {team.label}
+                    <div className="flex flex-col items-center gap-1">
+                      <team.icon className={`w-6 h-6 ${team.textColor}`} />
+                      <span className={`font-bold text-[10px] ${team.textColor}`}>
+                        {team.label.replace('Equipe ', '')}
                       </span>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <span>{team.subtitle}</span>
-                      </div>
-                    </div>
-                    
-                    {/* Decorative corner */}
-                    <div className={`absolute top-0 right-0 w-8 h-8 ${team.bgColor} rounded-bl-xl flex items-center justify-center`}>
-                      <Shield className={`w-3 h-3 ${team.textColor}`} />
                     </div>
                   </motion.div>
                 ))}
@@ -377,45 +360,24 @@ const PlantaoHome = () => {
 
               {/* CTA Button */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1 }}
+                transition={{ delay: 0.6 }}
               >
                 <Button
-                  size="lg"
+                  size="default"
                   onClick={() => setShowAuthPanel(true)}
-                  className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30 px-8 py-6 text-lg font-semibold group"
+                  className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30 px-6 font-semibold group"
                 >
-                  <Siren className="w-5 h-5 mr-2 group-hover:animate-pulse" />
+                  <Siren className="w-4 h-4 mr-2 group-hover:animate-pulse" />
                   Acessar Sistema
-                  <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                  <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
-              </motion.div>
-
-              {/* Features */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.2 }}
-                className="flex flex-wrap justify-center gap-4 mt-8 text-xs text-muted-foreground"
-              >
-                <div className="flex items-center gap-1.5 bg-muted/30 px-3 py-1.5 rounded-full">
-                  <Zap className="w-3 h-3 text-yellow-500" />
-                  <span>Banco de Horas</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-muted/30 px-3 py-1.5 rounded-full">
-                  <Star className="w-3 h-3 text-primary" />
-                  <span>Trocas de Plantão</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-muted/30 px-3 py-1.5 rounded-full">
-                  <Users className="w-3 h-3 text-emerald-500" />
-                  <span>Chat de Equipe</span>
-                </div>
               </motion.div>
             </main>
 
             {/* Footer */}
-            <footer className="py-4 text-center text-muted-foreground text-xs">
+            <footer className="py-3 text-center text-muted-foreground text-[10px]">
               <p>PlantãoPro v1.0 • Developed by Franc Denis</p>
             </footer>
           </motion.div>
