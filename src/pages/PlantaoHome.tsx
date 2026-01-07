@@ -19,6 +19,7 @@ import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 import plantaoBg from '@/assets/plantao-bg.png';
 import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
 import ThemeSelector from '@/components/plantao/ThemeSelector';
+import VideoSplash from '@/components/plantao/VideoSplash';
 
 
 // Saved credentials type
@@ -309,8 +310,8 @@ const PlantaoHome = () => {
   const { isSupported: biometricSupported, isRegistered: biometricRegistered, authenticateWithBiometric, registerBiometric } = useBiometricAuth();
   const navigate = useNavigate();
   const [showSplash, setShowSplash] = useState(() => {
-    // Mostra intro apenas 1x por sessão (não ao voltar/navegar)
-    return sessionStorage.getItem('plantao_splash_shown') !== '1';
+    // Mostra intro apenas 1x por instalação (localStorage persiste)
+    return localStorage.getItem('plantao_intro_shown') !== '1';
   });
   const [showAbout, setShowAbout] = useState(false);
   const [showAuthPanel, setShowAuthPanel] = useState(false);
@@ -323,9 +324,9 @@ const PlantaoHome = () => {
   const [selectedUnit, setSelectedUnit] = useState('CS Feijó');
   const [showUnitSelector, setShowUnitSelector] = useState(false);
 
-  // Marca que splash já foi exibido nesta sessão
+  // Marca que splash já foi exibido (persiste entre sessões)
   const handleSplashComplete = () => {
-    sessionStorage.setItem('plantao_splash_shown', '1');
+    localStorage.setItem('plantao_intro_shown', '1');
     setShowSplash(false);
   };
 
@@ -695,6 +696,11 @@ const PlantaoHome = () => {
     }
   };
 
+
+  // Se estiver mostrando splash, renderiza apenas o vídeo
+  if (showSplash) {
+    return <VideoSplash onComplete={handleSplashComplete} />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
