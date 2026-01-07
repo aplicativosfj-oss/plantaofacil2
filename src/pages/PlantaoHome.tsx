@@ -61,12 +61,11 @@ const validateCPF = (cpf: string): boolean => {
 
 // Lista de unidades socioeducativas
 const UNITS = [
-  'CASE Feijó',
-  'CASE Rio Branco',
-  'CSE Feijó',
-  'CSE Rio Branco',
-  'ISE Feijó',
-  'ISE Rio Branco',
+  'CS Feijó',
+  'CS Juruá',
+  'CS Rio Branco',
+  'CS Sena',
+  'CS Brasiléia',
 ];
 
 // Lista de cidades
