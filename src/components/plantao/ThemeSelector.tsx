@@ -35,35 +35,40 @@ const ThemeSelector = ({ trigger }: ThemeSelectorProps) => {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-md max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Palette className="w-5 h-5" />
-            Personalizar Tema
+      <DialogContent className="max-w-sm max-h-[85vh] p-0 overflow-hidden bg-gradient-to-b from-card to-background border-primary/20">
+        <DialogHeader className="p-4 pb-2 border-b border-border/50">
+          <DialogTitle className="flex items-center gap-2 text-sm">
+            <div className="p-1.5 rounded-lg bg-primary/10">
+              <Palette className="w-4 h-4 text-primary" />
+            </div>
+            Personalizar
           </DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="max-h-[60vh] pr-4">
-          <div className="space-y-4">
+        <ScrollArea className="max-h-[65vh]">
+          <div className="p-3 space-y-3">
             {/* Sound Toggle */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-              <div className="flex items-center gap-3">
-                {soundEnabled ? (
-                  <Volume2 className="w-5 h-5 text-primary" />
-                ) : (
-                  <VolumeX className="w-5 h-5 text-muted-foreground" />
-                )}
-                <Label htmlFor="sound-toggle">Sons do Sistema</Label>
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/30 border border-border/50">
+              <div className="flex items-center gap-2.5">
+                <div className={`p-1.5 rounded-lg ${soundEnabled ? 'bg-primary/20' : 'bg-muted'}`}>
+                  {soundEnabled ? (
+                    <Volume2 className="w-3.5 h-3.5 text-primary" />
+                  ) : (
+                    <VolumeX className="w-3.5 h-3.5 text-muted-foreground" />
+                  )}
+                </div>
+                <Label htmlFor="sound-toggle" className="text-xs">Sons</Label>
               </div>
               <Switch
                 id="sound-toggle"
                 checked={soundEnabled}
                 onCheckedChange={setSoundEnabled}
+                className="scale-90"
               />
             </div>
 
-            {/* Theme Grid */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Theme Grid - More compact and modern */}
+            <div className="grid grid-cols-3 gap-2">
               <AnimatePresence mode="popLayout">
                 {themes.map((theme) => {
                   const isSelected = currentTheme === theme.id;
@@ -75,14 +80,14 @@ const ThemeSelector = ({ trigger }: ThemeSelectorProps) => {
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={() => handleSelectTheme(theme.id)}
                       className={`
-                        relative p-4 rounded-xl border-2 text-left transition-all
+                        relative p-2 rounded-xl text-center transition-all duration-300
                         ${isSelected 
-                          ? 'border-primary bg-primary/10 shadow-lg shadow-primary/20' 
-                          : 'border-border bg-card hover:border-primary/50'
+                          ? 'bg-gradient-to-br from-primary/20 to-primary/5 ring-2 ring-primary shadow-lg shadow-primary/20' 
+                          : 'bg-card/50 hover:bg-card border border-border/30 hover:border-primary/30'
                         }
                       `}
                     >
@@ -91,36 +96,31 @@ const ThemeSelector = ({ trigger }: ThemeSelectorProps) => {
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary flex items-center justify-center"
+                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center shadow-md"
                         >
-                          <Check className="w-4 h-4 text-primary-foreground" />
+                          <Check className="w-2.5 h-2.5 text-primary-foreground" />
                         </motion.div>
                       )}
                       
                       {/* Theme icon */}
-                      <div className="text-3xl mb-2">{theme.icon}</div>
+                      <div className="text-xl mb-1">{theme.icon}</div>
                       
                       {/* Theme name */}
-                      <h3 className="font-semibold text-sm">{theme.name}</h3>
-                      <p className="text-xs text-muted-foreground">{theme.subtitle}</p>
+                      <h3 className="font-medium text-[10px] leading-tight truncate">{theme.name}</h3>
                       
-                      {/* Color preview */}
-                      <div className="flex gap-1 mt-3">
+                      {/* Color dots */}
+                      <div className="flex justify-center gap-0.5 mt-1.5">
                         <div 
-                          className="w-5 h-5 rounded-full"
+                          className="w-2 h-2 rounded-full ring-1 ring-white/20"
                           style={{ backgroundColor: `hsl(${theme.colors.primary})` }}
                         />
                         <div 
-                          className="w-5 h-5 rounded-full"
+                          className="w-2 h-2 rounded-full ring-1 ring-white/20"
                           style={{ backgroundColor: `hsl(${theme.colors.accent})` }}
                         />
                         <div 
-                          className="w-5 h-5 rounded-full"
+                          className="w-2 h-2 rounded-full ring-1 ring-white/20"
                           style={{ backgroundColor: `hsl(${theme.colors.teamAlfa})` }}
-                        />
-                        <div 
-                          className="w-5 h-5 rounded-full"
-                          style={{ backgroundColor: `hsl(${theme.colors.teamBravo})` }}
                         />
                       </div>
                     </motion.button>

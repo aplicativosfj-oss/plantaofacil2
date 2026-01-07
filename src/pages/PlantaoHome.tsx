@@ -481,85 +481,92 @@ const PlantaoHome = () => {
                       : '[ Selecione sua Equipe ]'}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   {TEAMS.map((team, index) => {
                     const isUserTeam = savedCredentials?.team === team.value;
                     const isBlocked = savedCredentials && !isUserTeam;
                     const isBlockedClicked = blockedTeamClicked === team.value;
+                    const TeamIcon = getTeamIcon(team.value, themeConfig);
                     
                     return (
                       <motion.button
                         key={team.value}
-                        initial={{ opacity: 0, x: index % 2 === 0 ? -10 : 10 }}
+                        initial={{ opacity: 0, y: 8 }}
                         animate={{ 
                           opacity: 1, 
-                          x: isBlockedClicked ? [0, -4, 4, -4, 4, 0] : 0,
-                          scale: isBlockedClicked ? [1, 0.98, 1] : 1,
+                          y: 0,
+                          x: isBlockedClicked ? [0, -3, 3, -3, 3, 0] : 0,
                         }}
                         transition={{ 
-                          delay: 0.3 + index * 0.05,
-                          x: isBlockedClicked ? { duration: 0.4 } : undefined,
+                          delay: 0.2 + index * 0.05,
+                          x: isBlockedClicked ? { duration: 0.3 } : undefined,
                         }}
-                        whileHover={{ scale: isBlocked ? 1 : 1.02 }}
-                        whileTap={{ scale: isBlocked ? 0.98 : 0.96 }}
+                        whileHover={{ scale: isBlocked ? 1 : 1.03, y: isBlocked ? 0 : -2 }}
+                        whileTap={{ scale: isBlocked ? 0.98 : 0.95 }}
                         onClick={() => handleTeamClick(team.value)}
                         disabled={isAutoLogging}
                         className={`
-                          relative p-4 md:p-5 rounded-lg border-l-4 text-left
-                          ${isBlockedClicked ? 'border-red-500' : team.borderColor}
+                          relative px-3 py-2.5 rounded-xl text-left overflow-hidden
+                          ${isBlockedClicked ? 'ring-1 ring-red-500' : ''}
                           ${isBlocked 
-                            ? 'bg-gradient-to-r from-red-900/20 to-transparent opacity-40 cursor-not-allowed' 
-                            : 'bg-gradient-to-r from-black/50 to-transparent cursor-pointer hover:from-black/70'}
-                          backdrop-blur-sm group transition-all duration-200
-                          ${isUserTeam ? 'ring-1 ring-primary/50' : ''}
+                            ? 'opacity-30 cursor-not-allowed' 
+                            : 'cursor-pointer'}
+                          ${isUserTeam ? 'ring-2 ring-primary shadow-lg shadow-primary/20' : ''}
+                          bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-md
+                          border border-white/5 hover:border-white/10
+                          transition-all duration-300
                         `}
                       >
-                        {/* Blocked overlay effect */}
+                        {/* Gradient accent bar */}
+                        <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${team.color}`} />
+                        
+                        {/* Blocked overlay */}
                         {isBlockedClicked && (
                           <motion.div
                             initial={{ opacity: 0 }}
-                            animate={{ opacity: [0, 0.5, 0] }}
-                            transition={{ duration: 0.5 }}
-                            className="absolute inset-0 bg-red-500/30 pointer-events-none"
+                            animate={{ opacity: [0, 0.4, 0] }}
+                            transition={{ duration: 0.4 }}
+                            className="absolute inset-0 bg-red-500/20 pointer-events-none"
                           />
                         )}
                         
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-md ${isBlocked ? 'bg-red-500/10' : team.bgColor} transition-colors`}>
+                        <div className="flex items-center gap-2.5 pl-2">
+                          <div className={`
+                            p-1.5 rounded-lg 
+                            ${isBlocked ? 'bg-red-500/10' : `bg-gradient-to-br ${team.color}`}
+                            shadow-sm
+                          `}>
                             {isBlocked ? (
-                              <Ban className="w-6 h-6 text-red-400/60" />
+                              <Ban className="w-4 h-4 text-red-400/60" />
                             ) : isUserTeam ? (
-                              <Fingerprint className={`w-6 h-6 ${team.textColor}`} />
+                              <Fingerprint className="w-4 h-4 text-white" />
                             ) : (
-                              (() => {
-                                const TeamIcon = getTeamIcon(team.value, themeConfig);
-                                return <TeamIcon className={`w-6 h-6 ${team.textColor}`} />;
-                              })()
+                              <TeamIcon className="w-4 h-4 text-white" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <span className={`font-bold text-sm md:text-base block ${isBlocked ? 'text-muted-foreground/50' : team.textColor}`}>
+                            <span className={`font-semibold text-xs block ${isBlocked ? 'text-muted-foreground/50' : 'text-foreground'}`}>
                               {team.label}
                             </span>
-                            <span className={`text-[10px] md:text-xs font-mono uppercase ${isBlocked ? 'text-red-400/40' : 'text-muted-foreground/70'}`}>
-                              {isUserTeam ? 'Entrar' : isBlocked ? 'Bloqueado' : team.subtitle}
+                            <span className={`text-[9px] font-mono uppercase ${isBlocked ? 'text-red-400/40' : 'text-muted-foreground/60'}`}>
+                              {isUserTeam ? '● Online' : isBlocked ? 'Bloqueado' : team.subtitle}
                             </span>
                           </div>
-                          {/* Status indicator */}
-                          {isUserTeam ? (
-                            <CheckCircle className="w-5 h-5 text-green-500" />
-                          ) : isBlocked ? (
-                            <Lock className="w-4 h-4 text-red-400/50" />
-                          ) : (
-                            <div className={`w-2 h-2 rounded-full ${team.bgColor} animate-pulse`} />
+                          {isUserTeam && (
+                            <CheckCircle className="w-4 h-4 text-green-400" />
                           )}
                         </div>
 
-                        {/* Shimmer effect on user's team */}
+                        {/* Shimmer effect */}
                         {isUserTeam && (
-                          <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-sm">
-                            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.03)_50%,transparent_75%)] bg-[length:200%_200%] animate-shimmer" />
-                          </div>
+                          <motion.div 
+                            className="absolute inset-0 pointer-events-none"
+                            initial={{ x: '-100%' }}
+                            animate={{ x: '100%' }}
+                            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                          >
+                            <div className="h-full w-1/2 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+                          </motion.div>
                         )}
                       </motion.button>
                     );
