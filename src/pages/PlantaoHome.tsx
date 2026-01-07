@@ -88,6 +88,177 @@ const TEAMS = [
   { value: 'delta', label: 'Equipe Delta', color: 'from-red-500 to-rose-600', bgColor: 'bg-team-delta/20', borderColor: 'border-team-delta', textColor: 'text-team-delta', subtitle: 'Intervenção Rápida' },
 ] as const;
 
+// Team Button Component with animations
+interface TeamButtonProps {
+  team: typeof TEAMS[number];
+  index: number;
+  isUserTeam: boolean;
+  isBlocked: boolean;
+  isBlockedClicked: boolean;
+  isAutoLogging: boolean;
+  themeConfig: any;
+  onTeamClick: (value: 'alfa' | 'bravo' | 'charlie' | 'delta') => void;
+}
+
+const TeamButton = ({ team, index, isUserTeam, isBlocked, isBlockedClicked, isAutoLogging, themeConfig, onTeamClick }: TeamButtonProps) => {
+  const [isPressed, setIsPressed] = useState(false);
+  const [ripples, setRipples] = useState<{x: number, y: number, id: number}[]>([]);
+  const TeamIcon = getTeamIcon(team.value, themeConfig);
+  
+  const handlePress = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (isBlocked) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const newRipple = { x, y, id: Date.now() };
+    setRipples(prev => [...prev, newRipple]);
+    setIsPressed(true);
+    
+    setTimeout(() => {
+      setRipples(prev => prev.filter(r => r.id !== newRipple.id));
+    }, 800);
+    
+    setTimeout(() => setIsPressed(false), 150);
+    onTeamClick(team.value);
+  };
+  
+  return (
+    <motion.button
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ 
+        opacity: 1, 
+        y: 0,
+        x: isBlockedClicked ? [0, -3, 3, -3, 3, 0] : 0,
+      }}
+      transition={{ 
+        delay: 0.2 + index * 0.05,
+        x: isBlockedClicked ? { duration: 0.3 } : undefined,
+      }}
+      whileHover={{ scale: isBlocked ? 1 : 1.03, y: isBlocked ? 0 : -2 }}
+      onClick={handlePress}
+      disabled={isAutoLogging}
+      className={`
+        relative px-3 py-2.5 rounded-xl text-left overflow-hidden
+        ${isBlockedClicked ? 'ring-1 ring-red-500' : ''}
+        ${isBlocked 
+          ? 'opacity-30 cursor-not-allowed' 
+          : 'cursor-pointer'}
+        ${isUserTeam ? 'ring-2 ring-primary shadow-lg shadow-primary/20' : ''}
+        bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-md
+        border border-white/5 hover:border-white/10
+        transition-all duration-300
+      `}
+    >
+      {/* Ripple effects */}
+      <AnimatePresence>
+        {ripples.map(ripple => (
+          <motion.span
+            key={ripple.id}
+            initial={{ scale: 0, opacity: 0.6 }}
+            animate={{ scale: 4, opacity: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            style={{ left: ripple.x, top: ripple.y }}
+            className={`absolute w-16 h-16 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r ${team.color} pointer-events-none`}
+          />
+        ))}
+      </AnimatePresence>
+      
+      {/* Press flash effect */}
+      <motion.div
+        initial={false}
+        animate={{ 
+          opacity: isPressed ? 0.3 : 0,
+          scale: isPressed ? 1.1 : 1
+        }}
+        transition={{ duration: 0.15 }}
+        className={`absolute inset-0 bg-gradient-to-r ${team.color} pointer-events-none rounded-xl`}
+      />
+      
+      {/* Gradient accent bar with pulse on press */}
+      <motion.div 
+        className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${team.color}`}
+        animate={{ 
+          width: isPressed ? '3px' : '4px',
+          opacity: isPressed ? 1 : 0.8
+        }}
+      />
+      
+      {/* Blocked overlay */}
+      {isBlockedClicked && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 0.4, 0] }}
+          transition={{ duration: 0.4 }}
+          className="absolute inset-0 bg-red-500/20 pointer-events-none"
+        />
+      )}
+      
+      <div className="flex items-center gap-2.5 pl-2 relative z-10">
+        <motion.div 
+          className={`
+            p-1.5 rounded-lg 
+            ${isBlocked ? 'bg-red-500/10' : `bg-gradient-to-br ${team.color}`}
+            shadow-sm
+          `}
+          animate={{ 
+            scale: isPressed ? 0.9 : 1,
+            rotate: isPressed ? -5 : 0
+          }}
+          transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+        >
+          {isBlocked ? (
+            <Ban className="w-4 h-4 text-red-400/60" />
+          ) : isUserTeam ? (
+            <Fingerprint className="w-4 h-4 text-white" />
+          ) : (
+            <TeamIcon className="w-4 h-4 text-white" />
+          )}
+        </motion.div>
+        <div className="flex-1 min-w-0">
+          <motion.span 
+            className={`font-semibold text-xs block ${isBlocked ? 'text-muted-foreground/50' : 'text-foreground'}`}
+            animate={{ x: isPressed ? 2 : 0 }}
+            transition={{ type: 'spring', stiffness: 400 }}
+          >
+            {team.label}
+          </motion.span>
+          <span className={`text-[9px] font-mono uppercase ${isBlocked ? 'text-red-400/40' : 'text-muted-foreground/60'}`}>
+            {isUserTeam ? '● Online' : isBlocked ? 'Bloqueado' : team.subtitle}
+          </span>
+        </div>
+        {isUserTeam && (
+          <motion.div
+            animate={{ scale: isPressed ? 1.2 : 1 }}
+            transition={{ type: 'spring', stiffness: 400 }}
+          >
+            <CheckCircle className="w-4 h-4 text-green-400" />
+          </motion.div>
+        )}
+      </div>
+
+      {/* Shimmer effect */}
+      {isUserTeam && (
+        <motion.div 
+          className="absolute inset-0 pointer-events-none"
+          initial={{ x: '-100%' }}
+          animate={{ x: '100%' }}
+          transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+        >
+          <div className="h-full w-1/2 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+        </motion.div>
+      )}
+      
+      {/* Corner glow on hover */}
+      <motion.div
+        className={`absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-gradient-to-br ${team.color} blur-xl opacity-0`}
+        whileHover={{ opacity: 0.3 }}
+      />
+    </motion.button>
+  );
+};
+
 // Scanning line effect
 const ScanLine = () => (
   <motion.div
@@ -482,95 +653,19 @@ const PlantaoHome = () => {
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  {TEAMS.map((team, index) => {
-                    const isUserTeam = savedCredentials?.team === team.value;
-                    const isBlocked = savedCredentials && !isUserTeam;
-                    const isBlockedClicked = blockedTeamClicked === team.value;
-                    const TeamIcon = getTeamIcon(team.value, themeConfig);
-                    
-                    return (
-                      <motion.button
-                        key={team.value}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ 
-                          opacity: 1, 
-                          y: 0,
-                          x: isBlockedClicked ? [0, -3, 3, -3, 3, 0] : 0,
-                        }}
-                        transition={{ 
-                          delay: 0.2 + index * 0.05,
-                          x: isBlockedClicked ? { duration: 0.3 } : undefined,
-                        }}
-                        whileHover={{ scale: isBlocked ? 1 : 1.03, y: isBlocked ? 0 : -2 }}
-                        whileTap={{ scale: isBlocked ? 0.98 : 0.95 }}
-                        onClick={() => handleTeamClick(team.value)}
-                        disabled={isAutoLogging}
-                        className={`
-                          relative px-3 py-2.5 rounded-xl text-left overflow-hidden
-                          ${isBlockedClicked ? 'ring-1 ring-red-500' : ''}
-                          ${isBlocked 
-                            ? 'opacity-30 cursor-not-allowed' 
-                            : 'cursor-pointer'}
-                          ${isUserTeam ? 'ring-2 ring-primary shadow-lg shadow-primary/20' : ''}
-                          bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-md
-                          border border-white/5 hover:border-white/10
-                          transition-all duration-300
-                        `}
-                      >
-                        {/* Gradient accent bar */}
-                        <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${team.color}`} />
-                        
-                        {/* Blocked overlay */}
-                        {isBlockedClicked && (
-                          <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: [0, 0.4, 0] }}
-                            transition={{ duration: 0.4 }}
-                            className="absolute inset-0 bg-red-500/20 pointer-events-none"
-                          />
-                        )}
-                        
-                        <div className="flex items-center gap-2.5 pl-2">
-                          <div className={`
-                            p-1.5 rounded-lg 
-                            ${isBlocked ? 'bg-red-500/10' : `bg-gradient-to-br ${team.color}`}
-                            shadow-sm
-                          `}>
-                            {isBlocked ? (
-                              <Ban className="w-4 h-4 text-red-400/60" />
-                            ) : isUserTeam ? (
-                              <Fingerprint className="w-4 h-4 text-white" />
-                            ) : (
-                              <TeamIcon className="w-4 h-4 text-white" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <span className={`font-semibold text-xs block ${isBlocked ? 'text-muted-foreground/50' : 'text-foreground'}`}>
-                              {team.label}
-                            </span>
-                            <span className={`text-[9px] font-mono uppercase ${isBlocked ? 'text-red-400/40' : 'text-muted-foreground/60'}`}>
-                              {isUserTeam ? '● Online' : isBlocked ? 'Bloqueado' : team.subtitle}
-                            </span>
-                          </div>
-                          {isUserTeam && (
-                            <CheckCircle className="w-4 h-4 text-green-400" />
-                          )}
-                        </div>
-
-                        {/* Shimmer effect */}
-                        {isUserTeam && (
-                          <motion.div 
-                            className="absolute inset-0 pointer-events-none"
-                            initial={{ x: '-100%' }}
-                            animate={{ x: '100%' }}
-                            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                          >
-                            <div className="h-full w-1/2 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-                          </motion.div>
-                        )}
-                      </motion.button>
-                    );
-                  })}
+                  {TEAMS.map((team, index) => (
+                    <TeamButton
+                      key={team.value}
+                      team={team}
+                      index={index}
+                      isUserTeam={savedCredentials?.team === team.value}
+                      isBlocked={!!(savedCredentials && savedCredentials.team !== team.value)}
+                      isBlockedClicked={blockedTeamClicked === team.value}
+                      isAutoLogging={isAutoLogging}
+                      themeConfig={themeConfig}
+                      onTeamClick={handleTeamClick}
+                    />
+                  ))}
                 </div>
                 
                 {/* Loading indicator for auto-login */}
