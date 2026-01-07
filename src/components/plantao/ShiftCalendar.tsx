@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday, differenceInHours, isBefore, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Clock, Calendar, AlertTriangle, Moon, Banknote, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Clock, Calendar, AlertTriangle, Moon, Banknote, Check, Sun } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -44,6 +44,8 @@ interface OvertimeEntry {
   hours_worked: number;
   description: string | null;
   total_value: number | null;
+  shift_type?: string;
+  scheduled_time?: string;
 }
 
 const COLORS = [
@@ -76,7 +78,7 @@ const ShiftCalendar = () => {
   const [newFirstShiftDate, setNewFirstShiftDate] = useState<string>('');
   const [dayOffForm, setDayOffForm] = useState({ off_type: '24h', reason: '' });
   const [selectedDayOff, setSelectedDayOff] = useState<DayOff | null>(null);
-  const [overtimeForm, setOvertimeForm] = useState({ hours: '', description: '' });
+  const [overtimeForm, setOvertimeForm] = useState({ hours: '', description: '', shiftType: 'day', scheduledTime: '' });
   const [selectedOvertime, setSelectedOvertime] = useState<OvertimeEntry | null>(null);
 
   // IMPORTANT: date strings like "2026-01-03" MUST be parsed as local dates.
@@ -399,10 +401,15 @@ const ShiftCalendar = () => {
     const existingOvertime = getOvertime(selectedDate);
     if (existingOvertime) {
       setSelectedOvertime(existingOvertime);
-      setOvertimeForm({ hours: existingOvertime.hours_worked.toString(), description: existingOvertime.description || '' });
+      setOvertimeForm({ 
+        hours: existingOvertime.hours_worked.toString(), 
+        description: existingOvertime.description || '',
+        shiftType: existingOvertime.shift_type || 'day',
+        scheduledTime: existingOvertime.scheduled_time || ''
+      });
     } else {
       setSelectedOvertime(null);
-      setOvertimeForm({ hours: '', description: '' });
+      setOvertimeForm({ hours: '', description: '', shiftType: 'day', scheduledTime: '' });
     }
     setIsDialogOpen(false);
     setIsOvertimeDialogOpen(true);
@@ -428,7 +435,10 @@ const ShiftCalendar = () => {
       description: overtimeForm.description || null,
       month_year: monthYear,
       hour_value: 15.75,
-      total_value: hours * 15.75
+      total_value: hours * 15.75,
+      shift_type: overtimeForm.shiftType,
+      scheduled_time: overtimeForm.scheduledTime || null,
+      alert_sent: false
     };
 
     if (selectedOvertime) {
@@ -963,6 +973,45 @@ const ShiftCalendar = () => {
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Shift Type Selection */}
+            <div className="space-y-3">
+              <Label>Turno</Label>
+              <RadioGroup
+                value={overtimeForm.shiftType}
+                onValueChange={(value) => setOvertimeForm(prev => ({ ...prev, shiftType: value }))}
+                className="flex gap-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="day" id="shift-day" />
+                  <Label htmlFor="shift-day" className="cursor-pointer flex items-center gap-1.5">
+                    <Sun className="w-4 h-4 text-amber-400" />
+                    Dia (06h-18h)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="night" id="shift-night" />
+                  <Label htmlFor="shift-night" className="cursor-pointer flex items-center gap-1.5">
+                    <Moon className="w-4 h-4 text-indigo-400" />
+                    Noite (18h-06h)
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Scheduled Time for Alert */}
+            <div className="space-y-2">
+              <Label>Horário de Início (para alertas)</Label>
+              <Input
+                type="time"
+                value={overtimeForm.scheduledTime}
+                onChange={e => setOvertimeForm(prev => ({ ...prev, scheduledTime: e.target.value }))}
+                placeholder="Ex: 18:00"
+              />
+              <p className="text-xs text-muted-foreground">
+                Você receberá um alerta 1 hora antes do horário informado
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label>Horas Trabalhadas</Label>
               <Input
@@ -993,6 +1042,16 @@ const ShiftCalendar = () => {
                   <span className="font-bold text-cyan-400">
                     R$ {(parseFloat(overtimeForm.hours || '0') * 15.75).toFixed(2)}
                   </span>
+                </div>
+                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                  {overtimeForm.shiftType === 'day' ? (
+                    <><Sun className="w-3 h-3 text-amber-400" /> Turno Diurno</>
+                  ) : (
+                    <><Moon className="w-3 h-3 text-indigo-400" /> Turno Noturno</>
+                  )}
+                  {overtimeForm.scheduledTime && (
+                    <span className="ml-2">• Início: {overtimeForm.scheduledTime}</span>
+                  )}
                 </div>
               </div>
             )}
