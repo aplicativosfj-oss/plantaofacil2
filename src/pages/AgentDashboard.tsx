@@ -7,7 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Shield, LogOut, Clock, Calendar, Users, DollarSign, 
   Bell, ArrowLeftRight, User, ChevronRight, AlertTriangle,
-  Timer, TrendingUp, Info, MessageCircle, ArrowLeft
+  Timer, TrendingUp, Info, MessageCircle, ArrowLeft,
+  Radio, Siren, Target, Crosshair, FileText, Briefcase,
+  Banknote, Repeat, CalendarDays
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format, differenceInHours } from 'date-fns';
@@ -500,85 +502,173 @@ const AgentDashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Quick Actions - Compact Grid */}
+            {/* Quick Actions - Enhanced Grid with unique effects */}
             <div className="grid grid-cols-4 gap-2">
-              <Card 
-                className="cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => handlePanelChange('calendar')}
+              {/* Calendário - Azul pulsante */}
+              <motion.div
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <CardContent className="p-2 text-center">
-                  <Calendar className="w-5 h-5 mx-auto text-primary mb-1" />
-                  <p className="text-[10px] font-medium">Calendário</p>
-                </CardContent>
-              </Card>
+                <Card 
+                  className="cursor-pointer border-primary/30 hover:border-primary/60 transition-all bg-gradient-to-br from-primary/10 to-transparent relative overflow-hidden group"
+                  onClick={() => handlePanelChange('calendar')}
+                >
+                  <motion.div
+                    className="absolute inset-0 bg-primary/5"
+                    animate={{ opacity: [0, 0.3, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                  <CardContent className="p-2.5 text-center relative">
+                    <motion.div
+                      animate={{ rotate: [0, 5, -5, 0] }}
+                      transition={{ duration: 4, repeat: Infinity }}
+                    >
+                      <CalendarDays className="w-5 h-5 mx-auto text-primary mb-1" />
+                    </motion.div>
+                    <p className="text-[10px] font-semibold">Calendário</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-              <Card 
-                className="cursor-pointer hover:border-accent/50 transition-colors"
-                onClick={() => handlePanelChange('monitoring')}
+              {/* Rondas - Verde com efeito radar */}
+              <motion.div
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <CardContent className="p-2 text-center">
-                  <Shield className="w-5 h-5 mx-auto text-accent mb-1" />
-                  <p className="text-[10px] font-medium">Rondas</p>
-                </CardContent>
-              </Card>
+                <Card 
+                  className="cursor-pointer border-accent/30 hover:border-accent/60 transition-all bg-gradient-to-br from-accent/10 to-transparent relative overflow-hidden group"
+                  onClick={() => handlePanelChange('monitoring')}
+                >
+                  <motion.div
+                    className="absolute inset-0 rounded-full"
+                    style={{ background: 'radial-gradient(circle, hsl(var(--accent) / 0.2) 0%, transparent 70%)' }}
+                    animate={{ scale: [0.5, 1.5], opacity: [0.5, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                  <CardContent className="p-2.5 text-center relative">
+                    <Crosshair className="w-5 h-5 mx-auto text-accent mb-1" />
+                    <p className="text-[10px] font-semibold">Rondas</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-              <Card 
-                className="cursor-pointer hover:border-primary/50 transition-colors relative"
-                onClick={() => handlePanelChange('swaps')}
+              {/* Permutas - Laranja com efeito de troca */}
+              <motion.div
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <CardContent className="p-2 text-center">
-                  <ArrowLeftRight className="w-5 h-5 mx-auto text-primary mb-1" />
-                  <p className="text-[10px] font-medium">Permutas</p>
-                  {pendingSwaps > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-white text-[10px] rounded-full flex items-center justify-center">
-                      {pendingSwaps}
-                    </span>
-                  )}
-                </CardContent>
-              </Card>
+                <Card 
+                  className="cursor-pointer border-orange-500/30 hover:border-orange-500/60 transition-all bg-gradient-to-br from-orange-500/10 to-transparent relative overflow-hidden"
+                  onClick={() => handlePanelChange('swaps')}
+                >
+                  <CardContent className="p-2.5 text-center relative">
+                    <motion.div
+                      animate={{ x: [-2, 2, -2] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      <Repeat className="w-5 h-5 mx-auto text-orange-400 mb-1" />
+                    </motion.div>
+                    <p className="text-[10px] font-semibold">Permutas</p>
+                    {pendingSwaps > 0 && (
+                      <motion.span 
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-white text-[10px] rounded-full flex items-center justify-center"
+                      >
+                        {pendingSwaps}
+                      </motion.span>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-              <Card 
-                className="cursor-pointer hover:border-accent/50 transition-colors"
-                onClick={() => handlePanelChange('overtime')}
+              {/* Banco de Horas - Amarelo com efeito de moeda */}
+              <motion.div
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <CardContent className="p-2 text-center">
-                  <DollarSign className="w-5 h-5 mx-auto text-accent mb-1" />
-                  <p className="text-[10px] font-medium">Horas</p>
-                </CardContent>
-              </Card>
+                <Card 
+                  className="cursor-pointer border-yellow-500/30 hover:border-yellow-500/60 transition-all bg-gradient-to-br from-yellow-500/10 to-transparent relative overflow-hidden"
+                  onClick={() => handlePanelChange('overtime')}
+                >
+                  <motion.div
+                    className="absolute top-0 left-0 right-0 h-full bg-gradient-to-b from-yellow-500/10 to-transparent"
+                    animate={{ y: ['-100%', '100%'] }}
+                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                  />
+                  <CardContent className="p-2.5 text-center relative">
+                    <motion.div
+                      animate={{ rotateY: [0, 360] }}
+                      transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
+                    >
+                      <Banknote className="w-5 h-5 mx-auto text-yellow-400 mb-1" />
+                    </motion.div>
+                    <p className="text-[10px] font-semibold">B. Horas</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </div>
 
-            {/* Stats Summary - Compact */}
-            <Card>
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-muted-foreground">Resumo do Mês</span>
-                  <span className="text-[10px] text-muted-foreground capitalize">
-                    {format(new Date(), "MMM/yy", { locale: ptBR })}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="text-center p-2 bg-primary/10 rounded">
-                    <p className="text-lg font-bold text-primary">
-                      {overtimeSummary?.total_hours.toFixed(0) || '0'}h
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">Horas</p>
+            {/* Stats Summary - Enhanced with glow effects */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="border-border/30 bg-gradient-to-br from-card to-card/50 overflow-hidden relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-accent/5" />
+                <CardContent className="p-3 relative">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      Resumo Mensal
+                    </span>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 capitalize">
+                      {format(new Date(), "MMM/yy", { locale: ptBR })}
+                    </Badge>
                   </div>
-                  <div className="text-center p-2 bg-accent/10 rounded">
-                    <p className="text-lg font-bold text-accent">
-                      R${overtimeSummary?.total_value.toFixed(0) || '0'}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">Valor</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <motion.div 
+                      whileHover={{ scale: 1.02 }}
+                      className="text-center p-2.5 bg-primary/10 rounded-lg border border-primary/20 relative overflow-hidden"
+                    >
+                      <motion.div
+                        className="absolute inset-0 bg-primary/10"
+                        animate={{ opacity: [0, 0.5, 0] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                      <p className="text-lg font-bold text-primary relative">
+                        {overtimeSummary?.total_hours.toFixed(0) || '0'}h
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Horas</p>
+                    </motion.div>
+                    <motion.div 
+                      whileHover={{ scale: 1.02 }}
+                      className="text-center p-2.5 bg-accent/10 rounded-lg border border-accent/20 relative overflow-hidden"
+                    >
+                      <motion.div
+                        className="absolute inset-0 bg-accent/10"
+                        animate={{ opacity: [0, 0.5, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                      />
+                      <p className="text-lg font-bold text-accent relative">
+                        R${overtimeSummary?.total_value.toFixed(0) || '0'}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Valor</p>
+                    </motion.div>
+                    <motion.div 
+                      whileHover={{ scale: 1.02 }}
+                      className="text-center p-2.5 bg-muted/30 rounded-lg border border-border/30"
+                    >
+                      <p className="text-lg font-bold text-muted-foreground">
+                        {overtimeSummary?.remaining_hours.toFixed(0) || '70'}h
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Disponível</p>
+                    </motion.div>
                   </div>
-                  <div className="text-center p-2 bg-muted/30 rounded">
-                    <p className="text-lg font-bold text-muted-foreground">
-                      {overtimeSummary?.remaining_hours.toFixed(0) || '70'}h
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">Disponível</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
 
             {/* Team Management - Compact */}
             <Card 
