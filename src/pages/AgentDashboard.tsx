@@ -26,6 +26,8 @@ import TeamChat from '@/components/plantao/TeamChat';
 import GlobalChat from '@/components/plantao/GlobalChat';
 import ShiftCalendar from '@/components/plantao/ShiftCalendar';
 import FirstShiftSetup from '@/components/plantao/FirstShiftSetup';
+import ShiftDayCard from '@/components/plantao/ShiftDayCard';
+import MonitoringRotation from '@/components/plantao/MonitoringRotation';
 import OnlineIndicator from '@/components/plantao/OnlineIndicator';
 import LicenseCounter from '@/components/plantao/LicenseCounter';
 import LicenseExpiredOverlay from '@/components/plantao/LicenseExpiredOverlay';
@@ -73,7 +75,7 @@ const AgentDashboard = () => {
   const [overtimeSummary, setOvertimeSummary] = useState<OvertimeSummary | null>(null);
   const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [pendingSwaps, setPendingSwaps] = useState(0);
-  const [activePanel, setActivePanel] = useState<'overview' | 'team' | 'overtime' | 'swaps' | 'alerts' | 'calendar'>('overview');
+  const [activePanel, setActivePanel] = useState<'overview' | 'team' | 'overtime' | 'swaps' | 'alerts' | 'calendar' | 'monitoring'>('overview');
   const [countdown, setCountdown] = useState<string>('');
   const [showAbout, setShowAbout] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -104,6 +106,23 @@ const AgentDashboard = () => {
       navigate('/');
     }
   }, [isLoading, agent, navigate]);
+
+  // Check if agent has shift schedule
+  useEffect(() => {
+    if (!agent?.id) return;
+
+    const checkShiftSchedule = async () => {
+      const { data } = await supabase
+        .from('shift_schedules')
+        .select('id')
+        .eq('agent_id', agent.id)
+        .single();
+
+      setHasShiftSchedule(!!data);
+    };
+
+    checkShiftSchedule();
+  }, [agent?.id]);
 
   // Fetch next shift
   useEffect(() => {
@@ -396,6 +415,9 @@ const AgentDashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
+            {/* Today's Shift Card */}
+            <ShiftDayCard />
+
             {/* Next Shift Card */}
             <Card className={`border-2 ${isShiftSoon ? 'border-warning/50 bg-warning/5' : 'border-primary/30'}`}>
               <CardHeader className="pb-2">
@@ -500,6 +522,43 @@ const AgentDashboard = () => {
                   <p className="text-xl font-bold">
                     {pendingSwaps > 0 ? `${pendingSwaps} pendente${pendingSwaps > 1 ? 's' : ''}` : 'Nenhuma'}
                   </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-2 gap-4">
+              <Card 
+                className="cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => setActivePanel('calendar')}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/20">
+                      <Calendar className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Calendário</p>
+                      <p className="text-xs text-muted-foreground">Meus plantões</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card 
+                className="cursor-pointer hover:border-accent/50 transition-colors"
+                onClick={() => setActivePanel('monitoring')}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-accent/20">
+                      <Users className="w-5 h-5 text-accent" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Rondas</p>
+                      <p className="text-xs text-muted-foreground">Divisão de turnos</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -610,6 +669,44 @@ const AgentDashboard = () => {
 
         {activePanel === 'alerts' && (
           <AlertsPanel onBack={() => setActivePanel('overview')} />
+        )}
+
+        {activePanel === 'calendar' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Button variant="ghost" size="icon" onClick={() => setActivePanel('overview')}>
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+              <h2 className="text-xl font-bold">Calendário de Plantões</h2>
+            </div>
+
+            {hasShiftSchedule === false ? (
+              <FirstShiftSetup onComplete={() => setHasShiftSchedule(true)} />
+            ) : (
+              <ShiftCalendar />
+            )}
+          </motion.div>
+        )}
+
+        {activePanel === 'monitoring' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Button variant="ghost" size="icon" onClick={() => setActivePanel('overview')}>
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+              <h2 className="text-xl font-bold">Divisão de Monitoramento</h2>
+            </div>
+
+            <MonitoringRotation />
+          </motion.div>
         )}
       </main>
     </div>
