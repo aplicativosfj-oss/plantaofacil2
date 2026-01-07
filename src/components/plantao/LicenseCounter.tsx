@@ -194,7 +194,7 @@ const LicenseCounter = ({ onExpired }: LicenseCounterProps) => {
       <motion.div
         initial={false}
         animate={{ width: isExpanded ? 'auto' : 'auto' }}
-        className={`relative border rounded-xl cursor-pointer transition-all ${getStatusColor()}`}
+        className={`relative border rounded-lg cursor-pointer transition-all ${getStatusColor()}`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <AnimatePresence mode="wait">
@@ -204,52 +204,43 @@ const LicenseCounter = ({ onExpired }: LicenseCounterProps) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="p-4 min-w-[280px]"
+              className="p-2 min-w-[180px]"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  <span className="font-bold text-sm">LICENÇA</span>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1">
+                  <Shield className="w-3 h-3" />
+                  <span className="font-bold text-[10px]">LICENÇA</span>
                 </div>
-                <Badge variant={isExpired ? 'destructive' : 'outline'} className="text-xs">
+                <Badge variant={isExpired ? 'destructive' : 'outline'} className="text-[9px] px-1 py-0 h-4">
                   {getStatusLabel()}
                 </Badge>
               </div>
 
-              <div className="grid grid-cols-4 gap-2 mb-3">
+              <div className="grid grid-cols-4 gap-1 mb-2">
                 {[
-                  { value: countdown.days, label: 'Dias' },
-                  { value: countdown.hours, label: 'Hrs' },
-                  { value: countdown.minutes, label: 'Min' },
-                  { value: countdown.seconds, label: 'Seg' },
+                  { value: countdown.days, label: 'D' },
+                  { value: countdown.hours, label: 'H' },
+                  { value: countdown.minutes, label: 'M' },
+                  { value: countdown.seconds, label: 'S' },
                 ].map((item, i) => (
-                  <div key={i} className="text-center p-2 bg-background/50 rounded-lg">
-                    <div className="text-lg font-mono font-bold">{String(item.value).padStart(2, '0')}</div>
-                    <div className="text-[10px] text-muted-foreground">{item.label}</div>
+                  <div key={i} className="text-center p-1 bg-background/50 rounded">
+                    <div className="text-xs font-mono font-bold">{String(item.value).padStart(2, '0')}</div>
+                    <div className="text-[8px] text-muted-foreground">{item.label}</div>
                   </div>
                 ))}
               </div>
 
-              <div className="text-xs text-muted-foreground mb-3">
-                {isExpired ? (
-                  <span className="text-destructive">Sua licença expirou. Renove para continuar.</span>
-                ) : (
-                  <>Expira em: {format(new Date(license.expires_at), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}</>
-                )}
-              </div>
-
               <Button 
                 size="sm" 
-                className="w-full gap-2"
+                className="w-full gap-1 h-6 text-[10px]"
                 variant={isExpired ? 'destructive' : 'default'}
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowPayment(true);
                 }}
               >
-                <CreditCard className="w-4 h-4" />
-                {isExpired ? 'Reativar Licença' : 'Renovar Antecipado'}
-                <ChevronRight className="w-4 h-4" />
+                <CreditCard className="w-3 h-3" />
+                {isExpired ? 'Reativar' : 'Renovar'}
               </Button>
             </motion.div>
           ) : (
