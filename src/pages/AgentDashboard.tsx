@@ -84,15 +84,17 @@ const AgentDashboard = () => {
   const [hasShiftSchedule, setHasShiftSchedule] = useState<boolean | null>(null);
   const [isLicenseExpired, setIsLicenseExpired] = useState(false);
 
-  // Show welcome only on first access of the day
+  // Show welcome only once every 24 hours
   useEffect(() => {
     if (agent) {
-      const today = new Date().toDateString();
-      const lastWelcomeDate = localStorage.getItem('plantao_welcome_date');
+      const now = Date.now();
+      const lastWelcomeTimestamp = localStorage.getItem('plantao_welcome_timestamp');
+      const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
       
-      if (lastWelcomeDate !== today) {
+      // Check if 24 hours have passed since last welcome
+      if (!lastWelcomeTimestamp || (now - parseInt(lastWelcomeTimestamp, 10)) >= TWENTY_FOUR_HOURS) {
         setShowWelcome(true);
-        localStorage.setItem('plantao_welcome_date', today);
+        localStorage.setItem('plantao_welcome_timestamp', now.toString());
       }
     }
   }, [agent]);
