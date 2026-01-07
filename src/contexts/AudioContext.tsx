@@ -1,8 +1,13 @@
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react';
 
 // Playlist de músicas - todas as músicas disponíveis
-// Background music permanently disabled - only SFX enabled
-const MUSIC_TRACKS: { path: string; name: string }[] = [];
+const MUSIC_TRACKS: { path: string; name: string }[] = [
+  { path: '/audio/peso-do-ritmo-1-new.mp3', name: 'Peso do Ritmo' },
+  { path: '/audio/peso-neon-new.mp3', name: 'Neon Pulse' },
+  { path: '/audio/cidade-vigilancia.mp3', name: 'Cidade Vigilância' },
+  { path: '/audio/background-80.mp3', name: 'Retro 80s' },
+  { path: '/audio/background-lento.mp3', name: 'Ambiente Calmo' },
+];
 
 const DEFAULT_MUSIC_VOLUME = 0.18;
 const MAX_MUSIC_VOLUME = 0.5;
@@ -230,8 +235,8 @@ const createCountdownBeep = () => {
 
 export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const getStoredPreference = (): boolean => {
-    // Background music desativada (mantemos apenas efeitos sonoros)
-    return false;
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored !== 'false';
   };
 
   const getSfxStoredPreference = (): boolean => {
@@ -495,19 +500,38 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [isOnHomeScreen]);
 
-  // Parar música quando sair da home
-  useEffect(() => {
-    if (!isOnHomeScreen && isMusicPlaying) {
-      fadeOut();
-    }
-  }, [isOnHomeScreen, isMusicPlaying, fadeOut]);
+  // Música continua em todos os painéis (removido o fadeOut automático ao sair da home)
 
   const toggleMusic = useCallback(() => {
-    // Música de fundo desativada (mantemos apenas SFX). Mantemos a função por compatibilidade.
-    stopMusicImmediately();
-    setIsMusicEnabled(false);
-    localStorage.setItem(STORAGE_KEY, 'false');
-  }, [stopMusicImmediately]);
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isMusicPlaying) {
+      fadeOut();
+      setIsMusicEnabled(false);
+      localStorage.setItem(STORAGE_KEY, 'false');
+      sessionStorage.setItem(MUSIC_STOPPED_SESSION_KEY, 'true');
+    } else {
+      setIsMusicEnabled(true);
+      localStorage.setItem(STORAGE_KEY, 'true');
+      sessionStorage.removeItem(MUSIC_STOPPED_SESSION_KEY);
+      
+      setupAnalyser();
+      if (audioContextRef.current?.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+      
+      if (shuffledPlaylist.length > 0) {
+        audio.src = shuffledPlaylist[currentTrackIndex].path;
+        audio.load();
+        audio.volume = 0;
+        audio.play().then(() => {
+          setIsMusicPlaying(true);
+          fadeIn();
+        }).catch(console.error);
+      }
+    }
+  }, [isMusicPlaying, fadeOut, fadeIn, setupAnalyser, shuffledPlaylist, currentTrackIndex]);
 
   const setOnHomeScreen = useCallback((value: boolean) => {
     setIsOnHomeScreenState(value);
