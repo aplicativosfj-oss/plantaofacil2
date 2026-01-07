@@ -36,6 +36,7 @@ import LicenseExpiryAlert from '@/components/plantao/LicenseExpiryAlert';
 import TeamBanner from '@/components/plantao/TeamBanner';
 import SoundButton from '@/components/plantao/SoundButton';
 import UnitTransferPanel from '@/components/plantao/UnitTransferPanel';
+import TeamShiftsPanel from '@/components/plantao/TeamShiftsPanel';
 import useClickSound from '@/hooks/useClickSound';
 import { useOvertimeAlerts } from '@/hooks/useOvertimeAlerts';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
@@ -86,7 +87,7 @@ const AgentDashboard = () => {
   const [overtimeSummary, setOvertimeSummary] = useState<OvertimeSummary | null>(null);
   const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [pendingSwaps, setPendingSwaps] = useState(0);
-  const [activePanel, setActivePanel] = useState<'overview' | 'team' | 'overtime' | 'swaps' | 'alerts' | 'calendar' | 'monitoring' | 'unit'>('overview');
+  const [activePanel, setActivePanel] = useState<'overview' | 'team' | 'overtime' | 'swaps' | 'alerts' | 'calendar' | 'monitoring' | 'unit' | 'team-shifts'>('overview');
   const [countdown, setCountdown] = useState<string>('');
   const [showAbout, setShowAbout] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -735,6 +736,31 @@ const AgentDashboard = () => {
               </CardContent>
             </Card>
 
+            {/* Team Shifts - Escala da Equipe */}
+            {agent.current_team && (
+              <Card 
+                className="cursor-pointer transition-colors border-border/50 hover:border-cyan-500/50"
+                onClick={() => handlePanelChange('team-shifts')}
+              >
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded bg-cyan-500/20">
+                        <Calendar className="w-4 h-4 text-cyan-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Escala da Equipe</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          Plantões e folgas do time
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Team Members Card */}
             <TeamMembersCard />
           </motion.div>
@@ -806,6 +832,23 @@ const AgentDashboard = () => {
               navigate('/');
             }}
           />
+        )}
+
+        {activePanel === 'team-shifts' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <SoundButton variant="ghost" size="icon" onClick={() => handlePanelChange('overview')}>
+                <ArrowLeft className="w-4 h-4" />
+              </SoundButton>
+              <h2 className="text-xl font-bold">Escala da Equipe</h2>
+            </div>
+
+            <TeamShiftsPanel />
+          </motion.div>
         )}
       </main>
     </div>
