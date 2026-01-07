@@ -295,7 +295,7 @@ const PlantaoHome = () => {
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col items-center justify-center px-4 py-6">
+            <main className="flex-1 flex flex-col items-center justify-start px-4 pt-4 pb-6">
               {/* Logo */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -423,39 +423,35 @@ const PlantaoHome = () => {
             exit={{ opacity: 0, y: 20 }}
             className="relative z-10 flex flex-col min-h-screen"
           >
-            {/* Header with Logo */}
-            <header className="py-4 px-4">
-              <motion.div 
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="container mx-auto flex flex-col items-center justify-center"
-              >
-                <img 
-                  src={plantaoLogo} 
-                  alt="PlantãoPro" 
-                  className="h-20 md:h-24 w-auto object-contain drop-shadow-2xl"
-                />
-              </motion.div>
-            </header>
-
-            {/* Main Content */}
-            <main className="flex-1 flex items-start justify-center px-4 py-2 overflow-y-auto">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="w-full max-w-md"
-              >
-                {/* Back Button */}
+            {/* Top Bar with Back Button */}
+            <header className="py-2 px-4 border-b border-primary/20">
+              <div className="container mx-auto flex items-center justify-between">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowAuthPanel(false)}
-                  className="mb-3 text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground gap-2 px-3"
                 >
-                  ← Voltar
+                  <ChevronRight className="w-4 h-4 rotate-180" />
+                  Voltar
                 </Button>
+                <img 
+                  src={plantaoLogo} 
+                  alt="PlantãoPro" 
+                  className="h-10 w-auto object-contain"
+                />
+                <div className="w-20" /> {/* Spacer for centering */}
+              </div>
+            </header>
+
+            {/* Main Content */}
+            <main className="flex-1 flex items-start justify-center px-4 pt-4 pb-2 overflow-y-auto">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="w-full max-w-md"
+              >
 
                 <Card className="border-primary/20 bg-card/90 backdrop-blur-md shadow-2xl shadow-primary/10">
                   <CardHeader className="text-center pb-3">
