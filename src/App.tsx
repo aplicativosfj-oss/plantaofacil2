@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PlantaoAuthProvider } from "@/contexts/PlantaoAuthContext";
+import { PlantaoThemeProvider } from "@/contexts/PlantaoThemeContext";
 import { Loader2 } from "lucide-react";
 
 const PlantaoHome = lazy(() => import("./pages/PlantaoHome"));
@@ -30,22 +31,24 @@ const PageLoader = () => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <PlantaoAuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<PlantaoHome />} />
-              <Route path="/dashboard" element={<AgentDashboard />} />
-              <Route path="/master" element={<PlantaoMasterDashboard />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
-    </PlantaoAuthProvider>
+    <PlantaoThemeProvider>
+      <PlantaoAuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<PlantaoHome />} />
+                <Route path="/dashboard" element={<AgentDashboard />} />
+                <Route path="/master" element={<PlantaoMasterDashboard />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </BrowserRouter>
+        </TooltipProvider>
+      </PlantaoAuthProvider>
+    </PlantaoThemeProvider>
   </QueryClientProvider>
 );
 
