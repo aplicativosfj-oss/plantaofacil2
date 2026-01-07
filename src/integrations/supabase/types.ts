@@ -158,6 +158,59 @@ export type Database = {
           },
         ]
       }
+      agent_licenses: {
+        Row: {
+          activated_at: string | null
+          agent_id: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          last_payment_at: string | null
+          license_key: string
+          license_type: string
+          monthly_fee: number
+          next_reminder_at: string | null
+          notes: string | null
+          status: string
+        }
+        Insert: {
+          activated_at?: string | null
+          agent_id: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          last_payment_at?: string | null
+          license_key?: string
+          license_type?: string
+          monthly_fee?: number
+          next_reminder_at?: string | null
+          notes?: string | null
+          status?: string
+        }
+        Update: {
+          activated_at?: string | null
+          agent_id?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          last_payment_at?: string | null
+          license_key?: string
+          license_type?: string
+          monthly_fee?: number
+          next_reminder_at?: string | null
+          notes?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_licenses_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: true
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_messages: {
         Row: {
           content: string
@@ -967,6 +1020,79 @@ export type Database = {
             columns: ["instructor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      license_payments: {
+        Row: {
+          agent_id: string
+          amount: number
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string | null
+          id: string
+          license_id: string
+          notes: string | null
+          payment_date: string | null
+          payment_method: string | null
+          payment_month: string
+          receipt_filename: string | null
+          receipt_url: string | null
+          status: string
+        }
+        Insert: {
+          agent_id: string
+          amount?: number
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string | null
+          id?: string
+          license_id: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_month: string
+          receipt_filename?: string | null
+          receipt_url?: string | null
+          status?: string
+        }
+        Update: {
+          agent_id?: string
+          amount?: number
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string | null
+          id?: string
+          license_id?: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_month?: string
+          receipt_filename?: string | null
+          receipt_url?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_payments_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "license_payments_confirmed_by_fkey"
+            columns: ["confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "license_payments_license_id_fkey"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "agent_licenses"
             referencedColumns: ["id"]
           },
         ]
@@ -2364,6 +2490,7 @@ export type Database = {
     Functions: {
       belongs_to_tenant: { Args: { check_tenant_id: string }; Returns: boolean }
       can_insert_profile: { Args: { _user_id: string }; Returns: boolean }
+      check_expired_licenses: { Args: never; Returns: undefined }
       create_master_credential: {
         Args: {
           p_full_name?: string
@@ -2372,6 +2499,10 @@ export type Database = {
           p_username: string
         }
         Returns: string
+      }
+      extend_license: {
+        Args: { p_license_id: string; p_months?: number }
+        Returns: undefined
       }
       generate_license_key: { Args: { prefix?: string }; Returns: string }
       generate_shift_dates: {
@@ -2389,6 +2520,17 @@ export type Database = {
       get_current_agent_id: { Args: never; Returns: string }
       get_current_profile_id: { Args: never; Returns: string }
       get_current_tenant_id: { Args: never; Returns: string }
+      get_license_stats: {
+        Args: never
+        Returns: {
+          active_licenses: number
+          expired_licenses: number
+          monthly_revenue: number
+          pending_payments: number
+          total_agents: number
+          trial_licenses: number
+        }[]
+      }
       get_monthly_overtime: {
         Args: { p_agent_id: string; p_month_year: string }
         Returns: {
