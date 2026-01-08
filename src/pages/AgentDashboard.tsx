@@ -552,7 +552,13 @@ const AgentDashboard = () => {
                         </motion.span>
                       </motion.div>
                       <div className="flex-1">
-                        <p className="text-lg font-semibold capitalize text-foreground">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px] px-1.5 py-0">
+                            <Shield className="w-2.5 h-2.5 mr-0.5" />
+                            PLANTÃO
+                          </Badge>
+                        </div>
+                        <p className="text-base font-semibold capitalize text-foreground">
                           {format(calculatedNextShiftDate, "EEEE", { locale: ptBR })}
                         </p>
                         <p className="text-sm text-muted-foreground">
