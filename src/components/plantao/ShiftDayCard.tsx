@@ -94,34 +94,34 @@ const ShiftDayCard = () => {
     const daysDiff = Math.floor((todayDate.getTime() - firstShift.getTime()) / (1000 * 60 * 60 * 24));
 
     // 24x72 pattern: work 1 day, rest 3 days = 4 day cycle
-    // Check if TODAY is a work day (shift starts at 06:00 today)
+    // Shift starts at 07:00 and ends at 07:00 next day (24 hours)
     const isTodayWorkDay = daysDiff >= 0 && daysDiff % 4 === 0;
     
-    // Check if YESTERDAY was a work day (shift still ongoing until 06:00 today)
+    // Check if YESTERDAY was a work day (shift still ongoing until 07:00 today)
     const yesterdayDiff = daysDiff - 1;
     const wasYesterdayWorkDay = yesterdayDiff >= 0 && yesterdayDiff % 4 === 0;
     
     // Current hour determines which shift we're in
     const currentHour = now.getHours();
     
-    // If before 06:00, we might still be in yesterday's shift
-    // If after 06:00, we're in today's shift (if it's a work day)
+    // If before 07:00, we might still be in yesterday's shift
+    // If after or equal 07:00, we're in today's shift (if it's a work day)
     
     let activeShift = false;
     let shiftStartTime: Date | null = null;
     
-    if (currentHour >= 6 && isTodayWorkDay) {
-      // Today's shift started at 06:00 today
+    if (currentHour >= 7 && isTodayWorkDay) {
+      // Today's shift started at 07:00 today
       activeShift = true;
       shiftStartTime = new Date(todayDate);
-      shiftStartTime.setHours(6, 0, 0, 0);
-    } else if (currentHour < 6 && wasYesterdayWorkDay) {
-      // Yesterday's shift is still ongoing (started at 06:00 yesterday, ends at 06:00 today)
+      shiftStartTime.setHours(7, 0, 0, 0);
+    } else if (currentHour < 7 && wasYesterdayWorkDay) {
+      // Yesterday's shift is still ongoing (started at 07:00 yesterday, ends at 07:00 today)
       activeShift = true;
       const yesterday = new Date(todayDate);
       yesterday.setDate(yesterday.getDate() - 1);
       shiftStartTime = new Date(yesterday);
-      shiftStartTime.setHours(6, 0, 0, 0);
+      shiftStartTime.setHours(7, 0, 0, 0);
     }
 
     // Calculate next shift date
@@ -303,7 +303,7 @@ const ShiftDayCard = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold font-mono text-amber-400">06:00</p>
+                      <p className="text-lg font-bold font-mono text-amber-400">07:00</p>
                       <p className="text-[10px] text-muted-foreground">Início</p>
                     </div>
                   </div>
