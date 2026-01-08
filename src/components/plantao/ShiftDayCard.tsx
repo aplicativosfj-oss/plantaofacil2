@@ -3,7 +3,7 @@ import { format, differenceInSeconds, addHours, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   Clock, Play, CheckCircle, AlertTriangle, Moon, Shield, 
-  Radio, Siren, Timer, Target, Zap
+  Radio, Siren, Timer, Target, Zap, Calendar
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
@@ -38,6 +38,7 @@ const ShiftDayCard = () => {
   const [shiftStart, setShiftStart] = useState<Date | null>(null);
   const [shiftEnd, setShiftEnd] = useState<Date | null>(null);
   const [elapsedTime, setElapsedTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [remainingTime, setRemainingTime] = useState({ hours: 24, minutes: 0, seconds: 0 });
   const [progress, setProgress] = useState(0);
   const [shiftSchedule, setShiftSchedule] = useState<ShiftSchedule | null>(null);
   const [nextShiftDate, setNextShiftDate] = useState<Date | null>(null);
@@ -147,25 +148,37 @@ const ShiftDayCard = () => {
     }
   };
 
-  // Update elapsed time
+  // Update elapsed time and remaining time
   useEffect(() => {
-    if (!isShiftToday || !shiftStart) return;
+    if (!isShiftToday || !shiftStart || !shiftEnd) return;
 
     const updateTimer = () => {
       const now = new Date();
       const diffSeconds = differenceInSeconds(now, shiftStart);
+      const remainingSeconds = differenceInSeconds(shiftEnd, now);
       
       if (diffSeconds < 0) {
         setElapsedTime({ hours: 0, minutes: 0, seconds: 0 });
+        setRemainingTime({ hours: 24, minutes: 0, seconds: 0 });
         setProgress(0);
         return;
       }
 
-      const hours = Math.floor(diffSeconds / 3600);
-      const minutes = Math.floor((diffSeconds % 3600) / 60);
-      const seconds = diffSeconds % 60;
-
-      setElapsedTime({ hours, minutes, seconds });
+      // Elapsed time
+      const elapsedHours = Math.floor(diffSeconds / 3600);
+      const elapsedMinutes = Math.floor((diffSeconds % 3600) / 60);
+      const elapsedSecs = diffSeconds % 60;
+      setElapsedTime({ hours: elapsedHours, minutes: elapsedMinutes, seconds: elapsedSecs });
+      
+      // Remaining time
+      if (remainingSeconds > 0) {
+        const remHours = Math.floor(remainingSeconds / 3600);
+        const remMinutes = Math.floor((remainingSeconds % 3600) / 60);
+        const remSecs = remainingSeconds % 60;
+        setRemainingTime({ hours: remHours, minutes: remMinutes, seconds: remSecs });
+      } else {
+        setRemainingTime({ hours: 0, minutes: 0, seconds: 0 });
+      }
       
       // Progress based on 24-hour shift
       const progressPercent = Math.min((diffSeconds / (24 * 3600)) * 100, 100);
@@ -176,7 +189,7 @@ const ShiftDayCard = () => {
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [isShiftToday, shiftStart]);
+  }, [isShiftToday, shiftStart, shiftEnd]);
 
   if (!shiftSchedule) {
     return null;
@@ -231,38 +244,75 @@ const ShiftDayCard = () => {
     );
   }
 
-  // No shift today - Faded/muted style
+  // No shift today - Show next shift highlighted
   if (!isShiftToday) {
     return (
-      <Card className="border-border/20 bg-muted/20 opacity-60">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-muted/30">
-                <Clock className="w-5 h-5 text-muted-foreground/50" />
-              </div>
-              <div>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative"
+      >
+        <Card className="border-border/30 bg-muted/20">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-muted/30">
+                  <Clock className="w-5 h-5 text-muted-foreground/50" />
+                </div>
                 <p className="text-sm text-muted-foreground font-medium">Sem plantão hoje</p>
-                {nextShiftDate && (
-                  <p className="text-xs text-primary/70">
-                    Próximo: {format(nextShiftDate, "EEEE, dd/MM", { locale: ptBR })}
-                  </p>
-                )}
               </div>
+              {upcomingDaysOff.length > 0 && (
+                <div className="flex gap-1.5">
+                  {upcomingDaysOff.slice(0, 2).map(dayOff => (
+                    <Badge key={dayOff.id} variant="outline" className="text-[9px] px-1.5 py-0.5 bg-purple-500/10 border-purple-500/20 text-purple-300">
+                      <Moon className="w-2.5 h-2.5 mr-0.5" />
+                      {format(parseDateOnly(dayOff.off_date), "dd/MM", { locale: ptBR })}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
-            {upcomingDaysOff.length > 0 && (
-              <div className="flex gap-1.5">
-                {upcomingDaysOff.slice(0, 2).map(dayOff => (
-                  <Badge key={dayOff.id} variant="outline" className="text-[9px] px-1.5 py-0.5 bg-purple-500/10 border-purple-500/20 text-purple-300">
-                    <Moon className="w-2.5 h-2.5 mr-0.5" />
-                    {format(parseDateOnly(dayOff.off_date), "dd/MM", { locale: ptBR })}
-                  </Badge>
-                ))}
-              </div>
+            
+            {/* Next shift highlight */}
+            {nextShiftDate && (
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="relative"
+              >
+                <motion.div
+                  animate={{ 
+                    boxShadow: ['0 0 0px rgba(245, 158, 11, 0)', '0 0 15px rgba(245, 158, 11, 0.3)', '0 0 0px rgba(245, 158, 11, 0)']
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="p-3 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <motion.div
+                        animate={{ rotate: [0, 10, -10, 0] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                      >
+                        <Shield className="w-5 h-5 text-amber-400" />
+                      </motion.div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Próximo Plantão</p>
+                        <p className="text-sm font-bold text-amber-300 capitalize">
+                          {format(nextShiftDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold font-mono text-amber-400">06:00</p>
+                      <p className="text-[10px] text-muted-foreground">Início</p>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
             )}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </motion.div>
     );
   }
 
@@ -365,35 +415,67 @@ const ShiftDayCard = () => {
             </Badge>
           </div>
 
-          {/* Timer Display - Tactical Style */}
-          <div className="text-center py-3 relative">
-            <div className="inline-flex items-center gap-1 px-6 py-3 rounded-lg bg-black/30 border border-white/10">
-              <Timer className="w-4 h-4 text-muted-foreground mr-2" />
-              <motion.span 
-                key={elapsedTime.hours}
-                initial={{ scale: 1.2, color: 'hsl(var(--primary))' }}
-                animate={{ scale: 1, color: 'hsl(var(--foreground))' }}
-                className="text-3xl font-mono font-bold tabular-nums"
-              >
-                {String(elapsedTime.hours).padStart(2, '0')}
-              </motion.span>
-              <span className="text-2xl text-muted-foreground animate-pulse">:</span>
-              <motion.span 
-                key={elapsedTime.minutes}
-                initial={{ scale: 1.1 }}
-                animate={{ scale: 1 }}
-                className="text-3xl font-mono font-bold tabular-nums"
-              >
-                {String(elapsedTime.minutes).padStart(2, '0')}
-              </motion.span>
-              <span className="text-xl text-muted-foreground">:</span>
-              <span className="text-xl font-mono text-muted-foreground tabular-nums w-6">
-                {String(elapsedTime.seconds).padStart(2, '0')}
-              </span>
+          {/* Timer Display - Worked and Remaining */}
+          <div className="grid grid-cols-2 gap-3 py-2">
+            {/* Worked Hours */}
+            <div className="text-center p-3 rounded-lg bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+              <p className="text-[10px] text-green-400 uppercase tracking-wider mb-1 flex items-center justify-center gap-1">
+                <Timer className="w-3 h-3" /> Trabalhadas
+              </p>
+              <div className="flex items-center justify-center gap-0.5">
+                <motion.span 
+                  key={elapsedTime.hours}
+                  initial={{ scale: 1.2 }}
+                  animate={{ scale: 1 }}
+                  className="text-2xl font-mono font-bold tabular-nums text-green-300"
+                >
+                  {String(elapsedTime.hours).padStart(2, '0')}
+                </motion.span>
+                <span className="text-lg text-green-400/50 animate-pulse">:</span>
+                <motion.span 
+                  key={elapsedTime.minutes}
+                  initial={{ scale: 1.1 }}
+                  animate={{ scale: 1 }}
+                  className="text-2xl font-mono font-bold tabular-nums text-green-300"
+                >
+                  {String(elapsedTime.minutes).padStart(2, '0')}
+                </motion.span>
+                <span className="text-sm text-green-400/50">:</span>
+                <span className="text-sm font-mono text-green-400/70 tabular-nums">
+                  {String(elapsedTime.seconds).padStart(2, '0')}
+                </span>
+              </div>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-2 uppercase tracking-wider">
-              Tempo de Serviço
-            </p>
+
+            {/* Remaining Hours */}
+            <div className="text-center p-3 rounded-lg bg-gradient-to-br from-amber-500/10 to-orange-600/5 border border-amber-500/20">
+              <p className="text-[10px] text-amber-400 uppercase tracking-wider mb-1 flex items-center justify-center gap-1">
+                <AlertTriangle className="w-3 h-3" /> Restantes
+              </p>
+              <div className="flex items-center justify-center gap-0.5">
+                <motion.span 
+                  key={remainingTime.hours}
+                  initial={{ scale: 1.2 }}
+                  animate={{ scale: 1 }}
+                  className={`text-2xl font-mono font-bold tabular-nums ${remainingTime.hours <= 4 ? 'text-red-400' : 'text-amber-300'}`}
+                >
+                  {String(remainingTime.hours).padStart(2, '0')}
+                </motion.span>
+                <span className="text-lg text-amber-400/50 animate-pulse">:</span>
+                <motion.span 
+                  key={remainingTime.minutes}
+                  initial={{ scale: 1.1 }}
+                  animate={{ scale: 1 }}
+                  className={`text-2xl font-mono font-bold tabular-nums ${remainingTime.hours <= 4 ? 'text-red-400' : 'text-amber-300'}`}
+                >
+                  {String(remainingTime.minutes).padStart(2, '0')}
+                </motion.span>
+                <span className="text-sm text-amber-400/50">:</span>
+                <span className={`text-sm font-mono tabular-nums ${remainingTime.hours <= 4 ? 'text-red-400/70' : 'text-amber-400/70'}`}>
+                  {String(remainingTime.seconds).padStart(2, '0')}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Progress Bar - Tactical */}
