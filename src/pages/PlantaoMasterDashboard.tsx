@@ -23,6 +23,8 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import OnlineIndicator from '@/components/plantao/OnlineIndicator';
 import LicenseManagement from '@/components/plantao/LicenseManagement';
+import AccessLogsPanel from '@/components/plantao/AccessLogsPanel';
+import SendMessagesPanel from '@/components/plantao/SendMessagesPanel';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 
 interface AgentWithDetails {
@@ -1088,17 +1090,17 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                 <Users className="w-4 h-4" />
                 <span className="hidden sm:inline">Agentes</span>
               </TabsTrigger>
+              <TabsTrigger value="access" className="gap-2">
+                <Clock className="w-4 h-4" />
+                <span className="hidden sm:inline">Acessos</span>
+              </TabsTrigger>
+              <TabsTrigger value="messages" className="gap-2">
+                <Calendar className="w-4 h-4" />
+                <span className="hidden sm:inline">Mensagens</span>
+              </TabsTrigger>
               <TabsTrigger value="leadership" className="gap-2">
                 <Crown className="w-4 h-4" />
                 <span className="hidden sm:inline">Lideranças</span>
-              </TabsTrigger>
-              <TabsTrigger value="overtime" className="gap-2">
-                <Clock className="w-4 h-4" />
-                <span className="hidden sm:inline">BH</span>
-              </TabsTrigger>
-              <TabsTrigger value="shifts" className="gap-2">
-                <Calendar className="w-4 h-4" />
-                <span className="hidden sm:inline">Plantões</span>
               </TabsTrigger>
             </TabsList>
 
@@ -1412,106 +1414,14 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               </Card>
             </TabsContent>
 
-            {/* Overtime Tab */}
-            <TabsContent value="overtime" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-primary" />
-                    Banco de Horas por Agente
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[500px]">
-                    <div className="space-y-2">
-                      {agents
-                        .filter(a => (a.totalOvertime || 0) > 0)
-                        .sort((a, b) => (b.totalOvertime || 0) - (a.totalOvertime || 0))
-                        .map(agent => (
-                          <div key={agent.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
-                                {agent.avatar_url ? (
-                                  <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
-                                ) : (
-                                  <User className="w-5 h-5 text-primary" />
-                                )}
-                              </div>
-                              <div>
-                                <p className="font-medium">{agent.full_name}</p>
-                                <Badge className={getTeamColor(agent.current_team)} variant="outline">
-                                  {agent.current_team?.toUpperCase() || 'SEM EQUIPE'}
-                                </Badge>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-2xl font-bold text-primary">{(agent.totalOvertime || 0).toFixed(1)}h</p>
-                              <p className="text-sm text-muted-foreground">
-                                R$ {(agent.totalOvertimeValue || 0).toFixed(2)}
-                              </p>
-                            </div>
-                          </div>
-                        ))
-                      }
-                      {agents.every(a => (a.totalOvertime || 0) === 0) && (
-                        <p className="text-muted-foreground text-center py-8">
-                          Nenhum agente com BH registrado
-                        </p>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
+            {/* Access Logs Tab */}
+            <TabsContent value="access" className="space-y-6">
+              <AccessLogsPanel />
             </TabsContent>
 
-            {/* Shifts Tab */}
-            <TabsContent value="shifts" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-primary" />
-                    Plantões Programados
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[500px]">
-                    <div className="space-y-2">
-                      {agents
-                        .filter(a => (a.shiftsCount || 0) > 0)
-                        .sort((a, b) => (b.shiftsCount || 0) - (a.shiftsCount || 0))
-                        .map(agent => (
-                          <div key={agent.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
-                                {agent.avatar_url ? (
-                                  <img src={agent.avatar_url} alt="" className="w-full h-full object-cover" />
-                                ) : (
-                                  <User className="w-5 h-5 text-primary" />
-                                )}
-                              </div>
-                              <div>
-                                <p className="font-medium">{agent.full_name}</p>
-                                <Badge className={getTeamColor(agent.current_team)} variant="outline">
-                                  {agent.current_team?.toUpperCase() || 'SEM EQUIPE'}
-                                </Badge>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-2xl font-bold text-primary">{agent.shiftsCount || 0}</p>
-                              <p className="text-sm text-muted-foreground">plantões</p>
-                            </div>
-                          </div>
-                        ))
-                      }
-                      {agents.every(a => (a.shiftsCount || 0) === 0) && (
-                        <p className="text-muted-foreground text-center py-8">
-                          Nenhum plantão programado ainda
-                        </p>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
+            {/* Messages Tab */}
+            <TabsContent value="messages" className="space-y-6">
+              <SendMessagesPanel />
             </TabsContent>
 
             {/* Leadership Tab */}
