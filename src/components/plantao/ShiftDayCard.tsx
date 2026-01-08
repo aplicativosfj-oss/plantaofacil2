@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
-import { format, differenceInSeconds, addHours, addDays } from 'date-fns';
+import { format, differenceInSeconds, addHours, addDays, subHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   Clock, Play, CheckCircle, AlertTriangle, Moon, Shield, 
-  Radio, Siren, Timer, Target, Zap, Calendar
+  Radio, Siren, Timer, Target, Zap, Calendar, Bell, BellRing, BellOff
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ShiftSchedule {
   first_shift_date: string;
@@ -23,6 +25,20 @@ interface DayOff {
   off_type: string;
   reason: string | null;
 }
+
+interface ShiftAlert {
+  id: string;
+  shiftDate: string;
+  alertTime: Date;
+  hoursBefore: number;
+}
+
+const ALERT_OPTIONS = [
+  { hours: 2, label: '2h antes' },
+  { hours: 4, label: '4h antes' },
+  { hours: 8, label: '8h antes' },
+  { hours: 12, label: '12h antes' },
+];
 
 const parseDateOnly = (value: string) => {
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -44,6 +60,9 @@ const ShiftDayCard = () => {
   const [nextShiftDate, setNextShiftDate] = useState<Date | null>(null);
   const [todayDayOff, setTodayDayOff] = useState<DayOff | null>(null);
   const [upcomingDaysOff, setUpcomingDaysOff] = useState<DayOff[]>([]);
+  const [showAlertOptions, setShowAlertOptions] = useState(false);
+  const [activeAlert, setActiveAlert] = useState<ShiftAlert | null>(null);
+  const [alertCountdown, setAlertCountdown] = useState<string | null>(null);
 
   // Fetch shift schedule
   useEffect(() => {
@@ -79,6 +98,22 @@ const ShiftDayCard = () => {
     };
 
     fetchData();
+
+    // Load saved alert from localStorage
+    const savedAlert = localStorage.getItem(`shift_alert_${agent.id}`);
+    if (savedAlert) {
+      try {
+        const parsed = JSON.parse(savedAlert);
+        const alertTime = new Date(parsed.alertTime);
+        if (alertTime > new Date()) {
+          setActiveAlert({ ...parsed, alertTime });
+        } else {
+          localStorage.removeItem(`shift_alert_${agent.id}`);
+        }
+      } catch (e) {
+        console.error('Error loading alert:', e);
+      }
+    }
   }, [agent?.id]);
 
   // Check if today is a shift day - considering 24h shift that spans 2 calendar days
@@ -191,6 +226,117 @@ const ShiftDayCard = () => {
     return () => clearInterval(interval);
   }, [isShiftToday, shiftStart, shiftEnd]);
 
+  // Alert countdown effect
+  useEffect(() => {
+    if (!activeAlert) {
+      setAlertCountdown(null);
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = new Date();
+      const diff = activeAlert.alertTime.getTime() - now.getTime();
+      
+      if (diff <= 0) {
+        // Trigger the alarm!
+        triggerAlarm();
+        setActiveAlert(null);
+        if (agent?.id) {
+          localStorage.removeItem(`shift_alert_${agent.id}`);
+        }
+        setAlertCountdown(null);
+        return;
+      }
+      
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      
+      if (hours > 0) {
+        setAlertCountdown(`${hours}h ${minutes}m`);
+      } else {
+        setAlertCountdown(`${minutes}m`);
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [activeAlert, agent?.id]);
+
+  const triggerAlarm = () => {
+    // Play alarm sound
+    const audio = new Audio('/audio/notification.mp3');
+    audio.volume = 1;
+    audio.loop = true;
+    audio.play().catch(() => {});
+    
+    // Stop after 30 seconds
+    setTimeout(() => {
+      audio.pause();
+      audio.currentTime = 0;
+    }, 30000);
+
+    // Show notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('⚠️ ALERTA DE PLANTÃO!', {
+        body: `Seu plantão começa em ${activeAlert?.hoursBefore || 0} horas!`,
+        icon: '/pwa-192x192.png',
+        tag: 'shift-alert',
+        requireInteraction: true
+      });
+    }
+    
+    toast.warning('⚠️ ALERTA DE PLANTÃO!', {
+      description: `Seu plantão começa em breve! Prepare-se.`,
+      duration: 30000,
+    });
+  };
+
+  const handleSetAlert = (hoursBefore: number) => {
+    if (!nextShiftDate || !agent?.id) return;
+    
+    // Shift starts at 07:00
+    const shiftStartTime = new Date(nextShiftDate);
+    shiftStartTime.setHours(7, 0, 0, 0);
+    
+    const alertTime = subHours(shiftStartTime, hoursBefore);
+    
+    if (alertTime <= new Date()) {
+      toast.error('Este horário já passou!');
+      return;
+    }
+    
+    const newAlert: ShiftAlert = {
+      id: crypto.randomUUID(),
+      shiftDate: format(nextShiftDate, 'yyyy-MM-dd'),
+      alertTime,
+      hoursBefore
+    };
+    
+    setActiveAlert(newAlert);
+    localStorage.setItem(`shift_alert_${agent.id}`, JSON.stringify(newAlert));
+    setShowAlertOptions(false);
+    
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+    
+    toast.success(`Alarme definido!`, {
+      description: `Você será alertado ${hoursBefore}h antes do plantão.`
+    });
+  };
+
+  const handleCancelAlert = () => {
+    if (agent?.id) {
+      localStorage.removeItem(`shift_alert_${agent.id}`);
+    }
+    setActiveAlert(null);
+    setShowAlertOptions(false);
+    toast.info('Alarme cancelado');
+  };
+
   if (!shiftSchedule) {
     return null;
   }
@@ -273,7 +419,7 @@ const ShiftDayCard = () => {
               )}
             </div>
             
-            {/* Next shift highlight */}
+            {/* Next shift highlight with Alert Button */}
             {nextShiftDate && (
               <motion.div
                 initial={{ opacity: 0, y: 5 }}
@@ -282,30 +428,136 @@ const ShiftDayCard = () => {
               >
                 <motion.div
                   animate={{ 
-                    boxShadow: ['0 0 0px rgba(245, 158, 11, 0)', '0 0 15px rgba(245, 158, 11, 0.3)', '0 0 0px rgba(245, 158, 11, 0)']
+                    boxShadow: ['0 0 0px rgba(245, 158, 11, 0)', '0 0 20px rgba(245, 158, 11, 0.4)', '0 0 0px rgba(245, 158, 11, 0)']
                   }}
                   transition={{ duration: 2, repeat: Infinity }}
-                  className="p-3 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30"
+                  className="p-4 rounded-xl bg-gradient-to-br from-amber-500/15 to-orange-500/15 border border-amber-500/40 backdrop-blur"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                  {/* Main content */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
                       <motion.div
-                        animate={{ rotate: [0, 10, -10, 0] }}
+                        animate={{ 
+                          rotate: [0, 10, -10, 0],
+                          scale: [1, 1.1, 1]
+                        }}
                         transition={{ duration: 3, repeat: Infinity }}
+                        className="p-2 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/30"
                       >
-                        <Shield className="w-5 h-5 text-amber-400" />
+                        <Shield className="w-5 h-5 text-white" />
                       </motion.div>
                       <div>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Próximo Plantão</p>
-                        <p className="text-sm font-bold text-amber-300 capitalize">
-                          {format(nextShiftDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                        <p className="text-base font-bold text-amber-300 capitalize">
+                          {format(nextShiftDate, "EEEE", { locale: ptBR })}
+                        </p>
+                        <p className="text-lg font-bold text-amber-200">
+                          {format(nextShiftDate, "dd 'de' MMMM", { locale: ptBR })}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold font-mono text-amber-400">07:00</p>
+                      <p className="text-2xl font-bold font-mono text-amber-400">07:00</p>
                       <p className="text-[10px] text-muted-foreground">Início</p>
                     </div>
+                  </div>
+
+                  {/* Alert Section */}
+                  <div className="border-t border-amber-500/20 pt-3">
+                    <AnimatePresence mode="wait">
+                      {activeAlert ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          className="flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-2">
+                            <motion.div
+                              animate={{ 
+                                scale: [1, 1.2, 1],
+                                rotate: [0, 10, -10, 0]
+                              }}
+                              transition={{ duration: 1, repeat: Infinity }}
+                              className="p-1.5 rounded-lg bg-green-500/20"
+                            >
+                              <BellRing className="w-4 h-4 text-green-400" />
+                            </motion.div>
+                            <div>
+                              <p className="text-xs text-green-300 font-medium">
+                                Alarme ativo: {activeAlert.hoursBefore}h antes
+                              </p>
+                              {alertCountdown && (
+                                <p className="text-[10px] text-muted-foreground">
+                                  Dispara em: <span className="text-green-400 font-mono">{alertCountdown}</span>
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleCancelAlert}
+                            className="h-8 px-2 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          >
+                            <BellOff className="w-4 h-4 mr-1" />
+                            Cancelar
+                          </Button>
+                        </motion.div>
+                      ) : showAlertOptions ? (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="space-y-2"
+                        >
+                          <p className="text-xs text-muted-foreground text-center">
+                            Quando deseja ser alertado?
+                          </p>
+                          <div className="grid grid-cols-4 gap-2">
+                            {ALERT_OPTIONS.map((option) => (
+                              <motion.button
+                                key={option.hours}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => handleSetAlert(option.hours)}
+                                className="py-2 px-2 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-medium hover:bg-amber-500/30 transition-colors"
+                              >
+                                {option.label}
+                              </motion.button>
+                            ))}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setShowAlertOptions(false)}
+                            className="w-full h-7 text-xs text-muted-foreground"
+                          >
+                            Cancelar
+                          </Button>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                        >
+                          <Button
+                            onClick={() => setShowAlertOptions(true)}
+                            className="w-full h-10 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-medium shadow-lg shadow-amber-500/20"
+                          >
+                            <motion.div
+                              animate={{ rotate: [0, 15, -15, 0] }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                              className="mr-2"
+                            >
+                              <Bell className="w-4 h-4" />
+                            </motion.div>
+                            Ativar Alarme para este Plantão
+                          </Button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </motion.div>
               </motion.div>
