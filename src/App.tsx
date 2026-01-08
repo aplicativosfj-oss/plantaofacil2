@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, Component, ReactNode } from "react";
+import { lazy, Suspense, useEffect, Component, ReactNode, memo } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +8,7 @@ import { PlantaoAuthProvider } from "@/contexts/PlantaoAuthContext";
 import { PlantaoThemeProvider } from "@/contexts/PlantaoThemeContext";
 import { Loader2, RefreshCw } from "lucide-react";
 import { clearExpiredCache } from "@/hooks/useOfflineStorage";
+import InstallBanner from "@/components/InstallBanner";
 
 // Lazy load pages with retry logic for failed imports
 const retryImport = <T extends { default: unknown }>(
@@ -16,15 +17,15 @@ const retryImport = <T extends { default: unknown }>(
 ): Promise<T> => {
   return importFn().catch((error) => {
     if (retries > 0) {
-      // Clear module cache and retry
       return new Promise<T>((resolve) => {
-        setTimeout(() => resolve(retryImport(importFn, retries - 1)), 500);
+        setTimeout(() => resolve(retryImport(importFn, retries - 1)), 300);
       });
     }
     throw error;
   });
 };
 
+// Preload critical pages
 const PlantaoHome = lazy(() => retryImport(() => import("./pages/PlantaoHome")));
 const AgentDashboard = lazy(() => retryImport(() => import("./pages/AgentDashboard")));
 const PlantaoMasterDashboard = lazy(() => retryImport(() => import("./pages/PlantaoMasterDashboard")));
@@ -223,12 +224,12 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <PlantaoThemeProvider>
         <PlantaoAuthProvider>
-          <TooltipProvider delayDuration={300}>
+          <TooltipProvider delayDuration={200}>
             <Toaster />
             <Sonner 
               position="top-center" 
               toastOptions={{
-                duration: 3000,
+                duration: 2500,
                 className: 'bg-card border-border',
               }}
             />
@@ -243,6 +244,7 @@ const App = () => {
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>
+                <InstallBanner />
               </LazyErrorBoundary>
             </BrowserRouter>
           </TooltipProvider>
