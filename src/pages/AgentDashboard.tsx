@@ -458,13 +458,28 @@ const AgentDashboard = () => {
                 {nextShift ? (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-lg font-bold">
-                          {format(new Date(nextShift.shift_start), "dd/MM", { locale: ptBR })}
-                        </p>
-                        <p className="text-xs text-muted-foreground capitalize">
-                          {format(new Date(nextShift.shift_start), 'EEEE', { locale: ptBR })} • {format(new Date(nextShift.shift_start), 'HH:mm')}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        {/* Número do dia destacado com animação */}
+                        <motion.div
+                          animate={{ 
+                            scale: [1, 1.05, 1],
+                            boxShadow: ['0 0 0px rgba(var(--primary), 0)', '0 0 15px rgba(var(--primary), 0.4)', '0 0 0px rgba(var(--primary), 0)']
+                          }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                          className="flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary/70 shadow-lg"
+                        >
+                          <span className="text-2xl font-bold text-primary-foreground">
+                            {format(new Date(nextShift.shift_start), "dd")}
+                          </span>
+                        </motion.div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">
+                            {format(new Date(nextShift.shift_start), "MMMM", { locale: ptBR })}
+                          </p>
+                          <p className="text-xs text-muted-foreground capitalize">
+                            {format(new Date(nextShift.shift_start), 'EEEE', { locale: ptBR })} • {format(new Date(nextShift.shift_start), 'HH:mm')}
+                          </p>
+                        </div>
                       </div>
                       <div className={`text-right ${isShiftSoon ? 'animate-pulse' : ''}`}>
                         <p className={`text-lg font-mono font-bold ${isShiftSoon ? 'text-warning' : 'text-primary'}`}>
@@ -495,17 +510,33 @@ const AgentDashboard = () => {
                     </div>
                   </div>
                 ) : (
-                  <div 
-                    className="flex items-center gap-3 p-2 bg-muted/20 rounded cursor-pointer hover:bg-muted/30 transition-colors"
+                  <motion.div 
+                    className="flex items-center gap-3 p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg cursor-pointer hover:from-primary/15 hover:to-primary/10 transition-all border border-primary/20"
                     onClick={() => handlePanelChange('calendar')}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
                   >
-                    <Calendar className="w-8 h-8 text-muted-foreground/50" />
+                    <motion.div
+                      animate={{ 
+                        rotate: [0, 5, -5, 0],
+                        scale: [1, 1.05, 1]
+                      }}
+                      transition={{ duration: 3, repeat: Infinity }}
+                      className="p-2 rounded-lg bg-primary/20"
+                    >
+                      <Calendar className="w-6 h-6 text-primary" />
+                    </motion.div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium">Configure seu plantão</p>
+                      <p className="text-sm font-medium text-foreground">Configure seu plantão</p>
                       <p className="text-xs text-muted-foreground">Toque para acessar o calendário</p>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                  </div>
+                    <motion.div
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      <ChevronRight className="w-5 h-5 text-primary" />
+                    </motion.div>
+                  </motion.div>
                 )}
               </CardContent>
             </Card>
