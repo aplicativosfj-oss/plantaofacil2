@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { X, GripVertical } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface DraggableFloatingButtonProps {
   children: React.ReactNode;
@@ -10,7 +11,7 @@ interface DraggableFloatingButtonProps {
   showCloseButton?: boolean;
 }
 
-const DraggableFloatingButton: React.FC<DraggableFloatingButtonProps> = ({
+const DraggableFloatingButton: React.FC<DraggableFloatingButtonProps> = memo(({
   children,
   storageKey,
   defaultPosition = { x: 16, y: 80 },
@@ -24,27 +25,38 @@ const DraggableFloatingButton: React.FC<DraggableFloatingButtonProps> = ({
   const [showControls, setShowControls] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number; right: number; bottom: number } | null>(null);
 
+  // Calculate safe bounds with margins
+  const getSafeBounds = useCallback(() => {
+    const minMargin = 16;
+    const maxRight = window.innerWidth - 80;
+    const maxBottom = window.innerHeight - 80;
+    // Ensure controls don't go above viewport - minimum 50px from top
+    const minBottom = 50;
+    return { minMargin, maxRight, maxBottom, minBottom };
+  }, []);
+
   // Load saved position
   useEffect(() => {
     try {
       const saved = localStorage.getItem(`floatingPos_${storageKey}`);
       if (saved) {
         const parsed = JSON.parse(saved);
+        const bounds = getSafeBounds();
         setPosition({
-          right: Math.max(8, Math.min(window.innerWidth - 80, parsed.right ?? defaultPosition.x)),
-          bottom: Math.max(8, Math.min(window.innerHeight - 80, parsed.bottom ?? defaultPosition.y)),
+          right: Math.max(bounds.minMargin, Math.min(bounds.maxRight, parsed.right ?? defaultPosition.x)),
+          bottom: Math.max(bounds.minBottom, Math.min(bounds.maxBottom, parsed.bottom ?? defaultPosition.y)),
         });
       }
-    } catch (e) {
+    } catch {
       // Ignore errors
     }
-  }, [storageKey, defaultPosition]);
+  }, [storageKey, defaultPosition, getSafeBounds]);
 
   // Save position
   const savePosition = useCallback((pos: { right: number; bottom: number }) => {
     try {
       localStorage.setItem(`floatingPos_${storageKey}`, JSON.stringify(pos));
-    } catch (e) {
+    } catch {
       // Ignore errors
     }
   }, [storageKey]);
@@ -67,12 +79,13 @@ const DraggableFloatingButton: React.FC<DraggableFloatingButtonProps> = ({
 
     const deltaX = dragStartRef.current.x - clientX;
     const deltaY = dragStartRef.current.y - clientY;
+    const bounds = getSafeBounds();
 
-    const newRight = Math.max(8, Math.min(window.innerWidth - 80, dragStartRef.current.right + deltaX));
-    const newBottom = Math.max(8, Math.min(window.innerHeight - 80, dragStartRef.current.bottom + deltaY));
+    const newRight = Math.max(bounds.minMargin, Math.min(bounds.maxRight, dragStartRef.current.right + deltaX));
+    const newBottom = Math.max(bounds.minBottom, Math.min(bounds.maxBottom, dragStartRef.current.bottom + deltaY));
 
     setPosition({ right: newRight, bottom: newBottom });
-  }, [isDragging]);
+  }, [isDragging, getSafeBounds]);
 
   // Handle drag end
   const handleDragEnd = useCallback(() => {
@@ -117,7 +130,7 @@ const DraggableFloatingButton: React.FC<DraggableFloatingButtonProps> = ({
       handleDragEnd();
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('mouseup', handleEnd);
     window.addEventListener('touchmove', handleTouchMove, { passive: true });
     window.addEventListener('touchend', handleEnd);
@@ -135,14 +148,21 @@ const DraggableFloatingButton: React.FC<DraggableFloatingButtonProps> = ({
   // Hide controls after timeout
   useEffect(() => {
     if (showControls && !isDragging) {
-      const timer = setTimeout(() => setShowControls(false), 3000);
+      const timer = setTimeout(() => setShowControls(false), 2500);
       return () => clearTimeout(timer);
     }
   }, [showControls, isDragging]);
 
+  // Determine if widget is near top of screen (controls should go below instead)
+  const isNearTop = position.bottom > window.innerHeight - 120;
+
   return (
-    <div
+    <motion.div
       ref={containerRef}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      transition={{ duration: 0.2 }}
       className={`fixed z-50 touch-none select-none ${className}`}
       style={{
         right: position.right,
@@ -154,11 +174,18 @@ const DraggableFloatingButton: React.FC<DraggableFloatingButtonProps> = ({
     >
       {/* Container with controls */}
       <div className="relative">
-        {/* Floating controls */}
-        <div
-          className={`absolute -top-9 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-card/95 backdrop-blur-sm border border-border rounded-full px-2 py-1 shadow-lg transition-all duration-200 ${
-            showControls || isDragging ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'
-          }`}
+        {/* Floating controls - positioned dynamically to avoid going off-screen */}
+        <motion.div
+          initial={false}
+          animate={{
+            opacity: showControls || isDragging ? 1 : 0,
+            scale: showControls || isDragging ? 1 : 0.9,
+            y: showControls || isDragging ? 0 : (isNearTop ? 5 : -5),
+          }}
+          transition={{ duration: 0.15 }}
+          className={`absolute left-1/2 -translate-x-1/2 flex items-center gap-1 bg-card/95 backdrop-blur-sm border border-border rounded-full px-2 py-1 shadow-lg ${
+            showControls || isDragging ? '' : 'pointer-events-none'
+          } ${isNearTop ? 'top-full mt-2' : 'bottom-full mb-2'}`}
         >
           {/* Drag handle */}
           <div
@@ -182,19 +209,21 @@ const DraggableFloatingButton: React.FC<DraggableFloatingButtonProps> = ({
               <X size={14} />
             </button>
           )}
-        </div>
+        </motion.div>
 
         {/* Children content - also draggable */}
         <div 
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
-          className={`transition-opacity duration-150 ${isDragging ? 'opacity-75' : 'opacity-100'}`}
+          className={`transition-opacity duration-100 ${isDragging ? 'opacity-80' : 'opacity-100'}`}
         >
           {children}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
-};
+});
+
+DraggableFloatingButton.displayName = 'DraggableFloatingButton';
 
 export default DraggableFloatingButton;

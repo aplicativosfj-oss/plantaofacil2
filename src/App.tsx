@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, Component, ReactNode, memo } from "react";
+import { lazy, Suspense, useEffect, Component, ReactNode } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,8 +7,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PlantaoAuthProvider } from "@/contexts/PlantaoAuthContext";
 import { PlantaoThemeProvider } from "@/contexts/PlantaoThemeContext";
 import { Loader2, RefreshCw } from "lucide-react";
-import { clearExpiredCache } from "@/hooks/useOfflineStorage";
+import { clearExpiredCache as clearLocalStorageCache } from "@/hooks/useOfflineStorage";
+import { clearExpiredCache as clearIndexedDBCache } from "@/lib/indexedDB";
 import InstallBanner from "@/components/InstallBanner";
+import OfflineBanner from "@/components/shared/OfflineBanner";
 
 // Lazy load pages with retry logic for failed imports
 const retryImport = <T extends { default: unknown }>(
@@ -111,9 +113,11 @@ const PageLoader = () => (
 );
 
 const App = () => {
-  // Clear expired cache on app start
+  // Clear expired caches on app start
   useEffect(() => {
-    clearExpiredCache();
+    // Clear both localStorage and IndexedDB caches
+    clearLocalStorageCache();
+    clearIndexedDBCache().catch(console.warn);
 
     // Bloqueio de áudio HTML: evita qualquer “música/player” nos painéis.
     // Sons do app ficam apenas via WebAudio (cliques), e o vídeo de intro pode ter som.
@@ -245,6 +249,7 @@ const App = () => {
                   </Routes>
                 </Suspense>
                 <InstallBanner />
+                <OfflineBanner />
               </LazyErrorBoundary>
             </BrowserRouter>
           </TooltipProvider>
