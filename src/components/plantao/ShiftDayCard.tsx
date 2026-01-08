@@ -40,18 +40,46 @@ const ALERT_OPTIONS = [
   { hours: 12, label: '12h antes' },
 ];
 
-const ACRE_UTC_OFFSET_HOURS = -5; // America/Rio_Branco (AC)
-const ACRE_OFFSET_MS = ACRE_UTC_OFFSET_HOURS * 60 * 60 * 1000;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
+// Acre timezone: UTC-5 (America/Rio_Branco)
+const ACRE_UTC_OFFSET_HOURS = -5;
 
+// Get current date/time parts as they appear on a clock in Acre
 const getAcreNowParts = () => {
-  // Date.now() is UTC-based; we shift and then read via UTC getters to obtain AC "clock".
-  const shifted = new Date(Date.now() + ACRE_OFFSET_MS);
+  const now = new Date();
+  // Convert UTC to Acre time by adding the offset (which is negative, so we subtract hours)
+  const utcHours = now.getUTCHours();
+  const utcMinutes = now.getUTCMinutes();
+  const utcSeconds = now.getUTCSeconds();
+  
+  // Create a date representing "now" in Acre
+  // We need to shift by the offset: Acre = UTC + (-5) = UTC - 5
+  let acreHour = utcHours + ACRE_UTC_OFFSET_HOURS; // -5 means we subtract 5 hours
+  let acreDay = now.getUTCDate();
+  let acreMonth = now.getUTCMonth();
+  let acreYear = now.getUTCFullYear();
+  
+  // Handle day rollover
+  if (acreHour < 0) {
+    acreHour += 24;
+    acreDay -= 1;
+    if (acreDay < 1) {
+      acreMonth -= 1;
+      if (acreMonth < 0) {
+        acreMonth = 11;
+        acreYear -= 1;
+      }
+      // Get last day of previous month
+      acreDay = new Date(Date.UTC(acreYear, acreMonth + 1, 0)).getUTCDate();
+    }
+  }
+  
   return {
-    year: shifted.getUTCFullYear(),
-    month: shifted.getUTCMonth(),
-    day: shifted.getUTCDate(),
-    hour: shifted.getUTCHours(),
+    year: acreYear,
+    month: acreMonth,
+    day: acreDay,
+    hour: acreHour,
+    minute: utcMinutes,
+    second: utcSeconds,
   };
 };
 
@@ -61,8 +89,10 @@ const getDatePartsUTC = (date: Date) => ({
   day: date.getUTCDate(),
 });
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const acreDateIndexMs = (year: number, month: number, day: number) => Date.UTC(year, month, day);
 
+// Convert Acre local time to a UTC Date object
 const acreLocalToInstant = (
   year: number,
   month: number,
@@ -70,7 +100,10 @@ const acreLocalToInstant = (
   hour: number,
   minute = 0,
   second = 0
-) => new Date(Date.UTC(year, month, day, hour - ACRE_UTC_OFFSET_HOURS, minute, second));
+) => {
+  // Acre is UTC-5, so to get UTC we ADD 5 hours
+  return new Date(Date.UTC(year, month, day, hour - ACRE_UTC_OFFSET_HOURS, minute, second));
+};
 
 const parseDateOnly = (value: string) => {
   // Date-only values must not shift by timezone. Use UTC noon to keep the same calendar day.
@@ -159,10 +192,25 @@ const ShiftDayCard = () => {
         const [y, m, d] = firstShiftDate.split('-').map(Number);
         return { year: y, month: m - 1, day: d };
       }
-      // Fallback: interpret the timestamp and then convert it to an AC calendar day.
+      // Fallback: interpret the timestamp and convert to Acre calendar day
       const raw = new Date(firstShiftDate);
-      const shifted = new Date(raw.getTime() + ACRE_OFFSET_MS);
-      return getDatePartsUTC(shifted);
+      const utcHours = raw.getUTCHours();
+      let acreHour = utcHours + ACRE_UTC_OFFSET_HOURS;
+      let acreDay = raw.getUTCDate();
+      let acreMonth = raw.getUTCMonth();
+      let acreYear = raw.getUTCFullYear();
+      if (acreHour < 0) {
+        acreDay -= 1;
+        if (acreDay < 1) {
+          acreMonth -= 1;
+          if (acreMonth < 0) {
+            acreMonth = 11;
+            acreYear -= 1;
+          }
+          acreDay = new Date(Date.UTC(acreYear, acreMonth + 1, 0)).getUTCDate();
+        }
+      }
+      return { year: acreYear, month: acreMonth, day: acreDay };
     })();
 
     const firstIndex = acreDateIndexMs(firstParts.year, firstParts.month, firstParts.day);
