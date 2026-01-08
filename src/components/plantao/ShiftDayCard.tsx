@@ -80,35 +80,70 @@ const ShiftDayCard = () => {
     fetchData();
   }, [agent?.id]);
 
-  // Check if today is a shift day
+  // Check if today is a shift day - considering 24h shift that spans 2 calendar days
   const checkIfShiftToday = (firstShiftDate: string) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const todayDate = new Date(now);
+    todayDate.setHours(0, 0, 0, 0);
 
     const firstShift = parseDateOnly(firstShiftDate);
     firstShift.setHours(0, 0, 0, 0);
 
     // Calculate days since first shift
-    const daysDiff = Math.floor((today.getTime() - firstShift.getTime()) / (1000 * 60 * 60 * 24));
+    const daysDiff = Math.floor((todayDate.getTime() - firstShift.getTime()) / (1000 * 60 * 60 * 24));
 
     // 24x72 pattern: work 1 day, rest 3 days = 4 day cycle
-    const isWorkDay = daysDiff >= 0 && daysDiff % 4 === 0;
+    // Check if TODAY is a work day (shift starts at 06:00 today)
+    const isTodayWorkDay = daysDiff >= 0 && daysDiff % 4 === 0;
+    
+    // Check if YESTERDAY was a work day (shift still ongoing until 06:00 today)
+    const yesterdayDiff = daysDiff - 1;
+    const wasYesterdayWorkDay = yesterdayDiff >= 0 && yesterdayDiff % 4 === 0;
+    
+    // Current hour determines which shift we're in
+    const currentHour = now.getHours();
+    
+    // If before 06:00, we might still be in yesterday's shift
+    // If after 06:00, we're in today's shift (if it's a work day)
+    
+    let activeShift = false;
+    let shiftStartTime: Date | null = null;
+    
+    if (currentHour >= 6 && isTodayWorkDay) {
+      // Today's shift started at 06:00 today
+      activeShift = true;
+      shiftStartTime = new Date(todayDate);
+      shiftStartTime.setHours(6, 0, 0, 0);
+    } else if (currentHour < 6 && wasYesterdayWorkDay) {
+      // Yesterday's shift is still ongoing (started at 06:00 yesterday, ends at 06:00 today)
+      activeShift = true;
+      const yesterday = new Date(todayDate);
+      yesterday.setDate(yesterday.getDate() - 1);
+      shiftStartTime = new Date(yesterday);
+      shiftStartTime.setHours(6, 0, 0, 0);
+    }
 
     // Calculate next shift date
     if (daysDiff < 0) {
       setNextShiftDate(firstShift);
+    } else if (activeShift) {
+      // Next shift is in 4 days from today's shift date (or yesterday if ongoing)
+      const shiftDate = shiftStartTime ? new Date(shiftStartTime) : todayDate;
+      shiftDate.setHours(0, 0, 0, 0);
+      setNextShiftDate(addDays(shiftDate, 4));
     } else {
-      const daysUntilNextShift = (4 - (daysDiff % 4)) % 4 || 4;
-      setNextShiftDate(addDays(today, isWorkDay ? 0 : daysUntilNextShift));
+      // Find next work day
+      const daysInCycle = daysDiff % 4;
+      const daysUntilNextShift = daysInCycle === 0 ? 0 : (4 - daysInCycle);
+      setNextShiftDate(addDays(todayDate, daysUntilNextShift));
     }
 
-    if (isWorkDay) {
+    if (activeShift && shiftStartTime) {
       setIsShiftToday(true);
-      // Shift starts at 06:00
-      const shiftStartTime = new Date(today);
-      shiftStartTime.setHours(6, 0, 0, 0);
       setShiftStart(shiftStartTime);
       setShiftEnd(addHours(shiftStartTime, 24));
+    } else {
+      setIsShiftToday(false);
     }
   };
 
