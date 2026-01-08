@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday, differenceInHours, isBefore, startOfDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday, differenceInHours, isBefore, startOfDay, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Clock, Calendar, AlertTriangle, Moon, Banknote, Check, Sun, TrendingUp, BarChart3 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Edit2, Clock, Calendar, AlertTriangle, Moon, Banknote, Check, Sun, TrendingUp, BarChart3, ArrowLeftRight, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -17,6 +17,72 @@ import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Area, AreaChart } from 'recharts';
+
+// ============================================
+// SISTEMA DE CORES PROFISSIONAL
+// ============================================
+const CATEGORY_COLORS = {
+  // Plantão (Shift)
+  shiftActive: {
+    border: 'border-orange-400',
+    bg: 'bg-gradient-to-br from-orange-500/50 to-orange-600/30',
+    text: 'text-orange-200',
+    glow: 'shadow-orange-500/40',
+    ring: 'ring-orange-400/40',
+  },
+  shiftCompleted: {
+    border: 'border-slate-500/60',
+    bg: 'bg-gradient-to-br from-slate-600/40 to-slate-700/30',
+    text: 'text-slate-400',
+    glow: '',
+    ring: '',
+  },
+  // BH (Banco de Horas)
+  bhActive: {
+    border: 'border-emerald-400',
+    bg: 'bg-gradient-to-br from-emerald-500/50 to-emerald-600/30',
+    text: 'text-emerald-200',
+    glow: 'shadow-emerald-500/40',
+    ring: 'ring-emerald-400/40',
+  },
+  bhScheduled: {
+    border: 'border-amber-400',
+    bg: 'bg-gradient-to-br from-amber-500/40 to-yellow-600/30',
+    text: 'text-amber-200',
+    glow: 'shadow-amber-500/50',
+    ring: 'ring-amber-400/50',
+  },
+  // Permuta (Swap)
+  swapActive: {
+    border: 'border-cyan-400',
+    bg: 'bg-gradient-to-br from-cyan-500/50 to-sky-600/30',
+    text: 'text-cyan-200',
+    glow: 'shadow-cyan-500/40',
+    ring: 'ring-cyan-400/40',
+  },
+  swapCompleted: {
+    border: 'border-cyan-600/50',
+    bg: 'bg-gradient-to-br from-cyan-700/30 to-sky-800/20',
+    text: 'text-cyan-400',
+    glow: '',
+    ring: '',
+  },
+  // Folga (Day Off)
+  dayOffActive: {
+    border: 'border-violet-400',
+    bg: 'bg-gradient-to-br from-violet-500/50 to-purple-600/30',
+    text: 'text-violet-200',
+    glow: 'shadow-violet-500/40',
+    ring: 'ring-violet-400/40',
+  },
+  dayOffCompleted: {
+    border: 'border-violet-600/50',
+    bg: 'bg-gradient-to-br from-violet-700/30 to-purple-800/20',
+    text: 'text-violet-400',
+    glow: '',
+    ring: '',
+  },
+};
 
 interface CalendarNote {
   id: string;
@@ -50,6 +116,14 @@ interface OvertimeEntry {
   scheduled_time?: string;
 }
 
+interface SwapEntry {
+  id: string;
+  original_shift_date: string;
+  compensation_date: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  is_requester: boolean;
+}
+
 const COLORS = [
   { value: 'blue', label: 'Azul', class: 'bg-blue-500' },
   { value: 'green', label: 'Verde', class: 'bg-green-500' },
@@ -70,6 +144,7 @@ const ShiftCalendar = () => {
   const [shiftDates, setShiftDates] = useState<ShiftDate[]>([]);
   const [daysOff, setDaysOff] = useState<DayOff[]>([]);
   const [overtimeEntries, setOvertimeEntries] = useState<OvertimeEntry[]>([]);
+  const [swapEntries, setSwapEntries] = useState<SwapEntry[]>([]);
   const [shiftSchedule, setShiftSchedule] = useState<{ first_shift_date: string; id: string } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditShiftDialogOpen, setIsEditShiftDialogOpen] = useState(false);
@@ -153,6 +228,25 @@ const ShiftCalendar = () => {
         .order('date', { ascending: true });
 
       if (overtimeData) setOvertimeEntries(overtimeData);
+
+      // Fetch swap entries (where agent is requester or requested)
+      const { data: swapData } = await supabase
+        .from('shift_swaps')
+        .select('*')
+        .or(`requester_id.eq.${agent.id},requested_id.eq.${agent.id}`)
+        .in('status', ['pending', 'accepted'])
+        .order('original_shift_date', { ascending: true });
+
+      if (swapData) {
+        const formattedSwaps: SwapEntry[] = swapData.map((swap: any) => ({
+          id: swap.id,
+          original_shift_date: swap.original_shift_date,
+          compensation_date: swap.compensation_date,
+          status: swap.status,
+          is_requester: swap.requester_id === agent.id,
+        }));
+        setSwapEntries(formattedSwaps);
+      }
     };
 
     fetchData();
@@ -184,6 +278,40 @@ const ShiftCalendar = () => {
 
   const getOvertime = (date: Date) => {
     return overtimeEntries.find(ot => isSameDay(parseDateOnly(ot.date), date));
+  };
+
+  // Get swap for a specific date (original or compensation)
+  const getSwapForDate = (date: Date) => {
+    return swapEntries.find(swap => 
+      isSameDay(parseDateOnly(swap.original_shift_date), date) || 
+      isSameDay(parseDateOnly(swap.compensation_date), date)
+    );
+  };
+
+  // Check if date has an active (pending) swap
+  const isSwapActive = (date: Date) => {
+    const swap = getSwapForDate(date);
+    return swap && swap.status === 'pending';
+  };
+
+  // Check if date has a completed (accepted) swap
+  const isSwapCompleted = (date: Date) => {
+    const swap = getSwapForDate(date);
+    return swap && swap.status === 'accepted';
+  };
+
+  // Check if day off is active (today or future)
+  const isDayOffActive = (date: Date) => {
+    const today = startOfDay(new Date());
+    const dayOff = getDayOff(date);
+    return dayOff && !isBefore(date, today);
+  };
+
+  // Check if day off is completed (past)
+  const isDayOffCompleted = (date: Date) => {
+    const today = startOfDay(new Date());
+    const dayOff = getDayOff(date);
+    return dayOff && isBefore(date, today);
   };
 
   // Check if overtime is completed (date has passed)
@@ -675,7 +803,7 @@ const ShiftCalendar = () => {
         ))}
       </div>
 
-      {/* Calendar Grid - Rounded buttons with animations */}
+      {/* Calendar Grid - Professional Color System */}
       <div className="grid grid-cols-7 gap-1.5">
         {paddingDays.map((_, i) => (
           <div key={`pad-${i}`} className="aspect-square bg-muted/10 rounded-xl" />
@@ -688,126 +816,168 @@ const ShiftCalendar = () => {
           const dayOff = getDayOff(day);
           const overtime = getOvertime(day);
           const today = isToday(day);
+          const swap = getSwapForDate(day);
 
           const overtimeCompleted = isOvertimeCompleted(day);
           const overtimeScheduled = isOvertimeScheduled(day);
+          const dayOffActive = isDayOffActive(day);
+          const dayOffCompleted = isDayOffCompleted(day);
+          const swapActive = isSwapActive(day);
+          const swapCompleted = isSwapCompleted(day);
+
+          // Determine priority category for styling
+          const getCategory = () => {
+            if (shiftCompleted) return 'shiftCompleted';
+            if (swapActive) return 'swapActive';
+            if (swapCompleted) return 'swapCompleted';
+            if (overtimeScheduled) return 'bhScheduled';
+            if (overtimeCompleted) return 'bhActive';
+            if (dayOffActive) return 'dayOffActive';
+            if (dayOffCompleted) return 'dayOffCompleted';
+            if (isShift) return 'shiftActive';
+            return null;
+          };
+
+          const category = getCategory();
 
           // Animation variants for different categories
           const getAnimationProps = () => {
             if (shiftCompleted) {
-              return { animate: { opacity: 0.7 } };
+              return { animate: { opacity: 0.6 } };
             }
-            // Completed overtime - subtle pulse
+            // Swap Active - cyan pulse
+            if (swapActive) {
+              return { 
+                animate: { 
+                  scale: [1, 1.04, 1],
+                  boxShadow: ['0 0 0px rgba(34, 211, 238, 0)', '0 0 18px rgba(34, 211, 238, 0.7)', '0 0 0px rgba(34, 211, 238, 0)']
+                },
+                transition: { duration: 1.3, repeat: Infinity, ease: 'easeInOut' as const }
+              };
+            }
+            // Swap Completed
+            if (swapCompleted) {
+              return { animate: { opacity: 0.75 } };
+            }
+            // BH Scheduled - amber attention pulse
+            if (overtimeScheduled) {
+              return { 
+                animate: { 
+                  scale: [1, 1.05, 1],
+                  boxShadow: ['0 0 0px rgba(251, 191, 36, 0)', '0 0 20px rgba(251, 191, 36, 0.7)', '0 0 0px rgba(251, 191, 36, 0)']
+                },
+                transition: { duration: 1.2, repeat: Infinity, ease: 'easeInOut' as const }
+              };
+            }
+            // BH Completed - emerald subtle glow
             if (overtimeCompleted) {
               return { 
                 animate: { 
-                  boxShadow: ['0 0 0px rgba(34, 197, 94, 0)', '0 0 8px rgba(34, 197, 94, 0.4)', '0 0 0px rgba(34, 197, 94, 0)']
+                  boxShadow: ['0 0 0px rgba(52, 211, 153, 0)', '0 0 12px rgba(52, 211, 153, 0.5)', '0 0 0px rgba(52, 211, 153, 0)']
+                },
+                transition: { duration: 2.5, repeat: Infinity, ease: 'easeInOut' as const }
+              };
+            }
+            // Day Off Active - violet shimmer
+            if (dayOffActive) {
+              return {
+                animate: { 
+                  scale: [1, 1.03, 1],
+                  boxShadow: ['0 0 0px rgba(167, 139, 250, 0)', '0 0 15px rgba(167, 139, 250, 0.6)', '0 0 0px rgba(167, 139, 250, 0)']
                 },
                 transition: { duration: 2, repeat: Infinity, ease: 'easeInOut' as const }
               };
             }
-            // Scheduled overtime - attention-grabbing animation
-            if (overtimeScheduled) {
-              return { 
-                animate: { 
-                  scale: [1, 1.03, 1],
-                  boxShadow: ['0 0 0px rgba(251, 191, 36, 0)', '0 0 15px rgba(251, 191, 36, 0.6)', '0 0 0px rgba(251, 191, 36, 0)']
-                },
-                transition: { duration: 1.5, repeat: Infinity, ease: 'easeInOut' as const }
-              };
+            // Day Off Completed
+            if (dayOffCompleted) {
+              return { animate: { opacity: 0.7 } };
             }
-            if (dayOff) {
-              return {
-                animate: { 
-                  scale: [1, 1.02, 1]
-                },
-                transition: { duration: 3, repeat: Infinity, ease: 'easeInOut' as const }
-              };
-            }
+            // Shift Active - orange glow
             if (isShift) {
               return {
                 animate: { 
-                  borderColor: ['rgba(245, 158, 11, 0.5)', 'rgba(245, 158, 11, 1)', 'rgba(245, 158, 11, 0.5)']
+                  boxShadow: ['0 0 0px rgba(251, 146, 60, 0)', '0 0 15px rgba(251, 146, 60, 0.6)', '0 0 0px rgba(251, 146, 60, 0)']
                 },
-                transition: { duration: 2.5, repeat: Infinity, ease: 'easeInOut' as const }
+                transition: { duration: 2, repeat: Infinity, ease: 'easeInOut' as const }
               };
             }
             return {};
           };
 
+          // Get class based on category
+          const getCategoryClasses = () => {
+            if (!category) {
+              if (today) return 'border-2 border-primary/60 bg-primary/15 shadow-md shadow-primary/20';
+              return 'border border-border/30 hover:border-primary/40 hover:bg-muted/30 hover:shadow-md';
+            }
+
+            const colors = CATEGORY_COLORS[category];
+            return `border-2 ${colors.border} ${colors.bg} shadow-lg ${colors.glow} ${colors.ring ? `ring-2 ${colors.ring} ring-offset-1 ring-offset-background` : ''}`;
+          };
+
+          const getTextColor = () => {
+            if (!category) {
+              if (today) return 'text-primary font-extrabold';
+              return 'text-foreground/80';
+            }
+            return CATEGORY_COLORS[category].text;
+          };
+
+          const isClickable = !shiftCompleted && !swapCompleted && !dayOffCompleted;
+
           return (
             <motion.button
               key={day.toISOString()}
-              whileHover={{ scale: shiftCompleted ? 1 : 1.08, y: shiftCompleted ? 0 : -2 }}
-              whileTap={{ scale: shiftCompleted ? 1 : 0.95 }}
-              onClick={() => !shiftCompleted && handleDateClick(day)}
-              disabled={shiftCompleted}
+              whileHover={{ scale: isClickable ? 1.08 : 1, y: isClickable ? -2 : 0 }}
+              whileTap={{ scale: isClickable ? 0.95 : 1 }}
+              onClick={() => isClickable && handleDateClick(day)}
+              disabled={!isClickable}
               {...getAnimationProps()}
               className={`
                 aspect-square p-1 rounded-xl transition-all relative overflow-hidden
-                ${shiftCompleted
-                  ? 'border-2 border-green-600/50 bg-gradient-to-br from-green-800/40 to-green-900/30 cursor-not-allowed'
-                  : overtimeCompleted
-                    ? 'border-2 border-green-400 bg-gradient-to-br from-green-500/40 to-green-600/20 shadow-lg shadow-green-500/20'
-                    : overtimeScheduled
-                      ? 'border-2 border-yellow-400 bg-gradient-to-br from-yellow-500/30 to-amber-600/20 shadow-lg shadow-yellow-500/30 ring-2 ring-yellow-400/30 ring-offset-1 ring-offset-background'
-                      : dayOff
-                        ? 'border-2 border-purple-400 bg-gradient-to-br from-purple-500/40 to-purple-600/20 shadow-lg shadow-purple-500/20'
-                        : isShift 
-                          ? 'border-2 border-amber-400 bg-gradient-to-br from-amber-500/40 to-amber-600/20 shadow-lg shadow-amber-500/20' 
-                          : today
-                            ? 'border-2 border-primary/50 bg-primary/10 shadow-md'
-                            : 'border border-border/30 hover:border-primary/30 hover:bg-muted/30 hover:shadow-md'
-                }
+                ${getCategoryClasses()}
+                ${!isClickable ? 'cursor-not-allowed' : 'cursor-pointer'}
               `}
             >
-              {/* Animated ring for special days */}
-              {(overtimeScheduled || overtimeCompleted || dayOff || isShift) && !shiftCompleted && (
+              {/* Animated inner glow for active items */}
+              {category && !category.includes('Completed') && (
                 <motion.div 
                   className={`absolute inset-0 rounded-xl ${
-                    overtimeCompleted ? 'bg-green-400/10' : overtimeScheduled ? 'bg-yellow-400/15' : dayOff ? 'bg-purple-400/10' : 'bg-amber-400/10'
+                    category === 'swapActive' ? 'bg-cyan-400/15' :
+                    category === 'bhScheduled' ? 'bg-amber-400/20' :
+                    category === 'bhActive' ? 'bg-emerald-400/15' :
+                    category === 'dayOffActive' ? 'bg-violet-400/15' :
+                    category === 'shiftActive' ? 'bg-orange-400/15' : ''
                   }`}
-                  animate={{ opacity: overtimeScheduled ? [0.4, 0.8, 0.4] : [0.3, 0.6, 0.3] }}
-                  transition={{ duration: overtimeScheduled ? 1 : 2, repeat: Infinity }}
+                  animate={{ opacity: [0.3, 0.7, 0.3] }}
+                  transition={{ duration: category === 'bhScheduled' || category === 'swapActive' ? 1 : 2, repeat: Infinity }}
                 />
               )}
 
-              {/* Scheduled overtime special effect - pulsing border */}
-              {overtimeScheduled && (
+              {/* Extra pulsing border for scheduled items */}
+              {(category === 'bhScheduled' || category === 'swapActive') && (
                 <motion.div 
-                  className="absolute inset-0 rounded-xl border-2 border-yellow-400/50"
+                  className={`absolute inset-0 rounded-xl border-2 ${
+                    category === 'swapActive' ? 'border-cyan-400/60' : 'border-amber-400/60'
+                  }`}
                   animate={{ 
-                    opacity: [0.5, 1, 0.5],
+                    opacity: [0.4, 1, 0.4],
                     scale: [1, 1.02, 1]
                   }}
-                  transition={{ duration: 1.2, repeat: Infinity }}
+                  transition={{ duration: 1, repeat: Infinity }}
                 />
               )}
 
               <div className="flex flex-col h-full items-center justify-center relative z-10">
                 {/* Date number */}
-                <div className={`text-sm font-bold ${
-                  shiftCompleted
-                    ? 'text-green-400'
-                    : overtimeCompleted
-                      ? 'text-green-300'
-                      : overtimeScheduled
-                        ? 'text-yellow-300'
-                        : dayOff
-                          ? 'text-purple-300'
-                          : isShift 
-                            ? 'text-amber-300' 
-                            : today 
-                              ? 'text-primary font-extrabold' 
-                              : 'text-foreground/80'
-                }`}>
+                <div className={`text-sm font-bold ${getTextColor()}`}>
                   {format(day, 'd')}
                 </div>
                 
-                {/* Status indicator with icons */}
+                {/* Status indicators */}
                 {shiftCompleted && (
                   <motion.div 
-                    className="text-green-400"
+                    className="text-slate-400"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                   >
@@ -815,55 +985,96 @@ const ShiftCalendar = () => {
                   </motion.div>
                 )}
 
-                {/* BH Realizado (completed) - green with check */}
-                {overtimeCompleted && !shiftCompleted && (
+                {/* Swap Active - cyan with arrows */}
+                {swapActive && !shiftCompleted && (
                   <motion.div 
-                    className="text-[7px] font-bold text-green-300 bg-green-500/30 px-1 rounded flex items-center gap-0.5"
-                    animate={{ scale: [1, 1.05, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <Check className="w-2 h-2" />
-                    BH
-                  </motion.div>
-                )}
-
-                {/* BH Programado (scheduled) - yellow with clock, more animation */}
-                {overtimeScheduled && !shiftCompleted && (
-                  <motion.div 
-                    className="text-[7px] font-bold text-yellow-300 bg-yellow-500/40 px-1 rounded flex items-center gap-0.5"
+                    className="text-[7px] font-bold text-cyan-200 bg-cyan-500/40 px-1 rounded flex items-center gap-0.5"
                     animate={{ 
                       scale: [1, 1.15, 1],
                       opacity: [0.8, 1, 0.8]
                     }}
                     transition={{ duration: 1, repeat: Infinity }}
                   >
+                    <ArrowLeftRight className="w-2 h-2" />
+                    <span>PM</span>
+                  </motion.div>
+                )}
+
+                {/* Swap Completed */}
+                {swapCompleted && !shiftCompleted && (
+                  <motion.div 
+                    className="text-[7px] font-bold text-cyan-400 bg-cyan-600/30 px-1 rounded flex items-center gap-0.5"
+                  >
+                    <Check className="w-2 h-2" />
+                    <span>PM</span>
+                  </motion.div>
+                )}
+
+                {/* BH Scheduled - amber with clock */}
+                {overtimeScheduled && !shiftCompleted && !swap && (
+                  <motion.div 
+                    className="text-[7px] font-bold text-amber-200 bg-amber-500/50 px-1 rounded flex items-center gap-0.5"
+                    animate={{ 
+                      scale: [1, 1.18, 1],
+                      opacity: [0.7, 1, 0.7]
+                    }}
+                    transition={{ duration: 0.9, repeat: Infinity }}
+                  >
                     <Clock className="w-2 h-2" />
-                    BH
+                    <span>BH</span>
+                  </motion.div>
+                )}
+
+                {/* BH Completed - emerald with check */}
+                {overtimeCompleted && !shiftCompleted && !swap && (
+                  <motion.div 
+                    className="text-[7px] font-bold text-emerald-200 bg-emerald-500/40 px-1 rounded flex items-center gap-0.5"
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 2.5, repeat: Infinity }}
+                  >
+                    <Check className="w-2 h-2" />
+                    <span>BH</span>
                   </motion.div>
                 )}
                 
-                {dayOff && !shiftCompleted && !overtime && (
+                {/* Day Off Active - violet with moon */}
+                {dayOffActive && !shiftCompleted && !overtime && !swap && (
                   <motion.div 
-                    className="text-purple-300"
-                    animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 4, repeat: Infinity }}
+                    className="text-violet-200"
+                    animate={{ 
+                      rotate: [0, 8, -8, 0],
+                      scale: [1, 1.1, 1]
+                    }}
+                    transition={{ duration: 3, repeat: Infinity }}
                   >
                     <Moon className="w-3 h-3" />
                   </motion.div>
                 )}
+
+                {/* Day Off Completed */}
+                {dayOffCompleted && !shiftCompleted && !overtime && !swap && (
+                  <motion.div className="text-violet-400/70">
+                    <Moon className="w-3 h-3" />
+                  </motion.div>
+                )}
                 
-                {isShift && !dayOff && !shiftCompleted && !overtime && (
+                {/* Shift Active - orange badge */}
+                {isShift && !dayOff && !shiftCompleted && !overtime && !swap && (
                   <motion.div 
-                    className="text-[8px] font-bold text-amber-300 bg-amber-500/30 px-1 rounded"
-                    animate={{ opacity: [0.7, 1, 0.7] }}
+                    className="text-[8px] font-bold text-orange-200 bg-orange-500/40 px-1.5 rounded flex items-center gap-0.5"
+                    animate={{ 
+                      opacity: [0.6, 1, 0.6],
+                      scale: [1, 1.05, 1]
+                    }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
-                    P
+                    <Sparkles className="w-2 h-2" />
+                    <span>P</span>
                   </motion.div>
                 )}
 
                 {/* Note indicator dots */}
-                {dayNotes.length > 0 && !isShift && !dayOff && !shiftCompleted && !overtime && (
+                {dayNotes.length > 0 && !category && !today && (
                   <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
                     {dayNotes.slice(0, 2).map((note, idx) => (
                       <motion.div 
@@ -881,38 +1092,87 @@ const ShiftCalendar = () => {
         })}
       </div>
 
-      {/* Legend - More visual with BH states */}
-      <div className="flex flex-wrap items-center justify-center gap-2 text-[9px] text-muted-foreground bg-muted/20 rounded-lg p-2">
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-md border-2 border-amber-400 bg-amber-500/30" />
-          <span>Plantão</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-md border-2 border-green-500 bg-green-800/40 flex items-center justify-center">
-            <Check className="w-2 h-2 text-green-400" />
-          </div>
-          <span>Concluído</span>
-        </div>
-        <div className="flex items-center gap-1">
+      {/* Professional Legend */}
+      <div className="grid grid-cols-3 gap-2 text-[9px] text-muted-foreground bg-muted/20 rounded-lg p-3">
+        {/* Plantão Row */}
+        <div className="flex items-center gap-1.5">
           <motion.div 
-            className="w-3 h-3 rounded-md border-2 border-yellow-400 bg-yellow-500/30 flex items-center justify-center"
+            className={`w-4 h-4 rounded-md border-2 ${CATEGORY_COLORS.shiftActive.border} ${CATEGORY_COLORS.shiftActive.bg} flex items-center justify-center`}
+            animate={{ boxShadow: ['0 0 0px rgba(251, 146, 60, 0)', '0 0 8px rgba(251, 146, 60, 0.5)', '0 0 0px rgba(251, 146, 60, 0)'] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <Sparkles className="w-2 h-2 text-orange-200" />
+          </motion.div>
+          <span className="text-orange-300">Plantão Ativo</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className={`w-4 h-4 rounded-md border-2 ${CATEGORY_COLORS.shiftCompleted.border} ${CATEGORY_COLORS.shiftCompleted.bg} flex items-center justify-center opacity-70`}>
+            <Check className="w-2 h-2 text-slate-400" />
+          </div>
+          <span className="text-slate-400">Plantão Concluído</span>
+        </div>
+        <div className="w-4" />
+
+        {/* BH Row */}
+        <div className="flex items-center gap-1.5">
+          <motion.div 
+            className={`w-4 h-4 rounded-md border-2 ${CATEGORY_COLORS.bhScheduled.border} ${CATEGORY_COLORS.bhScheduled.bg} flex items-center justify-center`}
             animate={{ scale: [1, 1.1, 1] }}
             transition={{ duration: 1, repeat: Infinity }}
           >
-            <Clock className="w-2 h-2 text-yellow-300" />
+            <Clock className="w-2 h-2 text-amber-200" />
           </motion.div>
-          <span>BH Agendado</span>
+          <span className="text-amber-300">BH Agendado</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-md border-2 border-green-400 bg-green-500/30 flex items-center justify-center">
-            <Check className="w-2 h-2 text-green-300" />
+        <div className="flex items-center gap-1.5">
+          <motion.div 
+            className={`w-4 h-4 rounded-md border-2 ${CATEGORY_COLORS.bhActive.border} ${CATEGORY_COLORS.bhActive.bg} flex items-center justify-center`}
+            animate={{ boxShadow: ['0 0 0px rgba(52, 211, 153, 0)', '0 0 6px rgba(52, 211, 153, 0.4)', '0 0 0px rgba(52, 211, 153, 0)'] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <Check className="w-2 h-2 text-emerald-200" />
+          </motion.div>
+          <span className="text-emerald-300">BH Realizado</span>
+        </div>
+        <div className="w-4" />
+
+        {/* Permuta Row */}
+        <div className="flex items-center gap-1.5">
+          <motion.div 
+            className={`w-4 h-4 rounded-md border-2 ${CATEGORY_COLORS.swapActive.border} ${CATEGORY_COLORS.swapActive.bg} flex items-center justify-center`}
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 1.2, repeat: Infinity }}
+          >
+            <ArrowLeftRight className="w-2 h-2 text-cyan-200" />
+          </motion.div>
+          <span className="text-cyan-300">Permuta Ativa</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className={`w-4 h-4 rounded-md border-2 ${CATEGORY_COLORS.swapCompleted.border} ${CATEGORY_COLORS.swapCompleted.bg} flex items-center justify-center opacity-75`}>
+            <Check className="w-2 h-2 text-cyan-400" />
           </div>
-          <span>BH Realizado</span>
+          <span className="text-cyan-500">Permuta Concluída</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded-md border-2 border-purple-400 bg-purple-500/30" />
-          <span>Folga</span>
+        <div className="w-4" />
+
+        {/* Folga Row */}
+        <div className="flex items-center gap-1.5">
+          <motion.div 
+            className={`w-4 h-4 rounded-md border-2 ${CATEGORY_COLORS.dayOffActive.border} ${CATEGORY_COLORS.dayOffActive.bg} flex items-center justify-center`}
+            animate={{ rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          >
+            <Moon className="w-2 h-2 text-violet-200" />
+          </motion.div>
+          <span className="text-violet-300">Folga Ativa</span>
         </div>
+        <div className="flex items-center gap-1.5">
+          <div className={`w-4 h-4 rounded-md border-2 ${CATEGORY_COLORS.dayOffCompleted.border} ${CATEGORY_COLORS.dayOffCompleted.bg} flex items-center justify-center opacity-70`}>
+            <Moon className="w-2 h-2 text-violet-400" />
+          </div>
+          <span className="text-violet-500">Folga Passada</span>
+        </div>
+        <div className="w-4" />
       </div>
 
       {/* Monthly BH Summary */}
