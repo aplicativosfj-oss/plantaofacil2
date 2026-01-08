@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState, Component, ReactNode } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,15 +6,30 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PlantaoAuthProvider } from "@/contexts/PlantaoAuthContext";
 import { PlantaoThemeProvider } from "@/contexts/PlantaoThemeContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { clearExpiredCache } from "@/hooks/useOfflineStorage";
 
-// Lazy load pages for better performance
-const PlantaoHome = lazy(() => import("./pages/PlantaoHome"));
-const AgentDashboard = lazy(() => import("./pages/AgentDashboard"));
-const PlantaoMasterDashboard = lazy(() => import("./pages/PlantaoMasterDashboard"));
-const Install = lazy(() => import("./pages/Install"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+// Lazy load pages with retry logic for failed imports
+const retryImport = <T extends { default: unknown }>(
+  importFn: () => Promise<T>,
+  retries = 2
+): Promise<T> => {
+  return importFn().catch((error) => {
+    if (retries > 0) {
+      // Clear module cache and retry
+      return new Promise<T>((resolve) => {
+        setTimeout(() => resolve(retryImport(importFn, retries - 1)), 500);
+      });
+    }
+    throw error;
+  });
+};
+
+const PlantaoHome = lazy(() => retryImport(() => import("./pages/PlantaoHome")));
+const AgentDashboard = lazy(() => retryImport(() => import("./pages/AgentDashboard")));
+const PlantaoMasterDashboard = lazy(() => retryImport(() => import("./pages/PlantaoMasterDashboard")));
+const Install = lazy(() => retryImport(() => import("./pages/Install")));
+const NotFound = lazy(() => retryImport(() => import("./pages/NotFound")));
 
 // Optimized query client with better caching
 const queryClient = new QueryClient({
@@ -33,6 +48,58 @@ const queryClient = new QueryClient({
   },
 });
 
+// Error boundary for lazy loading failures
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+class LazyErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryState> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): ErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  handleRetry = () => {
+    // Clear caches and reload
+    if ('caches' in window) {
+      caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
+    }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => 
+        Promise.all(regs.map(r => r.unregister()))
+      ).catch(() => {});
+    }
+    window.location.reload();
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-4 p-6 text-center">
+            <p className="text-lg font-medium text-foreground">Erro ao carregar</p>
+            <p className="text-sm text-muted-foreground">
+              Ocorreu um problema ao carregar a página.
+            </p>
+            <button
+              onClick={this.handleRetry}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Tentar novamente
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="flex flex-col items-center gap-3">
@@ -41,23 +108,6 @@ const PageLoader = () => (
     </div>
   </div>
 );
-
-// Synchronous cache reset check - BEFORE component renders
-const CACHE_RESET_KEY = 'plantaopro_cache_reset_v3';
-if (typeof window !== 'undefined' && localStorage.getItem(CACHE_RESET_KEY) !== '1') {
-  localStorage.setItem(CACHE_RESET_KEY, '1');
-  // Clear caches synchronously where possible, then reload
-  if ('caches' in window) {
-    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
-  }
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(regs => 
-      Promise.all(regs.map(r => r.unregister()))
-    ).catch(() => {});
-  }
-  // Small delay to let cleanup finish before reload
-  setTimeout(() => window.location.reload(), 100);
-}
 
 const App = () => {
   // Clear expired cache on app start
@@ -183,15 +233,17 @@ const App = () => {
               }}
             />
             <BrowserRouter>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/" element={<PlantaoHome />} />
-                  <Route path="/dashboard" element={<AgentDashboard />} />
-                  <Route path="/master" element={<PlantaoMasterDashboard />} />
-                  <Route path="/install" element={<Install />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
+              <LazyErrorBoundary>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/" element={<PlantaoHome />} />
+                    <Route path="/dashboard" element={<AgentDashboard />} />
+                    <Route path="/master" element={<PlantaoMasterDashboard />} />
+                    <Route path="/install" element={<Install />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </LazyErrorBoundary>
             </BrowserRouter>
           </TooltipProvider>
         </PlantaoAuthProvider>
