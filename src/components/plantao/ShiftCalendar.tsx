@@ -186,6 +186,20 @@ const ShiftCalendar = () => {
     return overtimeEntries.find(ot => isSameDay(parseDateOnly(ot.date), date));
   };
 
+  // Check if overtime is completed (date has passed)
+  const isOvertimeCompleted = (date: Date) => {
+    const today = startOfDay(new Date());
+    const overtime = getOvertime(date);
+    return overtime && isBefore(date, today);
+  };
+
+  // Check if overtime is scheduled (future date)
+  const isOvertimeScheduled = (date: Date) => {
+    const today = startOfDay(new Date());
+    const overtime = getOvertime(date);
+    return overtime && !isBefore(date, today);
+  };
+
   // Check if shift can be edited (within 24 hours before first shift date)
   const canEditShift = () => {
     if (!shiftSchedule) return false;
@@ -537,21 +551,42 @@ const ShiftCalendar = () => {
     .filter(note => parseDateOnly(note.note_date) >= todayStart)
     .sort((a, b) => parseDateOnly(a.note_date).getTime() - parseDateOnly(b.note_date).getTime());
 
-  // Calculate monthly BH summary
-  const monthlyBHSummary = overtimeEntries
-    .filter(ot => {
-      const otDate = parseDateOnly(ot.date);
-      return format(otDate, 'yyyy-MM') === format(currentMonth, 'yyyy-MM');
-    })
-    .reduce((acc, ot) => ({
-      totalHours: acc.totalHours + ot.hours_worked,
-      totalValue: acc.totalValue + (ot.total_value || (ot.hours_worked * (ot.hour_value || 15.75))),
-      count: acc.count + 1
-    }), { totalHours: 0, totalValue: 0, count: 0 });
+  // Calculate monthly BH summary - ONLY completed (past dates)
+  const monthlyBHSummary = useMemo(() => {
+    const today = startOfDay(new Date());
+    return overtimeEntries
+      .filter(ot => {
+        const otDate = parseDateOnly(ot.date);
+        // Only count if the date has passed (completed)
+        return format(otDate, 'yyyy-MM') === format(currentMonth, 'yyyy-MM') && isBefore(otDate, today);
+      })
+      .reduce((acc, ot) => ({
+        totalHours: acc.totalHours + ot.hours_worked,
+        totalValue: acc.totalValue + (ot.total_value || (ot.hours_worked * (ot.hour_value || 15.75))),
+        count: acc.count + 1
+      }), { totalHours: 0, totalValue: 0, count: 0 });
+  }, [overtimeEntries, currentMonth]);
 
-  // Calculate BH evolution data for last 6 months
+  // Calculate scheduled (future) BH for the month
+  const scheduledBHSummary = useMemo(() => {
+    const today = startOfDay(new Date());
+    return overtimeEntries
+      .filter(ot => {
+        const otDate = parseDateOnly(ot.date);
+        // Only count if the date is today or future (scheduled)
+        return format(otDate, 'yyyy-MM') === format(currentMonth, 'yyyy-MM') && !isBefore(otDate, today);
+      })
+      .reduce((acc, ot) => ({
+        totalHours: acc.totalHours + ot.hours_worked,
+        totalValue: acc.totalValue + (ot.total_value || (ot.hours_worked * (ot.hour_value || 15.75))),
+        count: acc.count + 1
+      }), { totalHours: 0, totalValue: 0, count: 0 });
+  }, [overtimeEntries, currentMonth]);
+
+  // Calculate BH evolution data for last 6 months - ONLY completed
   const bhEvolutionData = useMemo(() => {
     const months: { month: string; monthLabel: string; hours: number; value: number; count: number }[] = [];
+    const today = startOfDay(new Date());
     
     for (let i = 5; i >= 0; i--) {
       const targetMonth = subMonths(new Date(), i);
@@ -561,7 +596,8 @@ const ShiftCalendar = () => {
       const monthData = overtimeEntries
         .filter(ot => {
           const otDate = parseDateOnly(ot.date);
-          return format(otDate, 'yyyy-MM') === monthKey;
+          // Only count completed BH (past dates)
+          return format(otDate, 'yyyy-MM') === monthKey && isBefore(otDate, today);
         })
         .reduce((acc, ot) => ({
           hours: acc.hours + ot.hours_worked,
@@ -653,17 +689,31 @@ const ShiftCalendar = () => {
           const overtime = getOvertime(day);
           const today = isToday(day);
 
+          const overtimeCompleted = isOvertimeCompleted(day);
+          const overtimeScheduled = isOvertimeScheduled(day);
+
           // Animation variants for different categories
           const getAnimationProps = () => {
             if (shiftCompleted) {
               return { animate: { opacity: 0.7 } };
             }
-            if (overtime) {
+            // Completed overtime - subtle pulse
+            if (overtimeCompleted) {
               return { 
                 animate: { 
-                  boxShadow: ['0 0 0px rgba(6, 182, 212, 0)', '0 0 12px rgba(6, 182, 212, 0.5)', '0 0 0px rgba(6, 182, 212, 0)']
+                  boxShadow: ['0 0 0px rgba(34, 197, 94, 0)', '0 0 8px rgba(34, 197, 94, 0.4)', '0 0 0px rgba(34, 197, 94, 0)']
                 },
                 transition: { duration: 2, repeat: Infinity, ease: 'easeInOut' as const }
+              };
+            }
+            // Scheduled overtime - attention-grabbing animation
+            if (overtimeScheduled) {
+              return { 
+                animate: { 
+                  scale: [1, 1.03, 1],
+                  boxShadow: ['0 0 0px rgba(251, 191, 36, 0)', '0 0 15px rgba(251, 191, 36, 0.6)', '0 0 0px rgba(251, 191, 36, 0)']
+                },
+                transition: { duration: 1.5, repeat: Infinity, ease: 'easeInOut' as const }
               };
             }
             if (dayOff) {
@@ -697,26 +747,40 @@ const ShiftCalendar = () => {
                 aspect-square p-1 rounded-xl transition-all relative overflow-hidden
                 ${shiftCompleted
                   ? 'border-2 border-green-600/50 bg-gradient-to-br from-green-800/40 to-green-900/30 cursor-not-allowed'
-                  : overtime
-                    ? 'border-2 border-cyan-400 bg-gradient-to-br from-cyan-500/40 to-cyan-600/20 shadow-lg shadow-cyan-500/20'
-                    : dayOff
-                      ? 'border-2 border-purple-400 bg-gradient-to-br from-purple-500/40 to-purple-600/20 shadow-lg shadow-purple-500/20'
-                      : isShift 
-                        ? 'border-2 border-amber-400 bg-gradient-to-br from-amber-500/40 to-amber-600/20 shadow-lg shadow-amber-500/20' 
-                        : today
-                          ? 'border-2 border-primary/50 bg-primary/10 shadow-md'
-                          : 'border border-border/30 hover:border-primary/30 hover:bg-muted/30 hover:shadow-md'
+                  : overtimeCompleted
+                    ? 'border-2 border-green-400 bg-gradient-to-br from-green-500/40 to-green-600/20 shadow-lg shadow-green-500/20'
+                    : overtimeScheduled
+                      ? 'border-2 border-yellow-400 bg-gradient-to-br from-yellow-500/30 to-amber-600/20 shadow-lg shadow-yellow-500/30 ring-2 ring-yellow-400/30 ring-offset-1 ring-offset-background'
+                      : dayOff
+                        ? 'border-2 border-purple-400 bg-gradient-to-br from-purple-500/40 to-purple-600/20 shadow-lg shadow-purple-500/20'
+                        : isShift 
+                          ? 'border-2 border-amber-400 bg-gradient-to-br from-amber-500/40 to-amber-600/20 shadow-lg shadow-amber-500/20' 
+                          : today
+                            ? 'border-2 border-primary/50 bg-primary/10 shadow-md'
+                            : 'border border-border/30 hover:border-primary/30 hover:bg-muted/30 hover:shadow-md'
                 }
               `}
             >
               {/* Animated ring for special days */}
-              {(overtime || dayOff || isShift) && !shiftCompleted && (
+              {(overtimeScheduled || overtimeCompleted || dayOff || isShift) && !shiftCompleted && (
                 <motion.div 
                   className={`absolute inset-0 rounded-xl ${
-                    overtime ? 'bg-cyan-400/10' : dayOff ? 'bg-purple-400/10' : 'bg-amber-400/10'
+                    overtimeCompleted ? 'bg-green-400/10' : overtimeScheduled ? 'bg-yellow-400/15' : dayOff ? 'bg-purple-400/10' : 'bg-amber-400/10'
                   }`}
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                  transition={{ duration: 2, repeat: Infinity }}
+                  animate={{ opacity: overtimeScheduled ? [0.4, 0.8, 0.4] : [0.3, 0.6, 0.3] }}
+                  transition={{ duration: overtimeScheduled ? 1 : 2, repeat: Infinity }}
+                />
+              )}
+
+              {/* Scheduled overtime special effect - pulsing border */}
+              {overtimeScheduled && (
+                <motion.div 
+                  className="absolute inset-0 rounded-xl border-2 border-yellow-400/50"
+                  animate={{ 
+                    opacity: [0.5, 1, 0.5],
+                    scale: [1, 1.02, 1]
+                  }}
+                  transition={{ duration: 1.2, repeat: Infinity }}
                 />
               )}
 
@@ -725,15 +789,17 @@ const ShiftCalendar = () => {
                 <div className={`text-sm font-bold ${
                   shiftCompleted
                     ? 'text-green-400'
-                    : overtime
-                      ? 'text-cyan-300'
-                      : dayOff
-                        ? 'text-purple-300'
-                        : isShift 
-                          ? 'text-amber-300' 
-                          : today 
-                            ? 'text-primary font-extrabold' 
-                            : 'text-foreground/80'
+                    : overtimeCompleted
+                      ? 'text-green-300'
+                      : overtimeScheduled
+                        ? 'text-yellow-300'
+                        : dayOff
+                          ? 'text-purple-300'
+                          : isShift 
+                            ? 'text-amber-300' 
+                            : today 
+                              ? 'text-primary font-extrabold' 
+                              : 'text-foreground/80'
                 }`}>
                   {format(day, 'd')}
                 </div>
@@ -749,12 +815,29 @@ const ShiftCalendar = () => {
                   </motion.div>
                 )}
 
-                {overtime && !shiftCompleted && (
+                {/* BH Realizado (completed) - green with check */}
+                {overtimeCompleted && !shiftCompleted && (
                   <motion.div 
-                    className="text-[8px] font-bold text-cyan-300 bg-cyan-500/30 px-1 rounded"
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="text-[7px] font-bold text-green-300 bg-green-500/30 px-1 rounded flex items-center gap-0.5"
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
                   >
+                    <Check className="w-2 h-2" />
+                    BH
+                  </motion.div>
+                )}
+
+                {/* BH Programado (scheduled) - yellow with clock, more animation */}
+                {overtimeScheduled && !shiftCompleted && (
+                  <motion.div 
+                    className="text-[7px] font-bold text-yellow-300 bg-yellow-500/40 px-1 rounded flex items-center gap-0.5"
+                    animate={{ 
+                      scale: [1, 1.15, 1],
+                      opacity: [0.8, 1, 0.8]
+                    }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  >
+                    <Clock className="w-2 h-2" />
                     BH
                   </motion.div>
                 )}
@@ -798,30 +881,42 @@ const ShiftCalendar = () => {
         })}
       </div>
 
-      {/* Legend - More visual */}
-      <div className="flex flex-wrap items-center justify-center gap-3 text-[10px] text-muted-foreground bg-muted/20 rounded-lg p-2">
-        <div className="flex items-center gap-1.5">
+      {/* Legend - More visual with BH states */}
+      <div className="flex flex-wrap items-center justify-center gap-2 text-[9px] text-muted-foreground bg-muted/20 rounded-lg p-2">
+        <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded-md border-2 border-amber-400 bg-amber-500/30" />
           <span>Plantão</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded-md border-2 border-green-500 bg-green-800/40 flex items-center justify-center">
             <Check className="w-2 h-2 text-green-400" />
           </div>
           <span>Concluído</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-md border-2 border-cyan-400 bg-cyan-500/30" />
-          <span>BH</span>
+        <div className="flex items-center gap-1">
+          <motion.div 
+            className="w-3 h-3 rounded-md border-2 border-yellow-400 bg-yellow-500/30 flex items-center justify-center"
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 1, repeat: Infinity }}
+          >
+            <Clock className="w-2 h-2 text-yellow-300" />
+          </motion.div>
+          <span>BH Agendado</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 rounded-md border-2 border-green-400 bg-green-500/30 flex items-center justify-center">
+            <Check className="w-2 h-2 text-green-300" />
+          </div>
+          <span>BH Realizado</span>
+        </div>
+        <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded-md border-2 border-purple-400 bg-purple-500/30" />
           <span>Folga</span>
         </div>
       </div>
 
       {/* Monthly BH Summary */}
-      {monthlyBHSummary.count > 0 && (
+      {(monthlyBHSummary.count > 0 || scheduledBHSummary.count > 0) && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -845,20 +940,57 @@ const ShiftCalendar = () => {
               </div>
             </CardHeader>
             <CardContent className="px-3 pb-3 space-y-3">
-              <div className="grid grid-cols-3 gap-2">
-                <div className="text-center p-2 rounded-lg bg-muted/30">
-                  <div className="text-lg font-bold text-cyan-400">{monthlyBHSummary.count}</div>
-                  <div className="text-[10px] text-muted-foreground">Registros</div>
+              {/* Realized BH */}
+              {monthlyBHSummary.count > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs text-green-400">
+                    <Check className="w-3 h-3" />
+                    <span className="font-medium">Realizados</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-center p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <div className="text-lg font-bold text-green-400">{monthlyBHSummary.count}</div>
+                      <div className="text-[10px] text-muted-foreground">Registros</div>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <div className="text-lg font-bold text-green-400">{monthlyBHSummary.totalHours}h</div>
+                      <div className="text-[10px] text-muted-foreground">Total Horas</div>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                      <div className="text-lg font-bold text-green-300">R$ {monthlyBHSummary.totalValue.toFixed(2)}</div>
+                      <div className="text-[10px] text-muted-foreground">Valor Total</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-center p-2 rounded-lg bg-muted/30">
-                  <div className="text-lg font-bold text-cyan-400">{monthlyBHSummary.totalHours}h</div>
-                  <div className="text-[10px] text-muted-foreground">Total Horas</div>
-                </div>
-                <div className="text-center p-2 rounded-lg bg-muted/30">
-                  <div className="text-lg font-bold text-green-400">R$ {monthlyBHSummary.totalValue.toFixed(2)}</div>
-                  <div className="text-[10px] text-muted-foreground">Valor Total</div>
-                </div>
-              </div>
+              )}
+
+              {/* Scheduled BH */}
+              {scheduledBHSummary.count > 0 && (
+                <motion.div 
+                  className="space-y-2"
+                  animate={{ opacity: [0.8, 1, 0.8] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <div className="flex items-center gap-2 text-xs text-yellow-400">
+                    <Clock className="w-3 h-3" />
+                    <span className="font-medium">Agendados (aguardando cumprimento)</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-center p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                      <div className="text-lg font-bold text-yellow-400">{scheduledBHSummary.count}</div>
+                      <div className="text-[10px] text-muted-foreground">Registros</div>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                      <div className="text-lg font-bold text-yellow-400">{scheduledBHSummary.totalHours}h</div>
+                      <div className="text-[10px] text-muted-foreground">Total Horas</div>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                      <div className="text-sm font-medium text-yellow-300/70">Previsto</div>
+                      <div className="text-[10px] text-muted-foreground">R$ {scheduledBHSummary.totalValue.toFixed(2)}</div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
 
               {/* Evolution Chart */}
               <AnimatePresence>
