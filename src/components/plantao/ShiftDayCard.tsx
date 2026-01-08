@@ -40,10 +40,43 @@ const ALERT_OPTIONS = [
   { hours: 12, label: '12h antes' },
 ];
 
+const ACRE_UTC_OFFSET_HOURS = -5; // America/Rio_Branco (AC)
+const ACRE_OFFSET_MS = ACRE_UTC_OFFSET_HOURS * 60 * 60 * 1000;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const getAcreNowParts = () => {
+  // Date.now() is UTC-based; we shift and then read via UTC getters to obtain AC "clock".
+  const shifted = new Date(Date.now() + ACRE_OFFSET_MS);
+  return {
+    year: shifted.getUTCFullYear(),
+    month: shifted.getUTCMonth(),
+    day: shifted.getUTCDate(),
+    hour: shifted.getUTCHours(),
+  };
+};
+
+const getDatePartsUTC = (date: Date) => ({
+  year: date.getUTCFullYear(),
+  month: date.getUTCMonth(),
+  day: date.getUTCDate(),
+});
+
+const acreDateIndexMs = (year: number, month: number, day: number) => Date.UTC(year, month, day);
+
+const acreLocalToInstant = (
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute = 0,
+  second = 0
+) => new Date(Date.UTC(year, month, day, hour - ACRE_UTC_OFFSET_HOURS, minute, second));
+
 const parseDateOnly = (value: string) => {
+  // Date-only values must not shift by timezone. Use UTC noon to keep the same calendar day.
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     const [y, m, d] = value.split('-').map(Number);
-    return new Date(y, m - 1, d);
+    return new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
   }
   return new Date(value);
 };
@@ -116,63 +149,64 @@ const ShiftDayCard = () => {
     }
   }, [agent?.id]);
 
-  // Check if today is a shift day - considering 24h shift that spans 2 calendar days
+  // Check if today is a shift day - considering 24h shift that spans 2 calendar days (AC time)
   const checkIfShiftToday = (firstShiftDate: string) => {
-    const now = new Date();
-    const todayDate = new Date(now);
-    todayDate.setHours(0, 0, 0, 0);
+    const nowAC = getAcreNowParts();
+    const todayIndex = acreDateIndexMs(nowAC.year, nowAC.month, nowAC.day);
 
-    const firstShift = parseDateOnly(firstShiftDate);
-    firstShift.setHours(0, 0, 0, 0);
+    const firstParts = (() => {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(firstShiftDate)) {
+        const [y, m, d] = firstShiftDate.split('-').map(Number);
+        return { year: y, month: m - 1, day: d };
+      }
+      // Fallback: interpret the timestamp and then convert it to an AC calendar day.
+      const raw = new Date(firstShiftDate);
+      const shifted = new Date(raw.getTime() + ACRE_OFFSET_MS);
+      return getDatePartsUTC(shifted);
+    })();
 
-    // Calculate days since first shift
-    const daysDiff = Math.floor((todayDate.getTime() - firstShift.getTime()) / (1000 * 60 * 60 * 24));
+    const firstIndex = acreDateIndexMs(firstParts.year, firstParts.month, firstParts.day);
+
+    // Days since first shift (based on AC calendar days)
+    const daysDiff = Math.floor((todayIndex - firstIndex) / MS_PER_DAY);
 
     // 24x72 pattern: work 1 day, rest 3 days = 4 day cycle
-    // Shift starts at 07:00 and ends at 07:00 next day (24 hours)
+    // Shift starts at 07:00 (AC) and ends at 07:00 next day (24 hours)
     const isTodayWorkDay = daysDiff >= 0 && daysDiff % 4 === 0;
-    
-    // Check if YESTERDAY was a work day (shift still ongoing until 07:00 today)
     const yesterdayDiff = daysDiff - 1;
     const wasYesterdayWorkDay = yesterdayDiff >= 0 && yesterdayDiff % 4 === 0;
-    
-    // Current hour determines which shift we're in
-    const currentHour = now.getHours();
-    
-    // If before 07:00, we might still be in yesterday's shift
-    // If after or equal 07:00, we're in today's shift (if it's a work day)
-    
+
     let activeShift = false;
     let shiftStartTime: Date | null = null;
-    
-    if (currentHour >= 7 && isTodayWorkDay) {
-      // Today's shift started at 07:00 today
+    let shiftStartIndex = todayIndex; // AC calendar-day index
+
+    if (nowAC.hour >= 7 && isTodayWorkDay) {
       activeShift = true;
-      shiftStartTime = new Date(todayDate);
-      shiftStartTime.setHours(7, 0, 0, 0);
-    } else if (currentHour < 7 && wasYesterdayWorkDay) {
-      // Yesterday's shift is still ongoing (started at 07:00 yesterday, ends at 07:00 today)
+      shiftStartIndex = todayIndex;
+    } else if (nowAC.hour < 7 && wasYesterdayWorkDay) {
       activeShift = true;
-      const yesterday = new Date(todayDate);
-      yesterday.setDate(yesterday.getDate() - 1);
-      shiftStartTime = new Date(yesterday);
-      shiftStartTime.setHours(7, 0, 0, 0);
+      shiftStartIndex = todayIndex - MS_PER_DAY;
     }
 
-    // Calculate next shift date
-    if (daysDiff < 0) {
-      setNextShiftDate(firstShift);
-    } else if (activeShift) {
-      // Next shift is in 4 days from today's shift date (or yesterday if ongoing)
-      const shiftDate = shiftStartTime ? new Date(shiftStartTime) : todayDate;
-      shiftDate.setHours(0, 0, 0, 0);
-      setNextShiftDate(addDays(shiftDate, 4));
-    } else {
-      // Find next work day
-      const daysInCycle = daysDiff % 4;
-      const daysUntilNextShift = daysInCycle === 0 ? 0 : (4 - daysInCycle);
-      setNextShiftDate(addDays(todayDate, daysUntilNextShift));
+    if (activeShift) {
+      const shiftStartDate = new Date(shiftStartIndex);
+      const parts = getDatePartsUTC(shiftStartDate);
+      shiftStartTime = acreLocalToInstant(parts.year, parts.month, parts.day, 7, 0, 0);
     }
+
+    // Calculate next shift date (store at UTC noon to keep the same calendar day across timezones)
+    let nextShiftIndex: number;
+    if (daysDiff < 0) {
+      nextShiftIndex = firstIndex;
+    } else if (activeShift) {
+      nextShiftIndex = shiftStartIndex + 4 * MS_PER_DAY;
+    } else {
+      const daysInCycle = daysDiff % 4;
+      const daysUntilNextShift = daysInCycle === 0 ? 0 : 4 - daysInCycle;
+      nextShiftIndex = todayIndex + daysUntilNextShift * MS_PER_DAY;
+    }
+
+    setNextShiftDate(new Date(nextShiftIndex + 12 * 60 * 60 * 1000));
 
     if (activeShift && shiftStartTime) {
       setIsShiftToday(true);
@@ -180,6 +214,8 @@ const ShiftDayCard = () => {
       setShiftEnd(addHours(shiftStartTime, 24));
     } else {
       setIsShiftToday(false);
+      setShiftStart(null);
+      setShiftEnd(null);
     }
   };
 
@@ -295,11 +331,11 @@ const ShiftDayCard = () => {
 
   const handleSetAlert = (hoursBefore: number) => {
     if (!nextShiftDate || !agent?.id) return;
-    
-    // Shift starts at 07:00
-    const shiftStartTime = new Date(nextShiftDate);
-    shiftStartTime.setHours(7, 0, 0, 0);
-    
+
+    // Shift starts at 07:00 (AC) regardless of device timezone
+    const parts = getDatePartsUTC(nextShiftDate);
+    const shiftStartTime = acreLocalToInstant(parts.year, parts.month, parts.day, 7, 0, 0);
+
     const alertTime = subHours(shiftStartTime, hoursBefore);
     
     if (alertTime <= new Date()) {
