@@ -301,9 +301,9 @@ const OvertimePanel = ({ onBack }: Props) => {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-2">
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.1 }}
         >
           <Card className="border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-cyan-600/5">
             <CardContent className="p-3">
@@ -318,9 +318,9 @@ const OvertimePanel = ({ onBack }: Props) => {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.1, delay: 0.05 }}
         >
           <Card className="border-green-500/30 bg-gradient-to-br from-green-500/10 to-green-600/5">
             <CardContent className="p-3">

@@ -538,8 +538,9 @@ const AgentDashboard = () => {
       <main className="container mx-auto px-2 sm:px-4 lg:px-6 py-2 max-w-3xl pb-6">
         {activePanel === 'overview' && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15 }}
             className="space-y-3"
           >
             {/* Team Banner */}
@@ -989,8 +990,9 @@ const AgentDashboard = () => {
 
         {activePanel === 'calendar' && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.1 }}
             className="space-y-4"
           >
             <div className="flex items-center gap-2 mb-4">
@@ -1010,8 +1012,9 @@ const AgentDashboard = () => {
 
         {activePanel === 'monitoring' && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.1 }}
             className="space-y-4"
           >
             <div className="flex items-center gap-2 mb-4">
@@ -1037,8 +1040,9 @@ const AgentDashboard = () => {
 
         {activePanel === 'team-shifts' && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.1 }}
             className="space-y-4"
           >
             <div className="flex items-center gap-2 mb-4">
