@@ -37,6 +37,7 @@ import TeamBanner from '@/components/plantao/TeamBanner';
 import SoundButton from '@/components/plantao/SoundButton';
 import UnitTransferPanel from '@/components/plantao/UnitTransferPanel';
 import TeamShiftsPanel from '@/components/plantao/TeamShiftsPanel';
+import MaintenanceFeeDialog from '@/components/plantao/MaintenanceFeeDialog';
 import useClickSound from '@/hooks/useClickSound';
 import { useOvertimeAlerts } from '@/hooks/useOvertimeAlerts';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
@@ -388,6 +389,9 @@ const AgentDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-dark">
+      {/* Maintenance Fee Dialog (shows once for non-paid licenses) */}
+      <MaintenanceFeeDialog agentId={agent.id} isPaidLicense={false} />
+      
       {/* License Expiry Alert (shows when license is about to expire) */}
       <LicenseExpiryAlert />
       
