@@ -681,7 +681,7 @@ const ShiftDayCard = () => {
                   animate={{ scale: 1 }}
                   className="text-2xl font-mono font-bold tabular-nums text-green-300"
                 >
-                  {String(elapsedTime.hours).padStart(2, '0')}
+                  {elapsedTime.hours.toString().padStart(2, '0')}
                 </motion.span>
                 <span className="text-lg text-green-400/50 animate-pulse">:</span>
                 <motion.span 
@@ -690,11 +690,11 @@ const ShiftDayCard = () => {
                   animate={{ scale: 1 }}
                   className="text-2xl font-mono font-bold tabular-nums text-green-300"
                 >
-                  {String(elapsedTime.minutes).padStart(2, '0')}
+                  {elapsedTime.minutes.toString().padStart(2, '0')}
                 </motion.span>
                 <span className="text-sm text-green-400/50">:</span>
                 <span className="text-sm font-mono text-green-400/70 tabular-nums">
-                  {String(elapsedTime.seconds).padStart(2, '0')}
+                  {elapsedTime.seconds.toString().padStart(2, '0')}
                 </span>
               </div>
             </div>
@@ -711,7 +711,7 @@ const ShiftDayCard = () => {
                   animate={{ scale: 1 }}
                   className={`text-2xl font-mono font-bold tabular-nums ${remainingTime.hours <= 4 ? 'text-red-400' : 'text-amber-300'}`}
                 >
-                  {String(remainingTime.hours).padStart(2, '0')}
+                  {remainingTime.hours.toString().padStart(2, '0')}
                 </motion.span>
                 <span className="text-lg text-amber-400/50 animate-pulse">:</span>
                 <motion.span 
@@ -720,11 +720,11 @@ const ShiftDayCard = () => {
                   animate={{ scale: 1 }}
                   className={`text-2xl font-mono font-bold tabular-nums ${remainingTime.hours <= 4 ? 'text-red-400' : 'text-amber-300'}`}
                 >
-                  {String(remainingTime.minutes).padStart(2, '0')}
+                  {remainingTime.minutes.toString().padStart(2, '0')}
                 </motion.span>
                 <span className="text-sm text-amber-400/50">:</span>
                 <span className={`text-sm font-mono tabular-nums ${remainingTime.hours <= 4 ? 'text-red-400/70' : 'text-amber-400/70'}`}>
-                  {String(remainingTime.seconds).padStart(2, '0')}
+                  {remainingTime.seconds.toString().padStart(2, '0')}
                 </span>
               </div>
             </div>
