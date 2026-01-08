@@ -327,15 +327,17 @@ const AgentDashboard = () => {
         <div className="container mx-auto px-2 sm:px-4 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <SoundButton
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(-1)}
-                className="h-7 w-7"
-                title="Voltar"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </SoundButton>
+              {activePanel === 'overview' && (
+                <SoundButton
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate('/')}
+                  className="h-7 w-7"
+                  title="Voltar para Início"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </SoundButton>
+              )}
               <img src={plantaoLogo} alt="PlantãoPro" className="h-8 w-auto object-contain" />
               <div className="hidden sm:block">
                 <h1 className="text-sm font-display tracking-wide">PLANTÃO<span className="text-primary">PRO</span></h1>
