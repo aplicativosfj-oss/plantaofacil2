@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, User, Crown, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
+import AgentProfileDialog from './AgentProfileDialog';
+import ChangePasswordDialog from './ChangePasswordDialog';
 
 interface TeamMember {
   id: string;
@@ -38,6 +40,8 @@ const TeamMembersCard = () => {
   const { agent } = usePlantaoAuth();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   useEffect(() => {
     if (!agent?.current_team) {
@@ -90,99 +94,159 @@ const TeamMembersCard = () => {
   const teamName = agent.current_team.charAt(0).toUpperCase() + agent.current_team.slice(1);
 
   return (
-    <Card className={`border ${getTeamBgColor(agent.current_team)}`}>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between text-lg">
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-primary" />
-            Equipe {teamName}
-          </div>
-          <Badge variant="outline" className="text-xs">
-            {members.length} {members.length === 1 ? 'membro' : 'membros'}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-          </div>
-        ) : members.length === 0 ? (
-          <p className="text-muted-foreground text-center py-4">Nenhum membro na equipe</p>
-        ) : (
-          <div className="space-y-2">
-            {members.map((member, index) => {
-              const isCurrentUser = member.id === agent.id;
-              
-              return (
-                <motion.div
-                  key={member.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={`
-                    flex items-center gap-3 p-3 rounded-lg transition-all
-                    ${isCurrentUser 
-                      ? `bg-gradient-to-r ${getTeamColor(agent.current_team)} text-white shadow-lg` 
-                      : 'bg-muted/30 hover:bg-muted/50'
-                    }
-                  `}
-                >
-                  {/* Avatar */}
-                  <div className={`
-                    w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
-                    ${isCurrentUser ? 'bg-white/20' : 'bg-primary/10'}
-                  `}>
-                    {member.avatar_url ? (
-                      <img 
-                        src={member.avatar_url} 
-                        alt={member.full_name}
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
-                      <User className={`w-5 h-5 ${isCurrentUser ? 'text-white' : 'text-primary'}`} />
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className={`font-medium truncate ${isCurrentUser ? 'text-white' : 'text-foreground'}`}>
-                        {member.full_name}
-                      </p>
-                      {isCurrentUser && (
-                        <Crown className="w-4 h-4 text-yellow-300 flex-shrink-0" />
+    <>
+      <Card className={`border ${getTeamBgColor(agent.current_team)}`}>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between text-lg">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              Equipe {teamName}
+            </div>
+            <Badge variant="outline" className="text-xs">
+              {members.length} {members.length === 1 ? 'membro' : 'membros'}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            </div>
+          ) : members.length === 0 ? (
+            <p className="text-muted-foreground text-center py-4">Nenhum membro na equipe</p>
+          ) : (
+            <div className="space-y-2">
+              {members.map((member, index) => {
+                const isCurrentUser = member.id === agent.id;
+                
+                return (
+                  <motion.div
+                    key={member.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ 
+                      opacity: 1, 
+                      x: 0,
+                      boxShadow: isCurrentUser 
+                        ? ['0 0 0 0 rgba(251, 191, 36, 0)', '0 0 20px 4px rgba(251, 191, 36, 0.4)', '0 0 0 0 rgba(251, 191, 36, 0)']
+                        : 'none'
+                    }}
+                    transition={{ 
+                      delay: index * 0.05,
+                      boxShadow: isCurrentUser ? {
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: 'easeInOut'
+                      } : undefined
+                    }}
+                    whileHover={isCurrentUser ? { 
+                      scale: 1.02,
+                      transition: { duration: 0.2 }
+                    } : undefined}
+                    whileTap={isCurrentUser ? { scale: 0.98 } : undefined}
+                    onClick={isCurrentUser ? () => setShowProfileDialog(true) : undefined}
+                    className={`
+                      flex items-center gap-3 p-3 rounded-lg transition-all
+                      ${isCurrentUser 
+                        ? `bg-gradient-to-r ${getTeamColor(agent.current_team)} text-white shadow-lg cursor-pointer ring-2 ring-yellow-400/50` 
+                        : 'bg-muted/30 hover:bg-muted/50'
+                      }
+                    `}
+                  >
+                    {/* Avatar */}
+                    <div className={`
+                      w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                      ${isCurrentUser ? 'bg-white/20' : 'bg-primary/10'}
+                    `}>
+                      {member.avatar_url ? (
+                        <img 
+                          src={member.avatar_url} 
+                          alt={member.full_name}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <User className={`w-5 h-5 ${isCurrentUser ? 'text-white' : 'text-primary'}`} />
                       )}
                     </div>
-                    <p className={`text-sm truncate ${isCurrentUser ? 'text-white/80' : 'text-muted-foreground'}`}>
-                      Mat: {member.registration_number || 'N/A'}
-                    </p>
-                  </div>
 
-                  {/* Phone (if available and not current user) */}
-                  {member.phone && !isCurrentUser && (
-                    <a 
-                      href={`tel:${member.phone}`}
-                      className="p-2 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
-                      title="Ligar"
-                    >
-                      <Phone className="w-4 h-4 text-primary" />
-                    </a>
-                  )}
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className={`font-medium truncate ${isCurrentUser ? 'text-white' : 'text-foreground'}`}>
+                          {member.full_name}
+                        </p>
+                        {isCurrentUser && (
+                          <motion.div
+                            animate={{ 
+                              rotate: [0, -10, 10, -10, 0],
+                              scale: [1, 1.1, 1]
+                            }}
+                            transition={{ 
+                              duration: 2,
+                              repeat: Infinity,
+                              repeatDelay: 3
+                            }}
+                          >
+                            <Crown className="w-4 h-4 text-yellow-300 flex-shrink-0" />
+                          </motion.div>
+                        )}
+                      </div>
+                      <p className={`text-sm truncate ${isCurrentUser ? 'text-white/80' : 'text-muted-foreground'}`}>
+                        Mat: {member.registration_number || 'N/A'}
+                      </p>
+                    </div>
 
-                  {/* You badge */}
-                  {isCurrentUser && (
-                    <Badge className="bg-white/20 text-white border-0 text-xs">
-                      Você
-                    </Badge>
-                  )}
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                    {/* Phone (if available and not current user) */}
+                    {member.phone && !isCurrentUser && (
+                      <a 
+                        href={`tel:${member.phone}`}
+                        className="p-2 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+                        title="Ligar"
+                      >
+                        <Phone className="w-4 h-4 text-primary" />
+                      </a>
+                    )}
+
+                    {/* You badge */}
+                    {isCurrentUser && (
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.05, 1]
+                        }}
+                        transition={{ 
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: 'easeInOut'
+                        }}
+                      >
+                        <Badge className="bg-white/20 text-white border-0 text-xs hover:bg-white/30">
+                          Você
+                        </Badge>
+                      </motion.div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Profile Dialog */}
+      <AgentProfileDialog
+        isOpen={showProfileDialog}
+        onClose={() => setShowProfileDialog(false)}
+        onChangePassword={() => {
+          setShowProfileDialog(false);
+          setShowPasswordDialog(true);
+        }}
+      />
+
+      {/* Password Dialog */}
+      <ChangePasswordDialog
+        isOpen={showPasswordDialog}
+        onClose={() => setShowPasswordDialog(false)}
+      />
+    </>
   );
 };
 
