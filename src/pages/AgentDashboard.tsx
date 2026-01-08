@@ -97,6 +97,7 @@ const AgentDashboard = () => {
   const [showGlobalChat, setShowGlobalChat] = useState(false);
   const [hasShiftSchedule, setHasShiftSchedule] = useState<boolean | null>(null);
   const [isLicenseExpired, setIsLicenseExpired] = useState(false);
+  const [calculatedNextShiftDate, setCalculatedNextShiftDate] = useState<Date | null>(null);
 
   // Helper to handle panel change with sound
   const handlePanelChange = (panel: typeof activePanel) => {
@@ -125,18 +126,39 @@ const AgentDashboard = () => {
     }
   }, [isLoading, agent, navigate]);
 
-  // Check if agent has shift schedule
+  // Check if agent has shift schedule and calculate next shift date
   useEffect(() => {
     if (!agent?.id) return;
 
     const checkShiftSchedule = async () => {
       const { data } = await supabase
         .from('shift_schedules')
-        .select('id')
+        .select('id, first_shift_date')
         .eq('agent_id', agent.id)
         .single();
 
       setHasShiftSchedule(!!data);
+      
+      // Calculate next shift date based on 24x72 pattern
+      if (data?.first_shift_date) {
+        const MS_PER_DAY = 24 * 60 * 60 * 1000;
+        const now = new Date();
+        const firstShiftParts = data.first_shift_date.split('-').map(Number);
+        const firstIndex = Date.UTC(firstShiftParts[0], firstShiftParts[1] - 1, firstShiftParts[2]);
+        const todayIndex = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+        const daysDiff = Math.floor((todayIndex - firstIndex) / MS_PER_DAY);
+        
+        let nextShiftIndex: number;
+        if (daysDiff < 0) {
+          nextShiftIndex = firstIndex;
+        } else {
+          const daysInCycle = daysDiff % 4;
+          const daysUntilNextShift = daysInCycle === 0 ? 4 : 4 - daysInCycle;
+          nextShiftIndex = todayIndex + daysUntilNextShift * MS_PER_DAY;
+        }
+        
+        setCalculatedNextShiftDate(new Date(nextShiftIndex));
+      }
     };
 
     checkShiftSchedule();
@@ -508,6 +530,49 @@ const AgentDashboard = () => {
                         </p>
                       </div>
                     </div>
+                  </div>
+                ) : calculatedNextShiftDate ? (
+                  <div className="space-y-3">
+                    {/* Número do dia destacado com animação */}
+                    <div className="flex items-center gap-4">
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.08, 1],
+                          boxShadow: ['0 0 0px rgba(59, 130, 246, 0)', '0 0 25px rgba(59, 130, 246, 0.5)', '0 0 0px rgba(59, 130, 246, 0)']
+                        }}
+                        transition={{ duration: 2.5, repeat: Infinity }}
+                        className="flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-blue-600 shadow-xl shadow-primary/30"
+                      >
+                        <motion.span 
+                          className="text-3xl font-bold text-primary-foreground"
+                          animate={{ scale: [1, 1.05, 1] }}
+                          transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                        >
+                          {format(calculatedNextShiftDate, "dd")}
+                        </motion.span>
+                      </motion.div>
+                      <div className="flex-1">
+                        <p className="text-lg font-semibold capitalize text-foreground">
+                          {format(calculatedNextShiftDate, "EEEE", { locale: ptBR })}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(calculatedNextShiftDate, "dd 'de' MMMM", { locale: ptBR })}
+                        </p>
+                        <p className="text-xs text-primary font-medium">07:00 - Início</p>
+                      </div>
+                    </div>
+                    
+                    {/* Botão para calendário */}
+                    <motion.div 
+                      className="flex items-center gap-2 p-2 bg-muted/20 rounded-lg cursor-pointer hover:bg-muted/30 transition-all"
+                      onClick={() => handlePanelChange('calendar')}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                    >
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground flex-1">Ver calendário completo</span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </motion.div>
                   </div>
                 ) : (
                   <motion.div 
