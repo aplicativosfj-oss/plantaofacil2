@@ -330,9 +330,9 @@ const AgentDashboard = () => {
               <SoundButton
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate('/')}
+                onClick={() => navigate(-1)}
                 className="h-7 w-7"
-                title="Voltar à tela inicial"
+                title="Voltar"
               >
                 <ArrowLeft className="w-4 h-4" />
               </SoundButton>

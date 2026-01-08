@@ -730,20 +730,6 @@ const PlantaoHome = () => {
         <span className="hidden sm:inline">Sobre</span>
       </button>
 
-      {/* Effects Toggle Button (apenas efeitos visuais, sem áudio) */}
-      <button
-        onClick={toggleEffects}
-        className={`fixed bottom-4 right-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 backdrop-blur-sm ${
-          effectsEnabled
-            ? 'bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30'
-            : 'bg-muted/60 hover:bg-muted/80 text-muted-foreground'
-        }`}
-        title={effectsEnabled ? 'Desativar efeitos visuais' : 'Ativar efeitos visuais'}
-      >
-        <Sparkles className={`w-3.5 h-3.5 ${effectsEnabled ? '' : 'opacity-50'}`} />
-      </button>
-
-
       {/* Background Effects */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
