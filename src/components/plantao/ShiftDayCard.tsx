@@ -759,13 +759,14 @@ const ShiftDayCard = () => {
                 <Timer className="w-3 h-3" /> Trabalhadas
               </p>
               <div className="flex items-center justify-center gap-0.5">
+                {/* Hours without leading zero */}
                 <motion.span 
-                  key={elapsedTime.hours}
+                  key={`elapsed-h-${elapsedTime.hours}`}
                   initial={{ scale: 1.2 }}
                   animate={{ scale: 1 }}
                   className="text-2xl font-mono font-bold tabular-nums text-green-300"
                 >
-                  {elapsedTime.hours}
+                  {String(elapsedTime.hours)}
                 </motion.span>
                 <span className="text-lg text-green-400/50 animate-pulse">:</span>
                 <motion.span 
