@@ -14,7 +14,8 @@ import {
   Shield, LogOut, Users, DollarSign, Calendar, User, Search, 
   Clock, TrendingUp, Key, Eye, EyeOff, Save, AlertTriangle,
   CheckCircle, XCircle, ChevronDown, ChevronUp, Receipt, CreditCard, ArrowLeft,
-  Trash2, Edit, Ban, UserCheck, Building2, Crown, Phone, Mail, UserCog
+  Trash2, Edit, Ban, UserCheck, Building2, Crown, Phone, Mail, UserCog,
+  KeyRound, Copy, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, parseISO, differenceInDays, startOfMonth, endOfMonth } from 'date-fns';
@@ -161,6 +162,12 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
   const [deletingAgent, setDeletingAgent] = useState<AgentWithDetails | null>(null);
   const [editForm, setEditForm] = useState({ full_name: '', phone: '', email: '', unit: '', city: '' });
   const [savingAgent, setSavingAgent] = useState(false);
+  
+  // Password management
+  const [showAgentPassword, setShowAgentPassword] = useState<AgentWithDetails | null>(null);
+  const [agentPasswordInfo, setAgentPasswordInfo] = useState<{ cpf: string; password: string } | null>(null);
+  const [loadingPassword, setLoadingPassword] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !master) {
@@ -522,6 +529,73 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
     }
   };
 
+  // Password management functions
+  const handleViewAgentPassword = async (agent: AgentWithDetails) => {
+    setShowAgentPassword(agent);
+    setAgentPasswordInfo(null);
+    setLoadingPassword(true);
+    
+    try {
+      // A senha padrão é o CPF - mostrar isso para o admin
+      setAgentPasswordInfo({
+        cpf: agent.cpf,
+        password: agent.cpf // Senha padrão é o CPF
+      });
+    } finally {
+      setLoadingPassword(false);
+    }
+  };
+
+  const handleResetAgentPassword = async () => {
+    if (!showAgentPassword) return;
+    setResettingPassword(true);
+    
+    try {
+      // Gerar nova senha (últimos 8 dígitos do CPF + 2 caracteres aleatórios)
+      const cleanCpf = showAgentPassword.cpf.replace(/\D/g, '');
+      const randomChars = Math.random().toString(36).substring(2, 4).toUpperCase();
+      const newPassword = cleanCpf.slice(-6) + randomChars;
+      
+      // Chamar edge function para resetar senha
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/plantao-reset-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ 
+            cpf: showAgentPassword.cpf,
+            new_password: newPassword 
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Erro ao resetar senha');
+      }
+
+      setAgentPasswordInfo({
+        cpf: showAgentPassword.cpf,
+        password: newPassword
+      });
+      
+      toast.success('Senha resetada com sucesso!');
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      toast.error('Erro ao resetar senha do agente');
+    } finally {
+      setResettingPassword(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado!`);
+  };
+
   const getPositionLabel = (positionType: string) => {
     switch (positionType) {
       case 'diretor': return 'Diretor(a)';
@@ -704,6 +778,93 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
             </Button>
             <Button variant="destructive" onClick={handleDeleteAgent}>
               Excluir Agente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Agent Password Dialog */}
+      <Dialog open={!!showAgentPassword} onOpenChange={(open) => !open && setShowAgentPassword(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-primary" />
+              Credenciais do Agente
+            </DialogTitle>
+          </DialogHeader>
+          
+          {showAgentPassword && (
+            <div className="space-y-4">
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <p className="font-medium">{showAgentPassword.full_name}</p>
+                <p className="text-sm text-muted-foreground">Mat: {showAgentPassword.registration_number || 'N/A'}</p>
+              </div>
+              
+              {loadingPassword ? (
+                <div className="flex items-center justify-center py-4">
+                  <RefreshCw className="w-5 h-5 animate-spin text-primary" />
+                </div>
+              ) : agentPasswordInfo ? (
+                <div className="space-y-3">
+                  <div className="p-3 bg-muted/20 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase">CPF (Login)</p>
+                        <p className="font-mono font-medium">
+                          {agentPasswordInfo.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(agentPasswordInfo.cpf, 'CPF')}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="p-3 bg-primary/10 border border-primary/30 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase">Senha Atual</p>
+                        <p className="font-mono font-bold text-lg text-primary">
+                          {agentPasswordInfo.password}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(agentPasswordInfo.password, 'Senha')}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground text-center">
+                    A senha padrão inicial é o CPF do agente. Se foi alterada, use o botão abaixo para resetar.
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          )}
+          
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAgentPassword(null)}
+              className="sm:flex-1"
+            >
+              Fechar
+            </Button>
+            <Button 
+              onClick={handleResetAgentPassword} 
+              disabled={resettingPassword}
+              className="sm:flex-1 gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${resettingPassword ? 'animate-spin' : ''}`} />
+              {resettingPassword ? 'Resetando...' : 'Resetar Senha'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1202,6 +1363,15 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                                   >
                                     <Edit className="w-4 h-4" />
                                     Editar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="gap-2"
+                                    onClick={(e) => { e.stopPropagation(); handleViewAgentPassword(agent); }}
+                                  >
+                                    <KeyRound className="w-4 h-4" />
+                                    Ver Senha
                                   </Button>
                                   <Button
                                     size="sm"
