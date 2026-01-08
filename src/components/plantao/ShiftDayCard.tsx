@@ -765,7 +765,7 @@ const ShiftDayCard = () => {
                   animate={{ scale: 1 }}
                   className="text-2xl font-mono font-bold tabular-nums text-green-300"
                 >
-                  {elapsedTime.hours.toString().padStart(2, '0')}
+                  {elapsedTime.hours}
                 </motion.span>
                 <span className="text-lg text-green-400/50 animate-pulse">:</span>
                 <motion.span 
@@ -795,7 +795,7 @@ const ShiftDayCard = () => {
                   animate={{ scale: 1 }}
                   className={`text-2xl font-mono font-bold tabular-nums ${remainingTime.hours <= 4 ? 'text-red-400' : 'text-amber-300'}`}
                 >
-                  {remainingTime.hours.toString().padStart(2, '0')}
+                  {remainingTime.hours}
                 </motion.span>
                 <span className="text-lg text-amber-400/50 animate-pulse">:</span>
                 <motion.span 
