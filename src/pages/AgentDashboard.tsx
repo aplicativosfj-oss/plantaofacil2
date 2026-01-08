@@ -9,7 +9,7 @@ import {
   Bell, ArrowLeftRight, User, ChevronRight, AlertTriangle,
   Timer, TrendingUp, Info, MessageCircle, ArrowLeft,
   Radio, Siren, Target, Crosshair, FileText, Briefcase,
-  Banknote, Repeat, CalendarDays, Building
+  Banknote, Repeat, CalendarDays, Building, Moon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format, differenceInHours } from 'date-fns';
@@ -97,6 +97,7 @@ const AgentDashboard = () => {
   const [showGlobalChat, setShowGlobalChat] = useState(false);
   const [hasShiftSchedule, setHasShiftSchedule] = useState<boolean | null>(null);
   const [isLicenseExpired, setIsLicenseExpired] = useState(false);
+  const [nextEvent, setNextEvent] = useState<{ date: Date; type: 'plantao' | 'folga' | 'bh' | 'permuta'; description: string } | null>(null);
 
   // Helper to handle panel change with sound
   const handlePanelChange = (panel: typeof activePanel) => {
@@ -125,21 +126,120 @@ const AgentDashboard = () => {
     }
   }, [isLoading, agent, navigate]);
 
-  // Check if agent has shift schedule
+  // Check if agent has shift schedule and calculate next event
   useEffect(() => {
     if (!agent?.id) return;
 
-    const checkShiftSchedule = async () => {
-      const { data } = await supabase
+    const checkShiftScheduleAndNextEvent = async () => {
+      // Get shift schedule
+      const { data: scheduleData } = await supabase
         .from('shift_schedules')
-        .select('id')
+        .select('id, first_shift_date')
         .eq('agent_id', agent.id)
         .single();
 
-      setHasShiftSchedule(!!data);
+      setHasShiftSchedule(!!scheduleData);
+
+      if (!scheduleData?.first_shift_date) return;
+
+      const MS_PER_DAY = 24 * 60 * 60 * 1000;
+      const now = new Date();
+      const todayStr = format(now, 'yyyy-MM-dd');
+      
+      // Check for days off (folga)
+      const { data: daysOff } = await supabase
+        .from('agent_days_off')
+        .select('off_date, off_type, reason')
+        .eq('agent_id', agent.id)
+        .gte('off_date', todayStr)
+        .order('off_date', { ascending: true })
+        .limit(5);
+
+      // Check for pending swaps (permuta)
+      const { data: pendingSwapsData } = await supabase
+        .from('shift_swaps')
+        .select('compensation_date, original_shift_date')
+        .or(`requester_id.eq.${agent.id},requested_id.eq.${agent.id}`)
+        .eq('status', 'accepted')
+        .gte('compensation_date', todayStr)
+        .order('compensation_date', { ascending: true })
+        .limit(5);
+
+      // Check for overtime (BH)
+      const { data: overtimeData } = await supabase
+        .from('overtime_bank')
+        .select('date, shift_type, description')
+        .eq('agent_id', agent.id)
+        .gte('date', todayStr)
+        .order('date', { ascending: true })
+        .limit(5);
+
+      // Calculate next shift based on 24x72 pattern
+      const firstShiftParts = scheduleData.first_shift_date.split('-').map(Number);
+      const firstIndex = Date.UTC(firstShiftParts[0], firstShiftParts[1] - 1, firstShiftParts[2]);
+      const todayIndex = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+      const daysDiff = Math.floor((todayIndex - firstIndex) / MS_PER_DAY);
+      
+      let nextShiftIndex: number;
+      if (daysDiff < 0) {
+        nextShiftIndex = firstIndex;
+      } else {
+        const daysInCycle = daysDiff % 4;
+        const daysUntilNextShift = daysInCycle === 0 ? 4 : 4 - daysInCycle;
+        nextShiftIndex = todayIndex + daysUntilNextShift * MS_PER_DAY;
+      }
+      const nextShiftDate = new Date(nextShiftIndex);
+      const nextShiftStr = format(nextShiftDate, 'yyyy-MM-dd');
+
+      // Find the earliest upcoming event
+      const events: { date: Date; type: 'plantao' | 'folga' | 'bh' | 'permuta'; description: string }[] = [];
+
+      // Add next shift
+      events.push({ date: nextShiftDate, type: 'plantao', description: 'Plantão 24h' });
+
+      // Add days off
+      daysOff?.forEach(dayOff => {
+        const offDate = new Date(dayOff.off_date + 'T12:00:00Z');
+        const typeMap: Record<string, string> = {
+          'folga': 'Folga',
+          'ferias': 'Férias',
+          'licenca': 'Licença',
+          'abono': 'Abono'
+        };
+        events.push({ 
+          date: offDate, 
+          type: 'folga', 
+          description: typeMap[dayOff.off_type] || 'Folga' 
+        });
+      });
+
+      // Add approved swaps
+      pendingSwapsData?.forEach(swap => {
+        events.push({ 
+          date: new Date(swap.compensation_date + 'T12:00:00Z'), 
+          type: 'permuta', 
+          description: 'Permuta' 
+        });
+      });
+
+      // Add overtime
+      overtimeData?.forEach(ot => {
+        events.push({ 
+          date: new Date(ot.date + 'T12:00:00Z'), 
+          type: 'bh', 
+          description: ot.description || 'Banco de Horas' 
+        });
+      });
+
+      // Sort by date and get the earliest
+      events.sort((a, b) => a.date.getTime() - b.date.getTime());
+      
+      if (events.length > 0) {
+        setNextEvent(events[0]);
+      }
     };
 
-    checkShiftSchedule();
+    checkShiftScheduleAndNextEvent();
   }, [agent?.id]);
 
   // Fetch next shift
@@ -508,6 +608,74 @@ const AgentDashboard = () => {
                         </p>
                       </div>
                     </div>
+                  </div>
+                ) : nextEvent ? (
+                  <div className="space-y-3">
+                    {/* Número do dia destacado com animação e descrição */}
+                    <div className="flex items-center gap-4">
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.08, 1],
+                          boxShadow: nextEvent.type === 'plantao' 
+                            ? ['0 0 0px rgba(34, 197, 94, 0)', '0 0 25px rgba(34, 197, 94, 0.5)', '0 0 0px rgba(34, 197, 94, 0)']
+                            : nextEvent.type === 'folga'
+                            ? ['0 0 0px rgba(168, 85, 247, 0)', '0 0 25px rgba(168, 85, 247, 0.5)', '0 0 0px rgba(168, 85, 247, 0)']
+                            : nextEvent.type === 'bh'
+                            ? ['0 0 0px rgba(251, 191, 36, 0)', '0 0 25px rgba(251, 191, 36, 0.5)', '0 0 0px rgba(251, 191, 36, 0)']
+                            : ['0 0 0px rgba(59, 130, 246, 0)', '0 0 25px rgba(59, 130, 246, 0.5)', '0 0 0px rgba(59, 130, 246, 0)']
+                        }}
+                        transition={{ duration: 2.5, repeat: Infinity }}
+                        className={`flex items-center justify-center w-16 h-16 rounded-2xl shadow-xl ${
+                          nextEvent.type === 'plantao' ? 'bg-gradient-to-br from-green-500 via-green-600 to-emerald-700 shadow-green-500/30' :
+                          nextEvent.type === 'folga' ? 'bg-gradient-to-br from-purple-500 via-purple-600 to-violet-700 shadow-purple-500/30' :
+                          nextEvent.type === 'bh' ? 'bg-gradient-to-br from-amber-500 via-amber-600 to-orange-700 shadow-amber-500/30' :
+                          'bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 shadow-blue-500/30'
+                        }`}
+                      >
+                        <motion.span 
+                          className="text-3xl font-bold text-white"
+                          animate={{ scale: [1, 1.05, 1] }}
+                          transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                        >
+                          {format(nextEvent.date, "dd")}
+                        </motion.span>
+                      </motion.div>
+                      <div className="flex-1">
+                        <Badge className={`text-[10px] px-1.5 py-0 mb-1 ${
+                          nextEvent.type === 'plantao' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                          nextEvent.type === 'folga' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
+                          nextEvent.type === 'bh' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                          'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                        }`}>
+                          {nextEvent.type === 'plantao' && <Shield className="w-2.5 h-2.5 mr-0.5" />}
+                          {nextEvent.type === 'folga' && <Moon className="w-2.5 h-2.5 mr-0.5" />}
+                          {nextEvent.type === 'bh' && <Timer className="w-2.5 h-2.5 mr-0.5" />}
+                          {nextEvent.type === 'permuta' && <ArrowLeftRight className="w-2.5 h-2.5 mr-0.5" />}
+                          {nextEvent.description.toUpperCase()}
+                        </Badge>
+                        <p className="text-base font-semibold capitalize text-foreground">
+                          {format(nextEvent.date, "EEEE", { locale: ptBR })}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(nextEvent.date, "dd 'de' MMMM", { locale: ptBR })}
+                        </p>
+                        {nextEvent.type === 'plantao' && (
+                          <p className="text-xs text-green-400 font-medium">07:00 - Início</p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Botão para calendário */}
+                    <motion.div 
+                      className="flex items-center gap-2 p-2 bg-muted/20 rounded-lg cursor-pointer hover:bg-muted/30 transition-all"
+                      onClick={() => handlePanelChange('calendar')}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                    >
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground flex-1">Ver calendário completo</span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </motion.div>
                   </div>
                 ) : (
                   <motion.div 
