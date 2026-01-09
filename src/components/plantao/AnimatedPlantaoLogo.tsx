@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { usePlantaoTheme } from '@/contexts/PlantaoThemeContext';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
-import { Shield, Radio, Siren, Lock, Fingerprint, Eye, Crosshair } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 const AnimatedPlantaoLogo = () => {
   const { currentTheme, themeConfig } = usePlantaoTheme();
@@ -30,9 +30,6 @@ const AnimatedPlantaoLogo = () => {
 
   const colors = getParticleColors();
 
-  // Security icons for decoration
-  const SecurityIcons = [Shield, Radio, Siren, Lock, Fingerprint, Eye, Crosshair];
-
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
@@ -40,140 +37,126 @@ const AnimatedPlantaoLogo = () => {
       transition={{ duration: 0.3, type: 'spring', stiffness: 300 }}
       className="relative mb-4 text-center"
     >
-      {/* Animated glow ring */}
-      <motion.div
-        className="absolute inset-0 rounded-full"
-        style={{
-          background: `radial-gradient(circle, hsl(var(--primary)/0.4) 0%, transparent 70%)`,
-          filter: 'blur(50px)',
-        }}
-        animate={{
-          scale: [1, 1.3, 1],
-          opacity: [0.4, 0.7, 0.4],
-        }}
-        transition={{
-          duration: 2.5,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
+      {/* Pulsing radar waves effect */}
+      {[...Array(3)].map((_, i) => (
+        <motion.div
+          key={`wave-${i}`}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 pointer-events-none"
+          style={{
+            borderColor: colors[i % colors.length],
+            width: '120px',
+            height: '120px',
+          }}
+          animate={{
+            scale: [1, 2.5, 3],
+            opacity: [0.6, 0.2, 0],
+          }}
+          transition={{
+            duration: 2.5,
+            repeat: Infinity,
+            delay: i * 0.8,
+            ease: 'easeOut',
+          }}
+        />
+      ))}
 
-      {/* Rotating security ring - outer */}
-      <motion.div
-        className="absolute inset-0 flex items-center justify-center pointer-events-none"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-      >
-        <svg className="w-52 h-52 md:w-64 md:h-64" viewBox="0 0 200 200">
-          <defs>
-            <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor={colors[0]} stopOpacity="0.6" />
-              <stop offset="50%" stopColor={colors[1]} stopOpacity="0.4" />
-              <stop offset="100%" stopColor={colors[2]} stopOpacity="0.2" />
-            </linearGradient>
-          </defs>
-          <circle
-            cx="100"
-            cy="100"
-            r="90"
-            fill="none"
-            stroke="url(#ringGradient)"
-            strokeWidth="1.5"
-            strokeDasharray="8 12"
-          />
-        </svg>
-      </motion.div>
-
-      {/* Counter-rotating inner ring */}
-      <motion.div
-        className="absolute inset-0 flex items-center justify-center pointer-events-none"
-        animate={{ rotate: -360 }}
-        transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
-      >
-        <svg className="w-44 h-44 md:w-52 md:h-52" viewBox="0 0 160 160">
-          <circle
-            cx="80"
-            cy="80"
-            r="70"
-            fill="none"
-            stroke="hsl(var(--primary))"
-            strokeWidth="0.5"
-            strokeDasharray="4 8"
-            opacity="0.5"
-          />
-        </svg>
-      </motion.div>
-
-      {/* Security icons orbiting */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        {SecurityIcons.map((Icon, i) => (
+      {/* Hexagon grid pattern effect */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+        {[...Array(6)].map((_, i) => (
           <motion.div
-            key={i}
+            key={`hex-${i}`}
             className="absolute"
+            style={{
+              width: '40px',
+              height: '40px',
+              left: `${30 + (i % 3) * 20}%`,
+              top: `${25 + Math.floor(i / 3) * 35}%`,
+            }}
             animate={{
-              rotate: 360,
+              opacity: [0.1, 0.4, 0.1],
+              scale: [0.9, 1.1, 0.9],
             }}
             transition={{
-              duration: 20 + i * 2,
+              duration: 2,
               repeat: Infinity,
-              ease: 'linear',
-            }}
-            style={{
-              width: '180px',
-              height: '180px',
+              delay: i * 0.3,
             }}
           >
-            <motion.div
-              className="absolute"
-              style={{
-                top: '0%',
-                left: '50%',
-                transform: 'translateX(-50%)',
-              }}
-              animate={{
-                opacity: [0.3, 0.7, 0.3],
-                scale: [0.8, 1.1, 0.8],
-              }}
-              transition={{
-                duration: 2 + i * 0.3,
-                repeat: Infinity,
-                delay: i * 0.4,
-              }}
-            >
-              <Icon 
-                className="w-4 h-4" 
-                style={{ color: colors[i % colors.length] }}
+            <svg viewBox="0 0 40 40" className="w-full h-full">
+              <polygon
+                points="20,2 38,12 38,28 20,38 2,28 2,12"
+                fill="none"
+                stroke={colors[i % colors.length]}
+                strokeWidth="1"
+                opacity="0.5"
               />
-            </motion.div>
+            </svg>
           </motion.div>
         ))}
       </div>
 
-      {/* Floating particles with enhanced effects */}
-      {[...Array(8)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-2 h-2 rounded-full"
-          style={{
-            backgroundColor: colors[i % colors.length],
-            left: `${15 + Math.random() * 70}%`,
-            top: `${15 + Math.random() * 70}%`,
-            boxShadow: `0 0 10px ${colors[i % colors.length]}`,
-          }}
-          animate={{
-            y: [0, -20, 0],
-            x: [0, Math.random() * 15 - 7.5, 0],
-            opacity: [0.3, 0.9, 0.3],
-            scale: [0.8, 1.3, 0.8],
-          }}
-          transition={{
-            duration: 2 + Math.random() * 1.5,
-            repeat: Infinity,
-            delay: i * 0.2,
-            ease: 'easeInOut',
-          }}
-        />
-      ))}
+      {/* Corner brackets animation */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        animate={{ opacity: [0.3, 0.7, 0.3] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      >
+        <div className="absolute top-8 left-8 w-6 h-6 border-l-2 border-t-2" style={{ borderColor: colors[0] }} />
+        <div className="absolute top-8 right-8 w-6 h-6 border-r-2 border-t-2" style={{ borderColor: colors[1] }} />
+        <div className="absolute bottom-8 left-8 w-6 h-6 border-l-2 border-b-2" style={{ borderColor: colors[1] }} />
+        <div className="absolute bottom-8 right-8 w-6 h-6 border-r-2 border-b-2" style={{ borderColor: colors[0] }} />
+      </motion.div>
+
+      {/* Glowing dots effect */}
+      {[...Array(12)].map((_, i) => {
+        const angle = (i * 30) * (Math.PI / 180);
+        const radius = 85;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        
+        return (
+          <motion.div
+            key={`dot-${i}`}
+            className="absolute left-1/2 top-1/2 w-2 h-2 rounded-full pointer-events-none"
+            style={{
+              backgroundColor: colors[i % colors.length],
+              boxShadow: `0 0 8px ${colors[i % colors.length]}`,
+              x: x,
+              y: y,
+              marginLeft: '-4px',
+              marginTop: '-4px',
+            }}
+            animate={{
+              opacity: [0.3, 1, 0.3],
+              scale: [0.8, 1.3, 0.8],
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              delay: i * 0.1,
+              ease: 'easeInOut',
+            }}
+          />
+        );
+      })}
+
+      {/* Main glow effect */}
+      <motion.div
+        className="absolute inset-0 rounded-full pointer-events-none"
+        style={{
+          background: `radial-gradient(circle, hsl(var(--primary)/0.4) 0%, transparent 60%)`,
+          filter: 'blur(40px)',
+        }}
+        animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.4, 0.7, 0.4],
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+      />
 
       {/* Logo with enhanced effects - BIGGER SIZE */}
       <motion.div
@@ -271,7 +254,7 @@ const AnimatedPlantaoLogo = () => {
         </motion.div>
       </motion.div>
 
-      {/* Animated subtitle with typing effect */}
+      {/* Animated subtitle */}
       <motion.div
         className="flex items-center justify-center gap-2 mt-2"
         initial={{ opacity: 0 }}
