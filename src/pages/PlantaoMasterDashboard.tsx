@@ -1600,23 +1600,23 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               {/* Monthly Revenue */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
                     <TrendingUp className="w-5 h-5 text-primary" />
                     Faturamento Mensal
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {monthlyRevenue.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">
+                    <p className="text-muted-foreground text-center py-8 text-sm">
                       Nenhum pagamento registrado ainda
                     </p>
                   ) : (
                     <ScrollArea className="h-[200px]">
                       <div className="space-y-2">
                         {monthlyRevenue.map(rev => (
-                          <div key={rev.month} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                          <div key={rev.month} className="flex items-center justify-between p-3 bg-card border border-border/50 rounded-lg">
                             <div>
-                              <p className="font-medium">
+                              <p className="font-semibold text-sm">
                                 {format(parseISO(`${rev.month}-01`), "MMMM 'de' yyyy", { locale: ptBR })}
                               </p>
                               <p className="text-sm text-muted-foreground">
@@ -1640,14 +1640,14 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               {/* Pending Payments */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
                     <AlertTriangle className="w-5 h-5 text-amber-500" />
                     Pagamentos Pendentes
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {licensePayments.filter(p => p.status === 'pending').length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">
+                    <p className="text-muted-foreground text-center py-8 text-sm">
                       Nenhum pagamento pendente
                     </p>
                   ) : (
@@ -1656,9 +1656,9 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                         {licensePayments
                           .filter(p => p.status === 'pending')
                           .map(payment => (
-                            <div key={payment.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-amber-500/30">
+                            <div key={payment.id} className="flex items-center justify-between p-4 bg-card border border-amber-500/40 rounded-lg">
                               <div>
-                                <p className="font-medium">{payment.agent?.full_name || 'Agente'}</p>
+                                <p className="font-semibold text-sm">{payment.agent?.full_name || 'Agente'}</p>
                                 <p className="text-sm text-muted-foreground">
                                   Ref: {format(parseISO(`${payment.payment_month}-01`), "MMM/yyyy", { locale: ptBR })}
                                 </p>
@@ -1701,7 +1701,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               {/* Recent Payments History */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
                     <Receipt className="w-5 h-5 text-primary" />
                     Histórico de Pagamentos
                   </CardTitle>
@@ -1710,35 +1710,35 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                   <ScrollArea className="h-[300px]">
                     <div className="space-y-2">
                       {licensePayments.slice(0, 50).map(payment => (
-                        <div key={payment.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                        <div key={payment.id} className="flex items-center justify-between p-3 bg-card border border-border/50 rounded-lg">
                           <div className="flex items-center gap-3">
-                            <div className={`w-2 h-2 rounded-full ${
+                            <div className={`w-2.5 h-2.5 rounded-full ${
                               payment.status === 'confirmed' ? 'bg-green-500' :
                               payment.status === 'pending' ? 'bg-amber-500' :
                               'bg-red-500'
                             }`} />
                             <div>
-                              <p className="font-medium">{payment.agent?.full_name || 'Agente'}</p>
+                              <p className="font-semibold text-sm">{payment.agent?.full_name || 'Agente'}</p>
                               <p className="text-sm text-muted-foreground">
                                 {format(parseISO(`${payment.payment_month}-01`), "MMM/yyyy", { locale: ptBR })}
                               </p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold">R$ {payment.amount.toFixed(2)}</p>
-                            <Badge variant={
-                              payment.status === 'confirmed' ? 'default' :
-                              payment.status === 'pending' ? 'secondary' :
-                              'destructive'
-                            }>
+                            <p className="font-bold text-sm">R$ {payment.amount.toFixed(2)}</p>
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                              payment.status === 'confirmed' ? 'bg-green-500/20 text-green-500' :
+                              payment.status === 'pending' ? 'bg-amber-500/20 text-amber-500' :
+                              'bg-red-500/20 text-red-500'
+                            }`}>
                               {payment.status === 'confirmed' ? 'Confirmado' :
                                payment.status === 'pending' ? 'Pendente' : 'Rejeitado'}
-                            </Badge>
+                            </span>
                           </div>
                         </div>
                       ))}
                       {licensePayments.length === 0 && (
-                        <p className="text-muted-foreground text-center py-8">
+                        <p className="text-muted-foreground text-center py-8 text-sm">
                           Nenhum pagamento registrado
                         </p>
                       )}
