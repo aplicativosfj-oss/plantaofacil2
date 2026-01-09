@@ -941,7 +941,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
       </Dialog>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur">
+      <header className="sticky top-0 z-50 border-b border-border/50 bg-background">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -956,7 +956,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               </Button>
               <img src={plantaoLogo} alt="PlantãoPro" className="h-10 w-auto object-contain" />
               <div>
-                <h1 className="text-lg font-display tracking-wide">PLANTÃO<span className="text-primary">PRO</span></h1>
+                <h1 className="text-lg font-bold tracking-wide">PLANTÃO<span className="text-primary">PRO</span></h1>
                 <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/50 text-xs">
                   <Shield className="w-3 h-3 mr-1" />
                   MASTER

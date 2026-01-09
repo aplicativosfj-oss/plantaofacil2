@@ -143,15 +143,15 @@ const OnlineAgentsPanel = () => {
   return (
     <Card>
       <CardHeader className="pb-2 px-3 pt-3">
-        <CardTitle className="flex items-center justify-between text-sm">
+        <CardTitle className="flex items-center justify-between text-sm font-semibold">
           <div className="flex items-center gap-2">
             <Wifi className="w-4 h-4 text-green-500" />
-            Status Agentes
+            <span>Status Agentes</span>
           </div>
-          <Badge variant="outline" className="gap-1 text-xs">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            {onlineAgents.length}
-          </Badge>
+          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-border text-xs">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            <span>{onlineAgents.length}</span>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="px-3 pb-3">
@@ -160,8 +160,8 @@ const OnlineAgentsPanel = () => {
           {onlineAgents.length > 0 && (
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-xs font-medium text-green-500">Online ({onlineAgents.length})</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                <span className="text-xs font-semibold text-green-500">Online ({onlineAgents.length})</span>
               </div>
               <div className="space-y-1.5">
                 <AnimatePresence>
@@ -185,15 +185,15 @@ const OnlineAgentsPanel = () => {
                           <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
                         </div>
                         <div>
-                          <p className="font-medium text-xs">{presence.agent?.full_name || 'Desconhecido'}</p>
-                          <p className="text-[10px] text-muted-foreground">
+                          <p className="font-semibold text-sm">{presence.agent?.full_name || 'Desconhecido'}</p>
+                          <p className="text-xs text-muted-foreground">
                             {formatTimeAgo(presence.last_seen)}
                           </p>
                         </div>
                       </div>
-                      <Badge className={`${getTeamColor(presence.agent?.current_team)} text-[10px]`}>
+                      <span className={`${getTeamColor(presence.agent?.current_team)} px-2 py-0.5 rounded text-xs font-medium`}>
                         {presence.agent?.current_team?.toUpperCase() || 'N/A'}
-                      </Badge>
+                      </span>
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -206,14 +206,14 @@ const OnlineAgentsPanel = () => {
             <div>
               <div className="flex items-center gap-2 mb-2 mt-3">
                 <WifiOff className="w-3 h-3 text-muted-foreground" />
-                <span className="text-xs font-medium text-muted-foreground">Histórico</span>
+                <span className="text-xs font-semibold text-muted-foreground">Histórico</span>
               </div>
               
               {groupByDate(offlineAgents).slice(0, 2).map(([dateKey, agents]) => (
                 <div key={dateKey} className="mb-3">
                   <div className="flex items-center gap-1 mb-1.5">
                     <Calendar className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-[10px] font-medium text-muted-foreground uppercase">
+                    <span className="text-xs font-medium text-muted-foreground uppercase">
                       {formatDateGroup(agents[0].last_seen)}
                     </span>
                   </div>
@@ -233,16 +233,16 @@ const OnlineAgentsPanel = () => {
                               )}
                             </div>
                           </div>
-                          <div>
-                            <p className="font-medium text-xs">{presence.agent?.full_name || 'Desconhecido'}</p>
-                            <p className="text-[10px] text-muted-foreground">
+                        <div>
+                            <p className="font-medium text-sm">{presence.agent?.full_name || 'Desconhecido'}</p>
+                            <p className="text-xs text-muted-foreground">
                               {format(parseISO(presence.last_seen), "HH:mm", { locale: ptBR })}
                             </p>
                           </div>
                         </div>
-                        <Badge variant="outline" className={`${getTeamColor(presence.agent?.current_team)} text-[10px]`}>
+                        <span className={`${getTeamColor(presence.agent?.current_team)} px-2 py-0.5 rounded text-xs font-medium`}>
                           {presence.agent?.current_team?.toUpperCase() || 'N/A'}
-                        </Badge>
+                        </span>
                       </div>
                     ))}
                   </div>
