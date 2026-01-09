@@ -8,11 +8,9 @@ const INTRO_SHOWN_KEY = 'plantao_intro_video_shown';
 export default function PlantaoEntry() {
   const [LoadedPage, setLoadedPage] = useState<React.ComponentType | null>(null);
   const [failed, setFailed] = useState(false);
-  const [showIntro, setShowIntro] = useState(() => {
-    // Only show intro video on first visit
-    return !localStorage.getItem(INTRO_SHOWN_KEY);
-  });
-  const [introComplete, setIntroComplete] = useState(!showIntro);
+  // Video removed - no longer show intro video
+  const [showIntro] = useState(false);
+  const [introComplete, setIntroComplete] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
