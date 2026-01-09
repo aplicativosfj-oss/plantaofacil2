@@ -24,117 +24,76 @@ const PlantaoAboutDialog: React.FC<PlantaoAboutDialogProps> = ({ isOpen, onClose
 
           {/* Dialog */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-lg md:w-full z-50 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.15 }}
+            className="fixed left-2 right-2 top-[10%] bottom-[10%] md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-md md:w-full md:max-h-[80vh] z-50 bg-card border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden"
           >
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 p-2 rounded-full bg-muted/50 hover:bg-muted transition-colors z-10"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
             {/* Header with Logo */}
-            <div className="bg-gradient-to-b from-primary/20 to-transparent p-6 text-center">
-              <motion.img
+            <div className="flex-shrink-0 bg-gradient-to-b from-primary/20 to-transparent p-4 text-center relative">
+              <button
+                onClick={onClose}
+                className="absolute top-3 right-3 p-1.5 rounded-full bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <img
                 src={plantaoLogo}
                 alt="PlantãoPro"
-                className="h-20 mx-auto object-contain drop-shadow-lg"
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.1 }}
+                className="h-12 mx-auto object-contain drop-shadow-lg"
               />
-              <motion.h2
-                className="text-xl font-display tracking-wide mt-3"
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-              >
+              <h2 className="text-base font-display tracking-wide mt-2">
                 📱 Sobre o Aplicativo
-              </motion.h2>
+              </h2>
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-5 max-h-[60vh] overflow-y-auto">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {/* App Description */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="space-y-3"
-              >
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Este aplicativo foi desenvolvido com o objetivo de <strong className="text-foreground">controlar, registrar e acompanhar os plantões e o banco de horas</strong>, oferecendo aos usuários maior organização, clareza e autonomia na gestão do tempo de trabalho.
+              <div className="space-y-2 text-xs text-muted-foreground leading-relaxed">
+                <p>
+                  Este aplicativo foi desenvolvido para <strong className="text-foreground">controlar e acompanhar os plantões e o banco de horas</strong>, oferecendo organização e autonomia na gestão do tempo de trabalho.
                 </p>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  A ferramenta permite visualizar jornadas realizadas, acompanhar o saldo de horas e organizar plantões, contribuindo para um melhor planejamento das atividades profissionais e pessoais.
+                <p>
+                  Visualize jornadas, acompanhe o saldo de horas e organize plantões de forma prática.
                 </p>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Seu uso facilita o controle das rotinas, reduz a necessidade de registros manuais e promove maior transparência nas informações.
-                </p>
-                <p className="text-sm text-muted-foreground leading-relaxed italic">
-                  O aplicativo foi pensado para apoiar a organização do trabalho, proporcionando liberdade para que cada usuário possa gerenciar seu próprio tempo de forma prática e responsável.
-                </p>
-              </motion.div>
+              </div>
 
               {/* Features Icons */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="grid grid-cols-3 gap-3"
-              >
-                <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-muted/30">
-                  <Clock className="w-6 h-6 text-primary" />
-                  <span className="text-xs text-muted-foreground text-center">Controle de Plantões</span>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-muted/30">
+                  <Clock className="w-5 h-5 text-primary" />
+                  <span className="text-[10px] text-muted-foreground text-center">Plantões</span>
                 </div>
-                <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-muted/30">
-                  <Users className="w-6 h-6 text-accent" />
-                  <span className="text-xs text-muted-foreground text-center">Gestão de Equipes</span>
+                <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-muted/30">
+                  <Users className="w-5 h-5 text-accent" />
+                  <span className="text-[10px] text-muted-foreground text-center">Equipes</span>
                 </div>
-                <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-muted/30">
-                  <Heart className="w-6 h-6 text-destructive" />
-                  <span className="text-xs text-muted-foreground text-center">Banco de Horas</span>
+                <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-muted/30">
+                  <Heart className="w-5 h-5 text-destructive" />
+                  <span className="text-[10px] text-muted-foreground text-center">Banco de Horas</span>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Divider */}
               <div className="border-t border-border" />
 
               {/* Developer Info */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="space-y-3"
-              >
+              <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Code className="w-5 h-5 text-primary" />
-                  <h3 className="text-sm font-semibold text-foreground">👨‍💻 Sobre o Desenvolvedor</h3>
+                  <Code className="w-4 h-4 text-primary" />
+                  <h3 className="text-xs font-semibold text-foreground">👨‍💻 Desenvolvedor</h3>
                 </div>
-                
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  <strong className="text-foreground">Franc Denis</strong> é Agente Socioeducativo do CS Feijó e desenvolvedor de soluções digitais voltadas ao apoio da organização institucional e da gestão de rotinas de trabalho.
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  <strong className="text-foreground">Franc Denis</strong> - Agente Socioeducativo do CS Feijó, desenvolvedor de soluções digitais para organização institucional.
                 </p>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  A partir da experiência prática no ambiente socioeducativo, o desenvolvedor criou este aplicativo com foco em funcionalidade, clareza e utilidade real, atendendo às necessidades do dia a dia dos profissionais.
-                </p>
-              </motion.div>
+              </div>
 
               {/* Contact */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="bg-muted/30 rounded-xl p-4"
-              >
-                <div className="flex items-center justify-center gap-2 text-sm">
+              <div className="bg-muted/30 rounded-lg p-3">
+                <div className="flex items-center justify-center gap-2 text-xs">
                   <Mail className="w-4 h-4 text-primary" />
-                  <span className="text-muted-foreground">Contato:</span>
                   <a 
                     href="mailto:francdenisbr@gmail.com" 
                     className="text-primary hover:underline font-medium"
@@ -142,19 +101,14 @@ const PlantaoAboutDialog: React.FC<PlantaoAboutDialogProps> = ({ isOpen, onClose
                     francdenisbr@gmail.com
                   </a>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Footer */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.7 }}
-                className="text-center pt-2 border-t border-border"
-              >
-                <p className="text-xs text-muted-foreground">
+              <div className="text-center pt-2 border-t border-border">
+                <p className="text-[10px] text-muted-foreground">
                   Developed by <span className="text-primary font-medium">Franc Denis</span>
                 </p>
-              </motion.div>
+              </div>
             </div>
           </motion.div>
         </>
