@@ -143,9 +143,9 @@ const OnlineAgentsPanel = () => {
   return (
     <Card className="border border-border">
       <CardHeader className="pb-2 px-4 pt-4">
-        <CardTitle className="flex items-center justify-between text-sm font-medium text-muted-foreground">
+        <CardTitle className="flex items-center justify-between text-lg font-semibold tracking-wide text-foreground">
           <div className="flex items-center gap-2">
-            <Wifi className="w-4 h-4 text-green-500" />
+            <Wifi className="w-5 h-5 text-green-500" />
             <span>Status Agentes</span>
           </div>
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-green-500/50 bg-green-500/10 text-xs font-medium text-green-500">
