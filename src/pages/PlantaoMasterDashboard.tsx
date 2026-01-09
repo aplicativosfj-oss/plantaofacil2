@@ -1061,7 +1061,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
 
       {/* Edit Leadership Dialog */}
       <Dialog open={!!editingLeadership} onOpenChange={(open) => !open && setEditingLeadership(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserCog className="w-5 h-5 text-primary" />
@@ -1069,7 +1069,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
             </DialogTitle>
           </DialogHeader>
           {editingLeadership && (
-            <div className="space-y-4">
+            <div className="space-y-4 py-2">
               <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
                 {getPositionIcon(editingLeadership.position_type)}
                 <div>
@@ -1086,7 +1086,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                   className="uppercase"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Telefone</Label>
                   <Input
@@ -1115,11 +1115,11 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingLeadership(null)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2 pt-4">
+            <Button variant="outline" onClick={() => setEditingLeadership(null)} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button onClick={handleSaveLeadership} disabled={savingLeadership}>
+            <Button onClick={handleSaveLeadership} disabled={savingLeadership} className="w-full sm:w-auto">
               {savingLeadership ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>
@@ -1128,7 +1128,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
 
       {/* Edit Team Leadership Dialog */}
       <Dialog open={!!editingTeamLeadership} onOpenChange={(open) => !open && setEditingTeamLeadership(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-primary" />
@@ -1136,7 +1136,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
             </DialogTitle>
           </DialogHeader>
           {editingTeamLeadership && (
-            <div className="space-y-4">
+            <div className="space-y-4 py-2">
               <div className={`flex items-center gap-2 p-3 rounded-lg ${
                 editingTeamLeadership.team_name === 'alfa' ? 'bg-team-alfa/20' :
                 editingTeamLeadership.team_name === 'bravo' ? 'bg-team-bravo/20' :
@@ -1171,7 +1171,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                   className="uppercase"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Telefone</Label>
                   <Input
@@ -1200,11 +1200,11 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingTeamLeadership(null)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2 pt-4">
+            <Button variant="outline" onClick={() => setEditingTeamLeadership(null)} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button onClick={handleSaveTeamLeadership} disabled={savingLeadership}>
+            <Button onClick={handleSaveTeamLeadership} disabled={savingLeadership} className="w-full sm:w-auto">
               {savingLeadership ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>
