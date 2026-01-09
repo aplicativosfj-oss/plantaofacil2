@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePlantaoTheme } from '@/contexts/PlantaoThemeContext';
-import { usePlantaoEffects } from '@/hooks/usePlantaoEffects';
+import { useGlobalSound } from '@/hooks/useGlobalSound';
 import { 
   Shield, Star, Target, Crosshair, Flame, Siren, Truck, AlertTriangle,
   Ambulance, HeartPulse, Stethoscope, Activity, Lock, KeyRound, ShieldAlert,
   Car, Route, CircleAlert, Eye, Radar, ScanEye, Cctv, Building2, UserRoundCheck, 
-  MapPin, BadgeCheck, Ban, CheckCircle, Fingerprint, Zap, LucideIcon
+  MapPin, BadgeCheck, Ban, CheckCircle, Fingerprint, Zap, Radio, LucideIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +15,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Shield, Star, Target, Crosshair, Flame, Siren, Truck, AlertTriangle,
   Ambulance, HeartPulse, Stethoscope, Activity, Lock, KeyRound, ShieldAlert,
   Car, Route, CircleAlert, Eye, Radar, ScanEye, Cctv, Building2, UserRoundCheck, 
-  MapPin, BadgeCheck, Zap
+  MapPin, BadgeCheck, Zap, Radio
 };
 
 interface TeamData {
@@ -38,6 +38,52 @@ interface StyledTeamButtonProps {
   onTeamClick: (value: 'alfa' | 'bravo' | 'charlie' | 'delta') => void;
 }
 
+// Security-themed visual effects for each team
+const getTeamEffects = (teamValue: string) => {
+  switch (teamValue) {
+    case 'alfa':
+      return {
+        bgPattern: 'radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%)',
+        accentColor: '#3b82f6',
+        pulseColor: 'rgba(59, 130, 246, 0.4)',
+        icon: Shield,
+        effectType: 'shield', // Shield pulse effect
+      };
+    case 'bravo':
+      return {
+        bgPattern: 'radial-gradient(circle at 20% 80%, rgba(245, 158, 11, 0.15) 0%, transparent 50%)',
+        accentColor: '#f59e0b',
+        pulseColor: 'rgba(245, 158, 11, 0.4)',
+        icon: Star,
+        effectType: 'flash', // Flash/alert effect
+      };
+    case 'charlie':
+      return {
+        bgPattern: 'radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.15) 0%, transparent 50%)',
+        accentColor: '#22c55e',
+        pulseColor: 'rgba(34, 197, 94, 0.4)',
+        icon: Target,
+        effectType: 'radar', // Radar sweep effect
+      };
+    case 'delta':
+      return {
+        bgPattern: 'radial-gradient(circle at 100% 100%, rgba(239, 68, 68, 0.15) 0%, transparent 50%)',
+        accentColor: '#ef4444',
+        pulseColor: 'rgba(239, 68, 68, 0.4)',
+        icon: Crosshair,
+        effectType: 'siren', // Siren/emergency effect
+      };
+    default:
+      return {
+        bgPattern: '',
+        accentColor: '#3b82f6',
+        pulseColor: 'rgba(59, 130, 246, 0.4)',
+        icon: Shield,
+        effectType: 'shield',
+      };
+  }
+};
+
 const StyledTeamButton = ({ 
   team, 
   index, 
@@ -47,44 +93,135 @@ const StyledTeamButton = ({
   isAutoLogging, 
   onTeamClick 
 }: StyledTeamButtonProps) => {
-  const { themeConfig, playSound, soundEnabled } = usePlantaoTheme();
-  const { effectsEnabled } = usePlantaoEffects();
+  const { themeConfig } = usePlantaoTheme();
+  const { playClick } = useGlobalSound();
   const [isPressed, setIsPressed] = useState(false);
   const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([]);
   const [showGlow, setShowGlow] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   
   // Get team icon from theme
   const iconName = themeConfig.teamIcons[team.value];
   const TeamIcon = ICON_MAP[iconName] || Shield;
+  const teamEffects = getTeamEffects(team.value);
 
   const handlePress = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (isBlocked || isAutoLogging) return;
 
     // Play click sound
-    if (soundEnabled) {
-      playSound('click');
-    }
+    playClick();
 
     // Visual effects
-    if (effectsEnabled) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const newRipple = { x, y, id: Date.now() };
-      
-      setRipples(prev => [...prev, newRipple]);
-      setIsPressed(true);
-      setShowGlow(true);
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const newRipple = { x, y, id: Date.now() };
+    
+    setRipples(prev => [...prev, newRipple]);
+    setIsPressed(true);
+    setShowGlow(true);
 
-      setTimeout(() => {
-        setRipples(prev => prev.filter(r => r.id !== newRipple.id));
-      }, 700);
+    setTimeout(() => {
+      setRipples(prev => prev.filter(r => r.id !== newRipple.id));
+    }, 700);
 
-      setTimeout(() => setIsPressed(false), 120);
-      setTimeout(() => setShowGlow(false), 300);
-    }
+    setTimeout(() => setIsPressed(false), 120);
+    setTimeout(() => setShowGlow(false), 300);
 
     onTeamClick(team.value);
+  };
+
+  // Team-specific animated elements
+  const renderTeamEffect = () => {
+    if (!isHovered && !isUserTeam) return null;
+
+    switch (teamEffects.effectType) {
+      case 'shield':
+        return (
+          <motion.div
+            className="absolute top-2 right-2 pointer-events-none"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 0.6 }}
+            exit={{ scale: 0, opacity: 0 }}
+          >
+            <motion.div
+              animate={{ 
+                boxShadow: [
+                  `0 0 0 0 ${teamEffects.pulseColor}`,
+                  `0 0 0 8px transparent`,
+                ],
+              }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="w-6 h-6 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: teamEffects.accentColor + '20' }}
+            >
+              <Shield className="w-3 h-3" style={{ color: teamEffects.accentColor }} />
+            </motion.div>
+          </motion.div>
+        );
+      case 'flash':
+        return (
+          <motion.div
+            className="absolute top-2 right-2 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              animate={{ 
+                opacity: [0.4, 1, 0.4],
+                scale: [0.9, 1.1, 0.9],
+              }}
+              transition={{ duration: 0.8, repeat: Infinity }}
+            >
+              <Zap className="w-4 h-4" style={{ color: teamEffects.accentColor }} />
+            </motion.div>
+          </motion.div>
+        );
+      case 'radar':
+        return (
+          <motion.div
+            className="absolute top-2 right-2 pointer-events-none overflow-hidden w-6 h-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.7 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="absolute inset-0"
+              style={{
+                background: `conic-gradient(from 0deg, transparent 0%, ${teamEffects.accentColor}40 10%, transparent 20%)`,
+              }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+            />
+            <div 
+              className="absolute inset-0 rounded-full border"
+              style={{ borderColor: teamEffects.accentColor + '40' }}
+            />
+          </motion.div>
+        );
+      case 'siren':
+        return (
+          <motion.div
+            className="absolute top-2 right-2 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              animate={{ 
+                backgroundColor: [teamEffects.accentColor + '40', teamEffects.accentColor + '80', teamEffects.accentColor + '40'],
+              }}
+              transition={{ duration: 0.5, repeat: Infinity }}
+              className="w-4 h-4 rounded-full flex items-center justify-center"
+            >
+              <Radio className="w-2.5 h-2.5 text-white" />
+            </motion.div>
+          </motion.div>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -109,6 +246,8 @@ const StyledTeamButton = ({
         transition: { type: 'spring', stiffness: 400, damping: 20 }
       } : undefined}
       whileTap={!isBlocked ? { scale: 0.96 } : undefined}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
       onClick={handlePress}
       disabled={isAutoLogging}
       className={cn(
@@ -127,6 +266,17 @@ const StyledTeamButton = ({
         backdropFilter: 'blur(12px)',
       }}
     >
+      {/* Team-specific background pattern */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-60"
+        style={{ background: teamEffects.bgPattern }}
+      />
+
+      {/* Team-specific animated effect */}
+      <AnimatePresence>
+        {renderTeamEffect()}
+      </AnimatePresence>
+
       {/* Ambient glow effect on press */}
       <AnimatePresence>
         {showGlow && (
@@ -135,11 +285,11 @@ const StyledTeamButton = ({
             animate={{ opacity: 0.6, scale: 1.2 }}
             exit={{ opacity: 0, scale: 1.4 }}
             transition={{ duration: 0.3 }}
-            className={cn(
-              'absolute inset-0 rounded-2xl pointer-events-none',
-              `bg-gradient-to-r ${team.color}`
-            )}
-            style={{ filter: 'blur(20px)' }}
+            className="absolute inset-0 rounded-2xl pointer-events-none"
+            style={{ 
+              background: `radial-gradient(circle, ${teamEffects.accentColor}40 0%, transparent 70%)`,
+              filter: 'blur(20px)' 
+            }}
           />
         )}
       </AnimatePresence>
@@ -153,11 +303,12 @@ const StyledTeamButton = ({
             animate={{ scale: 5, opacity: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.7, ease: 'easeOut' }}
-            style={{ left: ripple.x, top: ripple.y }}
-            className={cn(
-              'absolute w-12 h-12 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none',
-              `bg-gradient-to-r ${team.color}`
-            )}
+            style={{ 
+              left: ripple.x, 
+              top: ripple.y,
+              backgroundColor: teamEffects.accentColor,
+            }}
+            className="absolute w-12 h-12 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
           />
         ))}
       </AnimatePresence>
@@ -170,18 +321,14 @@ const StyledTeamButton = ({
           scale: isPressed ? 1.05 : 1
         }}
         transition={{ duration: 0.1 }}
-        className={cn(
-          'absolute inset-0 rounded-2xl pointer-events-none',
-          `bg-gradient-to-br ${team.color}`
-        )}
+        className="absolute inset-0 rounded-2xl pointer-events-none"
+        style={{ backgroundColor: teamEffects.accentColor }}
       />
 
       {/* Left gradient bar with pulse animation */}
       <motion.div 
-        className={cn(
-          'absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl',
-          `bg-gradient-to-b ${team.color}`
-        )}
+        className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl"
+        style={{ backgroundColor: teamEffects.accentColor }}
         animate={{ 
           width: isPressed ? '6px' : '6px',
           opacity: isUserTeam ? [0.8, 1, 0.8] : 0.9
@@ -205,12 +352,8 @@ const StyledTeamButton = ({
       <div className="flex items-center gap-3 pl-3 relative z-10">
         {/* Icon container with animated background */}
         <motion.div 
-          className={cn(
-            'relative p-2.5 rounded-xl shadow-lg',
-            isBlocked 
-              ? 'bg-muted/20' 
-              : `bg-gradient-to-br ${team.color}`
-          )}
+          className="relative p-2.5 rounded-xl shadow-lg"
+          style={{ backgroundColor: isBlocked ? 'hsl(var(--muted)/0.2)' : teamEffects.accentColor }}
           animate={{ 
             scale: isPressed ? 0.85 : 1,
             rotate: isPressed ? -8 : 0
@@ -223,9 +366,8 @@ const StyledTeamButton = ({
               className="absolute inset-0 rounded-xl"
               animate={{ 
                 boxShadow: [
-                  '0 0 0 0 hsl(var(--primary)/0.4)',
-                  '0 0 0 6px hsl(var(--primary)/0)',
-                  '0 0 0 0 hsl(var(--primary)/0.4)'
+                  `0 0 0 0 ${teamEffects.pulseColor}`,
+                  `0 0 0 8px transparent`,
                 ]
               }}
               transition={{ duration: 2, repeat: Infinity }}
@@ -298,18 +440,16 @@ const StyledTeamButton = ({
 
       {/* Hover gradient overlay */}
       <motion.div
-        className={cn(
-          'absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none',
-          `bg-gradient-to-t from-transparent via-transparent to-white/5`
-        )}
+        className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
+        style={{
+          background: `linear-gradient(to top, transparent, ${teamEffects.accentColor}10)`,
+        }}
       />
 
       {/* Corner accent on hover */}
       <motion.div
-        className={cn(
-          'absolute -bottom-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-0 group-hover:opacity-40 transition-opacity pointer-events-none',
-          `bg-gradient-to-br ${team.color}`
-        )}
+        className="absolute -bottom-6 -right-6 w-20 h-20 rounded-full blur-2xl opacity-0 group-hover:opacity-40 transition-opacity pointer-events-none"
+        style={{ backgroundColor: teamEffects.accentColor }}
       />
     </motion.button>
   );

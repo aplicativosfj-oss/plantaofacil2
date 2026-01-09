@@ -5,6 +5,7 @@ import { usePlantaoTheme } from '@/contexts/PlantaoThemeContext';
 import { useBiometricAuth } from '@/hooks/useBiometricAuth';
 import { useAgentCpfValidation, useAgentRegistrationValidation } from '@/hooks/useAgentValidation';
 import { usePlantaoEffects } from '@/hooks/usePlantaoEffects';
+import { useGlobalSound } from '@/hooks/useGlobalSound';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,12 +17,13 @@ import { Switch } from '@/components/ui/switch';
 import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar, Flame, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, KeyRound, ShieldAlert, Car, Route, CircleAlert, Radar, ScanEye, Cctv, Building2, UserRoundCheck, BadgeCheck, RotateCcw, Settings, Sparkles, Volume2, VolumeX, icons as LucideIcons, LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 import plantaoBg from '@/assets/plantao-bg.png';
+import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
 import ThemeSelector from '@/components/plantao/ThemeSelector';
 import VideoSplash from '@/components/plantao/VideoSplash';
 import StyledTeamButton from '@/components/plantao/StyledTeamButton';
+import AnimatedPlantaoLogo from '@/components/plantao/AnimatedPlantaoLogo';
 
 
 // Saved credentials type
@@ -316,7 +318,8 @@ const AlertPulse = () => (
 const PlantaoHome = () => {
   const { signIn, signInMaster, signUp, isLoading, agent } = usePlantaoAuth();
   const { themeConfig, soundEnabled, setSoundEnabled, playSound } = usePlantaoTheme();
-  const { effectsEnabled, toggleEffects, playClickSound, soundEnabled: effectsSoundEnabled, toggleSound } = usePlantaoEffects();
+  const { effectsEnabled, toggleEffects, soundEnabled: effectsSoundEnabled, toggleSound } = usePlantaoEffects();
+  const { playClick } = useGlobalSound();
   const { isSupported: biometricSupported, isRegistered: biometricRegistered, authenticateWithBiometric, registerBiometric } = useBiometricAuth();
   const navigate = useNavigate();
   const [showSplash, setShowSplash] = useState(() => {
@@ -721,7 +724,7 @@ const PlantaoHome = () => {
       {/* About Button */}
       <button
         onClick={() => {
-          playClickSound();
+          playClick();
           setShowAbout(true);
         }}
         className="fixed bottom-4 left-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/60 hover:bg-muted/80 text-muted-foreground hover:text-foreground text-xs transition-all duration-300 backdrop-blur-sm"
@@ -776,7 +779,7 @@ const PlantaoHome = () => {
                     onClick={() => {
                       toggleSound();
                       if (!effectsSoundEnabled) {
-                        playClickSound();
+                        playClick();
                       }
                     }}
                     whileHover={{ scale: 1.1 }}
@@ -798,7 +801,7 @@ const PlantaoHome = () => {
                   <ThemeSelector 
                     trigger={
                       <button 
-                        onClick={playClickSound}
+                        onClick={playClick}
                         className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 hover:bg-muted transition-colors hover:scale-105 active:scale-95 duration-200"
                       >
                         <Palette className="w-4 h-4 text-primary" />
@@ -811,7 +814,7 @@ const PlantaoHome = () => {
                   {savedCredentials && (
                     <motion.button
                       onClick={() => {
-                        playClickSound();
+                        playClick();
                         handleResetCredentials();
                       }}
                       whileHover={{ scale: effectsEnabled ? 1.1 : 1 }}
@@ -826,7 +829,7 @@ const PlantaoHome = () => {
                   {/* Admin Access Button */}
                   <motion.button
                     onClick={() => {
-                      playClickSound();
+                      playClick();
                       setShowMasterLogin(true);
                       setSelectedTeam(null);
                       setShowAuthPanel(true);
@@ -848,28 +851,8 @@ const PlantaoHome = () => {
 
             {/* Main Content - Moved Up */}
             <main className="flex-1 flex flex-col items-center justify-start pt-2 px-4">
-              {/* Logo + Title Combined */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="relative mb-3 text-center"
-              >
-                {/* Efeito de brilho suave */}
-                <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
-                
-                <img 
-                  src={plantaoLogo} 
-                  alt="PlantãoPro" 
-                  className="relative h-24 md:h-32 w-auto object-contain drop-shadow-2xl mx-auto"
-                />
-                <h1 className="text-xl md:text-2xl font-display font-bold text-foreground tracking-wider mt-2">
-                  PLANTÃO<span className="text-primary">PRO</span>
-                </h1>
-                <p className="text-muted-foreground text-[10px] font-mono uppercase tracking-widest mt-0.5">
-                  Gestão de Plantões • Segurança
-                </p>
-              </motion.div>
+              {/* Animated Logo Component */}
+              <AnimatedPlantaoLogo />
 
               {/* Teams Grid - Larger Buttons */}
               <motion.div
