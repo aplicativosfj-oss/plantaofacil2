@@ -7,7 +7,8 @@ const SOUND_KEY = 'plantao_sound_enabled';
 export const usePlantaoEffects = () => {
   const [effectsEnabled, setEffectsEnabled] = useState(() => {
     const stored = localStorage.getItem(EFFECTS_KEY);
-    return stored !== 'false'; // enabled by default
+    // Desabilitado por padrão para carregamento inicial mais rápido
+    return stored === 'true';
   });
 
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -17,12 +18,20 @@ export const usePlantaoEffects = () => {
 
   const clickAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Pre-load click sound
+  // Só cria/precarrega áudio quando som estiver habilitado
   useEffect(() => {
-    clickAudioRef.current = new Audio('/audio/click.mp3');
-    clickAudioRef.current.volume = 0.3;
-    clickAudioRef.current.preload = 'auto';
-  }, []);
+    if (!soundEnabled) {
+      clickAudioRef.current = null;
+      return;
+    }
+    const audio = new Audio('/audio/click.mp3');
+    audio.volume = 0.3;
+    audio.preload = 'auto';
+    clickAudioRef.current = audio;
+    return () => {
+      clickAudioRef.current = null;
+    };
+  }, [soundEnabled]);
 
   useEffect(() => {
     localStorage.setItem(EFFECTS_KEY, String(effectsEnabled));
