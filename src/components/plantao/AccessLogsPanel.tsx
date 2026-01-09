@@ -182,7 +182,7 @@ const AccessLogsPanel = () => {
       {onlineAgents.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
+            <CardTitle className="panel-submenu-title flex items-center gap-2 text-base sm:text-lg font-semibold">
               <Activity className="w-5 h-5 text-green-500" />
               Usuários Online
             </CardTitle>
@@ -214,7 +214,7 @@ const AccessLogsPanel = () => {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
+            <CardTitle className="panel-submenu-title flex items-center gap-2 text-base sm:text-lg font-semibold">
               <LogIn className="w-5 h-5 text-primary" />
               Registro de Acessos
             </CardTitle>

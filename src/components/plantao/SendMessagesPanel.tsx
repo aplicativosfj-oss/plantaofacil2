@@ -353,7 +353,7 @@ const SendMessagesPanel = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <MessageCircle className="w-6 h-6 text-primary" />
-          <h2 className="text-xl font-bold text-foreground drop-shadow-none">Mensagens</h2>
+          <h2 className="panel-submenu-title text-base sm:text-lg font-semibold">Mensagens</h2>
         </div>
         <Button onClick={() => setShowComposeDialog(true)} className="gap-2">
           <Send className="w-4 h-4" />
@@ -423,7 +423,7 @@ const SendMessagesPanel = () => {
       {/* Sent Messages History */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground">
+          <CardTitle className="panel-submenu-title flex items-center gap-2 text-base sm:text-lg font-semibold">
             <MessageCircle className="w-5 h-5 text-primary" />
             Histórico de Mensagens
           </CardTitle>

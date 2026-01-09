@@ -110,6 +110,21 @@
     }
   }
 
+  /* ==========================================================
+     Títulos de “submenus”/seções (painéis)
+     - reduz o “branco estourado”
+     - adiciona contorno sutil (sem efeito neon)
+     - força fonte do corpo para máxima legibilidade
+     ========================================================== */
+  .panel-submenu-title {
+    font-family: var(--font-body);
+    letter-spacing: 0.08em;
+    color: hsl(var(--foreground) / 0.86);
+    -webkit-text-stroke: 0.35px hsl(var(--background) / 0.45);
+    /* fallback (menos “borrado” que glow): */
+    text-shadow: 0 1px 0 hsl(var(--background) / 0.55);
+  }
+
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: var(--gradient-primary);
