@@ -444,25 +444,9 @@ const PlantaoHome = () => {
           navigate('/dashboard');
         }
       } else {
-        // Different team - BLOCK ACCESS and show which team they belong to
+        // Different team - BLOCK ACCESS - show inline message via StyledTeamButton
         setBlockedTeamClicked(teamValue);
-        setTimeout(() => setBlockedTeamClicked(null), 400);
-        
-        const teamLabels: Record<string, string> = {
-          alfa: 'ALFA (Força Tática)',
-          bravo: 'BRAVO (Operações Especiais)',
-          charlie: 'CHARLIE (Pronta Resposta)',
-          delta: 'DELTA (Intervenção Rápida)'
-        };
-        
-        toast.error(
-          <div className="space-y-1">
-            <p className="font-bold">⚠️ Acesso Negado!</p>
-            <p>Você pertence à equipe: <span className="font-bold text-amber-400">{teamLabels[savedCredentials.team]}</span></p>
-            <p className="text-xs opacity-80">Para trocar de equipe, acesse seu painel e use a opção de transferência.</p>
-          </div>,
-          { duration: 6000 }
-        );
+        setTimeout(() => setBlockedTeamClicked(null), 3000); // Keep message visible for 3 seconds
       }
     } else {
       // No saved credentials - show login for this team
@@ -873,18 +857,27 @@ const PlantaoHome = () => {
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {TEAMS.map((team, index) => (
-                    <StyledTeamButton
-                      key={team.value}
-                      team={team}
-                      index={index}
-                      isUserTeam={savedCredentials?.team === team.value}
-                      isBlocked={false}
-                      isBlockedClicked={blockedTeamClicked === team.value}
-                      isAutoLogging={isAutoLogging}
-                      onTeamClick={handleTeamClick}
-                    />
-                  ))}
+                  {TEAMS.map((team, index) => {
+                    const teamLabels: Record<string, string> = {
+                      alfa: 'ALFA',
+                      bravo: 'BRAVO',
+                      charlie: 'CHARLIE',
+                      delta: 'DELTA'
+                    };
+                    return (
+                      <StyledTeamButton
+                        key={team.value}
+                        team={team}
+                        index={index}
+                        isUserTeam={savedCredentials?.team === team.value}
+                        isBlocked={false}
+                        isBlockedClicked={blockedTeamClicked === team.value}
+                        isAutoLogging={isAutoLogging}
+                        userTeamLabel={savedCredentials ? teamLabels[savedCredentials.team] : undefined}
+                        onTeamClick={handleTeamClick}
+                      />
+                    );
+                  })}
                 </div>
                 
                 {/* Loading indicator for auto-login */}
