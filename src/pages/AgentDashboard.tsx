@@ -11,7 +11,7 @@ import {
   Radio, Siren, Target, Crosshair, FileText, Briefcase,
   Banknote, Repeat, CalendarDays, Building, Moon
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import TeamSelector from '@/components/plantao/TeamSelector';
@@ -99,6 +99,8 @@ const AgentDashboard = () => {
   const [hasShiftSchedule, setHasShiftSchedule] = useState<boolean | null>(null);
   const [isLicenseExpired, setIsLicenseExpired] = useState(false);
   const [nextEvent, setNextEvent] = useState<{ date: Date; type: 'plantao' | 'folga' | 'bh' | 'permuta'; description: string } | null>(null);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [newMessagePopup, setNewMessagePopup] = useState<{ sender: string; content: string } | null>(null);
 
   // Helper to handle panel change with sound
   const handlePanelChange = (panel: typeof activePanel) => {
@@ -367,6 +369,79 @@ const AgentDashboard = () => {
     fetchPendingSwaps();
   }, [agent?.id]);
 
+  // Track unread messages and show popup for new messages
+  useEffect(() => {
+    if (!agent?.id) return;
+
+    const lastReadKey = `plantao_last_read_${agent.id}`;
+    const lastReadTime = localStorage.getItem(lastReadKey) || new Date(0).toISOString();
+
+    const fetchUnreadMessages = async () => {
+      const { count } = await supabase
+        .from('chat_messages')
+        .select('*', { count: 'exact', head: true })
+        .neq('sender_id', agent.id)
+        .gt('created_at', lastReadTime);
+
+      setUnreadMessages(count || 0);
+    };
+
+    fetchUnreadMessages();
+
+    // Subscribe to new messages
+    const channel = supabase
+      .channel('chat-messages-notifications')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages',
+      }, async (payload) => {
+        const newMessage = payload.new as any;
+        
+        // Don't notify for own messages
+        if (newMessage.sender_id === agent.id) return;
+        
+        // Don't notify if chat is already open
+        if (showGlobalChat || showChat) return;
+
+        // Fetch sender info
+        const { data: senderData } = await supabase
+          .from('agents')
+          .select('full_name')
+          .eq('id', newMessage.sender_id)
+          .single();
+
+        // Show popup
+        const senderName = senderData?.full_name || 'Agente';
+        const content = newMessage.content.length > 50 
+          ? newMessage.content.substring(0, 50) + '...' 
+          : newMessage.content;
+        
+        setNewMessagePopup({ sender: senderName, content });
+        
+        // Auto-hide popup after 5 seconds
+        setTimeout(() => {
+          setNewMessagePopup(null);
+        }, 5000);
+
+        // Update unread count
+        fetchUnreadMessages();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [agent?.id, showGlobalChat, showChat]);
+
+  // Mark messages as read when opening chat
+  const handleOpenChat = () => {
+    const lastReadKey = `plantao_last_read_${agent?.id}`;
+    localStorage.setItem(lastReadKey, new Date().toISOString());
+    setUnreadMessages(0);
+    setShowGlobalChat(true);
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -426,6 +501,39 @@ const AgentDashboard = () => {
       <TeamChat isOpen={showChat} onClose={() => setShowChat(false)} />
       <GlobalChat isOpen={showGlobalChat} onClose={() => setShowGlobalChat(false)} />
 
+      {/* New Message Popup */}
+      <AnimatePresence>
+        {newMessagePopup && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: -20, x: '-50%' }}
+            className="fixed top-16 left-1/2 z-[100] cursor-pointer"
+            onClick={() => {
+              setNewMessagePopup(null);
+              handleOpenChat();
+            }}
+          >
+            <div className="bg-gradient-to-br from-card via-card to-card/95 border border-green-500/40 rounded-xl shadow-2xl shadow-black/30 backdrop-blur-xl overflow-hidden max-w-xs">
+              <div className="h-0.5 bg-gradient-to-r from-green-500 via-green-400 to-green-500" />
+              <div className="p-3 flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-green-500/20 shrink-0">
+                  <MessageCircle className="w-4 h-4 text-green-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground truncate">
+                    {newMessagePopup.sender}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
+                    {newMessagePopup.content}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur">
         <div className="container mx-auto px-2 sm:px-4 py-2">
@@ -453,10 +561,15 @@ const AgentDashboard = () => {
               <SoundButton
                 variant="ghost"
                 size="icon"
-                onClick={() => setShowGlobalChat(true)}
-                className="h-7 w-7"
+                onClick={handleOpenChat}
+                className="relative h-7 w-7"
               >
                 <MessageCircle className="w-4 h-4" />
+                {unreadMessages > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 text-white text-[10px] rounded-full flex items-center justify-center animate-pulse">
+                    {unreadMessages > 9 ? '9+' : unreadMessages}
+                  </span>
+                )}
               </SoundButton>
               <OnlineIndicator compact />
               <SoundButton
