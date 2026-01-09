@@ -100,6 +100,17 @@ interface UnitLeadership {
   is_active: boolean;
 }
 
+interface TeamLeadership {
+  id: string;
+  team_name: string;
+  position_type: string;
+  full_name: string | null;
+  phone: string | null;
+  email: string | null;
+  notes: string | null;
+  is_active: boolean;
+}
+
 const getTeamColor = (team: string | null) => {
   switch (team) {
     case 'alfa': return 'bg-team-alfa text-primary-foreground';
@@ -129,7 +140,9 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
   const [licensePayments, setLicensePayments] = useState<LicensePaymentRecord[]>([]);
   const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenue[]>([]);
   const [unitLeadership, setUnitLeadership] = useState<UnitLeadership[]>([]);
+  const [teamLeadership, setTeamLeadership] = useState<TeamLeadership[]>([]);
   const [editingLeadership, setEditingLeadership] = useState<UnitLeadership | null>(null);
+  const [editingTeamLeadership, setEditingTeamLeadership] = useState<TeamLeadership | null>(null);
   const [leadershipForm, setLeadershipForm] = useState({ full_name: '', phone: '', email: '', notes: '' });
   const [savingLeadership, setSavingLeadership] = useState(false);
   
@@ -257,6 +270,14 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
         .order('unit_name');
 
       setUnitLeadership((leadershipData || []) as UnitLeadership[]);
+
+      // Fetch team leadership (chefe de equipe e apoio)
+      const { data: teamLeadershipData } = await supabase
+        .from('team_leadership')
+        .select('*')
+        .order('team_name');
+
+      setTeamLeadership((teamLeadershipData || []) as TeamLeadership[]);
 
       // Fetch shifts count
       const { data: shiftsData } = await supabase
@@ -542,6 +563,33 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
     } catch (err) {
       console.error(err);
       toast.error('Erro ao atualizar liderança');
+    } finally {
+      setSavingLeadership(false);
+    }
+  };
+
+  // Team Leadership management functions
+  const handleSaveTeamLeadership = async () => {
+    if (!editingTeamLeadership) return;
+    setSavingLeadership(true);
+    try {
+      const { error } = await supabase
+        .from('team_leadership')
+        .update({
+          full_name: leadershipForm.full_name || null,
+          phone: leadershipForm.phone || null,
+          email: leadershipForm.email || null,
+          notes: leadershipForm.notes || null,
+        })
+        .eq('id', editingTeamLeadership.id);
+
+      if (error) throw error;
+      toast.success('Liderança de equipe atualizada!');
+      setEditingTeamLeadership(null);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao atualizar liderança de equipe');
     } finally {
       setSavingLeadership(false);
     }
@@ -1078,6 +1126,91 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Team Leadership Dialog */}
+      <Dialog open={!!editingTeamLeadership} onOpenChange={(open) => !open && setEditingTeamLeadership(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-primary" />
+              Editar Liderança de Equipe
+            </DialogTitle>
+          </DialogHeader>
+          {editingTeamLeadership && (
+            <div className="space-y-4">
+              <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                editingTeamLeadership.team_name === 'alfa' ? 'bg-team-alfa/20' :
+                editingTeamLeadership.team_name === 'bravo' ? 'bg-team-bravo/20' :
+                editingTeamLeadership.team_name === 'charlie' ? 'bg-team-charlie/20' :
+                'bg-team-delta/20'
+              }`}>
+                {editingTeamLeadership.position_type === 'chefe_equipe' ? (
+                  <Crown className="w-5 h-5 text-amber-500" />
+                ) : (
+                  <UserCog className="w-5 h-5 text-blue-500" />
+                )}
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase">
+                    {editingTeamLeadership.position_type === 'chefe_equipe' ? 'Chefe de Equipe' : 'Apoio'}
+                  </p>
+                  <p className={`font-medium capitalize ${
+                    editingTeamLeadership.team_name === 'alfa' ? 'text-team-alfa' :
+                    editingTeamLeadership.team_name === 'bravo' ? 'text-team-bravo' :
+                    editingTeamLeadership.team_name === 'charlie' ? 'text-team-charlie' :
+                    'text-team-delta'
+                  }`}>
+                    Equipe {editingTeamLeadership.team_name}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Nome Completo</Label>
+                <Input
+                  value={leadershipForm.full_name}
+                  onChange={(e) => setLeadershipForm({ ...leadershipForm, full_name: e.target.value.toUpperCase() })}
+                  placeholder="Nome do ocupante do cargo"
+                  className="uppercase"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Telefone</Label>
+                  <Input
+                    value={leadershipForm.phone}
+                    onChange={(e) => setLeadershipForm({ ...leadershipForm, phone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>E-mail</Label>
+                  <Input
+                    value={leadershipForm.email}
+                    onChange={(e) => setLeadershipForm({ ...leadershipForm, email: e.target.value })}
+                    placeholder="email@exemplo.com"
+                    type="email"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Observações</Label>
+                <Input
+                  value={leadershipForm.notes}
+                  onChange={(e) => setLeadershipForm({ ...leadershipForm, notes: e.target.value })}
+                  placeholder="Observações adicionais"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingTeamLeadership(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveTeamLeadership} disabled={savingLeadership}>
+              {savingLeadership ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background">
         <div className="container mx-auto px-4 py-3">
@@ -1307,20 +1440,41 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {(['alfa', 'bravo', 'charlie', 'delta'] as const).map(team => (
-                      <div key={team} className={`p-4 rounded-lg ${getTeamColor(team)} shadow-lg`}>
-                        <p className="text-lg font-bold capitalize">{team}</p>
-                        <div className="mt-2 space-y-1">
-                          <p className="text-sm font-medium">
-                            {teamStats[team].count} agente(s)
-                          </p>
-                          <p className="text-sm font-medium">
-                            {teamStats[team].overtime.toFixed(1)}h BH
-                          </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {(['alfa', 'bravo', 'charlie', 'delta'] as const).map(team => {
+                      const chefe = teamLeadership.find(l => l.team_name === team && l.position_type === 'chefe_equipe');
+                      const apoio = teamLeadership.find(l => l.team_name === team && l.position_type === 'apoio');
+                      return (
+                        <div key={team} className={`p-4 rounded-lg ${getTeamColor(team)} shadow-lg`}>
+                          <p className="text-lg font-bold capitalize">{team}</p>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-sm font-medium">
+                              {teamStats[team].count} agente(s)
+                            </p>
+                            <p className="text-sm font-medium">
+                              {teamStats[team].overtime.toFixed(1)}h BH
+                            </p>
+                          </div>
+                          {/* Lideranças da equipe */}
+                          <div className="mt-3 pt-3 border-t border-white/20 space-y-1.5">
+                            <div className="flex items-center gap-1.5">
+                              <Crown className="w-3.5 h-3.5 opacity-80" />
+                              <span className="text-xs font-medium opacity-90">Chefe:</span>
+                              <span className="text-xs font-semibold truncate">
+                                {chefe?.full_name || <span className="opacity-60 italic">Não definido</span>}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <UserCog className="w-3.5 h-3.5 opacity-80" />
+                              <span className="text-xs font-medium opacity-90">Apoio:</span>
+                              <span className="text-xs font-semibold truncate">
+                                {apoio?.full_name || <span className="opacity-60 italic">Não definido</span>}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
@@ -1499,6 +1653,56 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                                     </p>
                                   </div>
                                 </div>
+
+                                {/* Liderança da Equipe do Agente */}
+                                {agent.current_team && (
+                                  <div className="px-4 pb-4">
+                                    <div className={`p-3 rounded-lg ${getTeamColor(agent.current_team)} bg-opacity-20 border border-border/30`}>
+                                      <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+                                        <Shield className="w-3.5 h-3.5" />
+                                        Liderança da Equipe {agent.current_team.charAt(0).toUpperCase() + agent.current_team.slice(1)}
+                                      </p>
+                                      <div className="grid grid-cols-2 gap-3">
+                                        {(() => {
+                                          const chefe = teamLeadership.find(l => l.team_name === agent.current_team && l.position_type === 'chefe_equipe');
+                                          const apoio = teamLeadership.find(l => l.team_name === agent.current_team && l.position_type === 'apoio');
+                                          return (
+                                            <>
+                                              <div>
+                                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                  <Crown className="w-3 h-3 text-amber-500" />
+                                                  Chefe de Equipe
+                                                </p>
+                                                <p className="text-sm font-semibold">
+                                                  {chefe?.full_name || <span className="text-muted-foreground italic">Não definido</span>}
+                                                </p>
+                                                {chefe?.phone && (
+                                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                    <Phone className="w-3 h-3" /> {chefe.phone}
+                                                  </p>
+                                                )}
+                                              </div>
+                                              <div>
+                                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                  <UserCog className="w-3 h-3 text-blue-500" />
+                                                  Apoio
+                                                </p>
+                                                <p className="text-sm font-semibold">
+                                                  {apoio?.full_name || <span className="text-muted-foreground italic">Não definido</span>}
+                                                </p>
+                                                {apoio?.phone && (
+                                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                    <Phone className="w-3 h-3" /> {apoio.phone}
+                                                  </p>
+                                                )}
+                                              </div>
+                                            </>
+                                          );
+                                        })()}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                                 
                                 {/* Agent Management Buttons */}
                                 <div className="p-4 pt-0 flex flex-wrap gap-2 border-t border-border/30 mt-4 pt-4">
@@ -1620,6 +1824,113 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                         </Button>
                       </div>
                     ))}
+                </CardContent>
+              </Card>
+
+              {/* Team Leadership - Chefes de Equipe e Apoios */}
+              <Card className="border-primary/30">
+                <CardHeader>
+                  <CardTitle className="panel-submenu-title flex items-center gap-2 text-base sm:text-lg font-semibold">
+                    <Shield className="w-5 h-5 text-primary" />
+                    Lideranças das Equipes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {(['alfa', 'bravo', 'charlie', 'delta'] as const).map(team => {
+                      const chefe = teamLeadership.find(l => l.team_name === team && l.position_type === 'chefe_equipe');
+                      const apoio = teamLeadership.find(l => l.team_name === team && l.position_type === 'apoio');
+                      return (
+                        <div key={team} className={`p-4 rounded-lg border ${
+                          team === 'alfa' ? 'border-team-alfa/50 bg-team-alfa/10' :
+                          team === 'bravo' ? 'border-team-bravo/50 bg-team-bravo/10' :
+                          team === 'charlie' ? 'border-team-charlie/50 bg-team-charlie/10' :
+                          'border-team-delta/50 bg-team-delta/10'
+                        }`}>
+                          <p className={`text-base font-bold capitalize mb-3 ${
+                            team === 'alfa' ? 'text-team-alfa' :
+                            team === 'bravo' ? 'text-team-bravo' :
+                            team === 'charlie' ? 'text-team-charlie' :
+                            'text-team-delta'
+                          }`}>
+                            Equipe {team}
+                          </p>
+                          
+                          {/* Chefe de Equipe */}
+                          <div className="mb-3 p-2 bg-card rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <Crown className="w-4 h-4 text-amber-500" />
+                                <span className="text-xs font-semibold text-muted-foreground">Chefe de Equipe</span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => {
+                                  if (chefe) {
+                                    setEditingTeamLeadership(chefe);
+                                    setLeadershipForm({
+                                      full_name: chefe.full_name || '',
+                                      phone: chefe.phone || '',
+                                      email: chefe.email || '',
+                                      notes: chefe.notes || ''
+                                    });
+                                  }
+                                }}
+                              >
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                            </div>
+                            <p className="text-sm font-semibold mt-1">
+                              {chefe?.full_name || <span className="text-muted-foreground italic text-xs">Não definido</span>}
+                            </p>
+                            {chefe?.phone && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                <Phone className="w-3 h-3" /> {chefe.phone}
+                              </p>
+                            )}
+                          </div>
+                          
+                          {/* Apoio */}
+                          <div className="p-2 bg-card rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <UserCog className="w-4 h-4 text-blue-500" />
+                                <span className="text-xs font-semibold text-muted-foreground">Apoio</span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => {
+                                  if (apoio) {
+                                    setEditingTeamLeadership(apoio);
+                                    setLeadershipForm({
+                                      full_name: apoio.full_name || '',
+                                      phone: apoio.phone || '',
+                                      email: apoio.email || '',
+                                      notes: apoio.notes || ''
+                                    });
+                                  }
+                                }}
+                              >
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                            </div>
+                            <p className="text-sm font-semibold mt-1">
+                              {apoio?.full_name || <span className="text-muted-foreground italic text-xs">Não definido</span>}
+                            </p>
+                            {apoio?.phone && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                <Phone className="w-3 h-3" /> {apoio.phone}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </CardContent>
               </Card>
 
