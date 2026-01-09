@@ -276,12 +276,12 @@ const AgentProfileDialog: React.FC<AgentProfileDialogProps> = ({
                 )}
               </div>
 
-              {/* CPF - Always read-only */}
+              {/* CPF - Only visible to the agent themselves (this dialog is only for the logged-in agent) */}
               <div className="bg-muted/30 rounded-lg p-4">
                 <div className="flex items-center gap-3">
                   <IdCard className="w-5 h-5 text-muted-foreground" />
                   <div>
-                    <p className="text-xs text-muted-foreground">CPF (não editável)</p>
+                    <p className="text-xs text-muted-foreground">CPF (visível apenas para você)</p>
                     <p className="font-medium font-mono">{formatCPF(agent.cpf)}</p>
                   </div>
                 </div>
