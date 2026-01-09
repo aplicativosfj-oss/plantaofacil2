@@ -30,8 +30,8 @@ const retryImport = <T extends { default: unknown }>(
   });
 };
 
-// PlantaoHome carrega de forma síncrona para abrir instantaneamente
-import PlantaoHome from "./pages/PlantaoHome";
+// Entrada ultra-rápida (carrega PlantaoHome em background)
+import PlantaoEntry from "./pages/PlantaoEntry";
 const AgentDashboard = lazy(() => retryImport(() => import("./pages/AgentDashboard")));
 const PlantaoMasterDashboard = lazy(() => retryImport(() => import("./pages/PlantaoMasterDashboard")));
 const Install = lazy(() => retryImport(() => import("./pages/Install")));
@@ -135,9 +135,6 @@ const App = () => {
     // Bloqueio de áudio HTML: evita qualquer “música/player” nos painéis.
     // Sons do app ficam apenas via WebAudio (cliques), e o vídeo de intro pode ter som.
     const originalPlay = HTMLMediaElement.prototype.play;
-
-    const isIntroSplash = (src: string) => src.includes('/video/intro-splash.mp4');
-
     const sanitizeMediaElement = (el: Element) => {
       try {
         const tag = (el.tagName || '').toUpperCase();
@@ -151,9 +148,8 @@ const App = () => {
         }
         if (tag === 'VIDEO') {
           const video = el as HTMLVideoElement;
-          const src = (video.currentSrc || (video as any).src || '').toString();
           try {
-            if (!video.controls && !isIntroSplash(src)) {
+            if (!video.controls) {
               video.muted = true;
               video.volume = 0;
             }
@@ -176,11 +172,11 @@ const App = () => {
           return Promise.resolve();
         }
 
-        // Mantém vídeos de fundo mudos, mas libera o vídeo da intro
+        // Mantém vídeos de fundo mudos
         if (tag === 'VIDEO') {
           try {
             const videoEl = this as HTMLVideoElement;
-            if (!videoEl.controls && !isIntroSplash(src)) {
+            if (!videoEl.controls) {
               videoEl.muted = true;
               videoEl.volume = 0;
             }
@@ -257,8 +253,7 @@ const App = () => {
                 <LazyErrorBoundary>
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
-                      {/* PlantaoHome carrega imediatamente (import síncrono) */}
-                      <Route path="/" element={<PlantaoHome />} />
+                      <Route path="/" element={<PlantaoEntry />} />
                       <Route path="/dashboard" element={<AgentDashboard />} />
                       <Route path="/master" element={<PlantaoMasterDashboard />} />
                       <Route path="/install" element={<Install />} />

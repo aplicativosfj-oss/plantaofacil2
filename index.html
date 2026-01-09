@@ -111,6 +111,36 @@
     <div id="root"></div>
     
     <script>
+      // App version bump: força limpar cache/SW quando mudar versão (remove restos de splash antigo)
+      (function () {
+        var APP_VERSION = '2026-01-09-2';
+        try {
+          var prev = localStorage.getItem('__app_version');
+          if (prev !== APP_VERSION) {
+            localStorage.setItem('__app_version', APP_VERSION);
+            if ('serviceWorker' in navigator || 'caches' in window) {
+              Promise.resolve()
+                .then(function () {
+                  if (!('serviceWorker' in navigator)) return;
+                  return navigator.serviceWorker.getRegistrations().then(function (regs) {
+                    return Promise.all(regs.map(function (r) { return r.unregister(); }));
+                  });
+                })
+                .then(function () {
+                  if (!('caches' in window)) return;
+                  return caches.keys().then(function (keys) {
+                    return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+                  });
+                })
+                .finally(function () {
+                  // Recarrega uma vez para pegar os arquivos novos
+                  window.location.reload();
+                });
+            }
+          }
+        } catch (e) {}
+      })();
+
       // Remove initial loader faster
       var loaderRemoved = false;
       function removeLoader() {
@@ -120,18 +150,20 @@
         if (loader) {
           loader.style.opacity = '0';
           loader.style.transition = 'opacity 0.15s';
-          setTimeout(function() { loader.remove(); }, 150);
+          setTimeout(function () {
+            loader.remove();
+          }, 150);
         }
       }
       // Remove on DOMContentLoaded (faster than load)
       document.addEventListener('DOMContentLoaded', removeLoader);
       // Fallback for load event
       window.addEventListener('load', removeLoader);
-      
+
       // Register service worker early
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js').catch(function() {});
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js').catch(function () {});
         });
       }
     </script>
