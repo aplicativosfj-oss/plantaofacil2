@@ -15,7 +15,7 @@ export default function PlantaoBootSplash({
   title = "PLANTÃO PRO",
   subtitle = "Carregando…",
   onComplete,
-  showVideo = true,
+  showVideo = false, // Video removed - always show splash screen
 }: Props) {
   const [videoEnded, setVideoEnded] = useState(!showVideo);
   const [videoError, setVideoError] = useState(false);
