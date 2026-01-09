@@ -103,6 +103,9 @@ const PageLoader = () => (
 const App = () => {
   // Clear expired caches on app start (defer para não travar o first paint)
   useEffect(() => {
+    // Remove o loader do index.html somente quando o React realmente montou.
+    (window as unknown as { __removeInitialLoader?: () => void }).__removeInitialLoader?.();
+
     const runIdle = (fn: () => void) => {
       const ric = (
         window as unknown as {
