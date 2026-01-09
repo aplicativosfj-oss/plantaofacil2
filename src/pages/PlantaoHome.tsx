@@ -683,22 +683,6 @@ const PlantaoHome = () => {
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 transition-none">
       <PlantaoAboutDialog isOpen={showAbout} onClose={() => setShowAbout(false)} />
 
-      {/* About Button - Top Left Professional */}
-      <motion.button
-        onClick={() => {
-          playClick();
-          setShowAbout(true);
-        }}
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className="fixed top-4 left-4 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 border border-primary/30 hover:border-primary/50 text-primary hover:text-primary backdrop-blur-md shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all duration-300"
-        title="Sobre o aplicativo"
-      >
-        <Info className="w-4 h-4" />
-        <span className="text-sm font-medium">Sobre</span>
-      </motion.button>
 
       {/* Background Effects (somente quando efeitos estiverem habilitados) */}
       {effectsEnabled && (
@@ -742,8 +726,7 @@ const PlantaoHome = () => {
             {/* Top HUD Bar */}
             <header className="py-3 px-4 border-b border-primary/20">
               <div className="container mx-auto flex items-center justify-between">
-                {/* Spacer for About button */}
-                <div className="w-24 md:w-28" />
+                <div /> {/* Empty spacer for balance */}
                 <HUDElement>
                   <span className="flex items-center gap-1">
                     {themeConfig.emoji} {themeConfig.name}
@@ -821,7 +804,18 @@ const PlantaoHome = () => {
                     <span className="text-xs font-medium text-green-400">Online</span>
                   </div>
                 </div>
-                <span className="text-xs text-muted-foreground">v1.0</span>
+                <div className="flex flex-col items-end gap-0.5">
+                  <span className="text-xs text-muted-foreground">v1.0</span>
+                  <button 
+                    onClick={() => {
+                      playClick();
+                      setShowAbout(true);
+                    }}
+                    className="text-[10px] text-muted-foreground/60 hover:text-primary transition-colors"
+                  >
+                    Sobre
+                  </button>
+                </div>
               </div>
             </header>
 
