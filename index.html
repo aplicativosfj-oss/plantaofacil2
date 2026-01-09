@@ -111,17 +111,22 @@
     <div id="root"></div>
     
     <script>
-      // Remove initial loader once app is ready
-      window.addEventListener('load', function() {
-        setTimeout(function() {
-          var loader = document.getElementById('initial-loader');
-          if (loader) {
-            loader.style.opacity = '0';
-            loader.style.transition = 'opacity 0.3s';
-            setTimeout(function() { loader.remove(); }, 300);
-          }
-        }, 100);
-      });
+      // Remove initial loader faster
+      var loaderRemoved = false;
+      function removeLoader() {
+        if (loaderRemoved) return;
+        loaderRemoved = true;
+        var loader = document.getElementById('initial-loader');
+        if (loader) {
+          loader.style.opacity = '0';
+          loader.style.transition = 'opacity 0.15s';
+          setTimeout(function() { loader.remove(); }, 150);
+        }
+      }
+      // Remove on DOMContentLoaded (faster than load)
+      document.addEventListener('DOMContentLoaded', removeLoader);
+      // Fallback for load event
+      window.addEventListener('load', removeLoader);
       
       // Register service worker early
       if ('serviceWorker' in navigator) {
