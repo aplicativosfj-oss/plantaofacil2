@@ -2708,6 +2708,7 @@ export type Database = {
       belongs_to_tenant: { Args: { check_tenant_id: string }; Returns: boolean }
       can_insert_profile: { Args: { _user_id: string }; Returns: boolean }
       check_expired_licenses: { Args: never; Returns: undefined }
+      cleanup_old_chat_messages: { Args: never; Returns: number }
       create_master_credential: {
         Args: {
           p_full_name?: string

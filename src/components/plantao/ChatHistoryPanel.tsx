@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { format } from 'date-fns';
+import { format, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   MessageSquare, Users, Globe, Shield, Star, Target, Crosshair, 
   User, Play, Pause, FileText, Volume2, ArrowLeft, Search,
-  Calendar, Filter, ChevronDown, Mail, MailOpen
+  Calendar, Filter, ChevronDown, Mail, MailOpen, Trash2, Clock, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +19,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ChatMessage {
   id: string;
@@ -159,6 +170,23 @@ const MessageContent: React.FC<{ content: string }> = ({ content }) => {
   return <span className="text-sm">{content}</span>;
 };
 
+// Time remaining component
+const TimeRemaining: React.FC<{ createdAt: string }> = ({ createdAt }) => {
+  const hoursElapsed = differenceInHours(new Date(), new Date(createdAt));
+  const hoursRemaining = Math.max(0, 24 - hoursElapsed);
+  
+  if (hoursRemaining === 0) {
+    return <span className="text-destructive text-[10px]">Expirando...</span>;
+  }
+  
+  return (
+    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+      <Clock className="w-2.5 h-2.5" />
+      {hoursRemaining}h
+    </span>
+  );
+};
+
 const ChatHistoryPanel = ({ onBack, onOpenGlobalChat, onOpenTeamChat }: ChatHistoryPanelProps) => {
   const { agent } = usePlantaoAuth();
   const [activeTab, setActiveTab] = useState<'all' | 'sent' | 'received'>('all');
@@ -166,71 +194,86 @@ const ChatHistoryPanel = ({ onBack, onOpenGlobalChat, onOpenTeamChat }: ChatHist
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterChannel, setFilterChannel] = useState<'all' | 'general' | 'team'>('all');
+  const [deleteMessageId, setDeleteMessageId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Fetch messages
-  useEffect(() => {
+  const fetchMessages = async () => {
     if (!agent?.id) return;
+    
+    setIsLoading(true);
+    
+    // Filter messages less than 24 hours old
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .gte('created_at', twentyFourHoursAgo)
+      .order('created_at', { ascending: false })
+      .limit(200);
 
-    const fetchMessages = async () => {
-      setIsLoading(true);
-      
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(200);
-
-      if (error) {
-        console.error('Error fetching messages:', error);
-        setIsLoading(false);
-        return;
-      }
-
-      if (data) {
-        const senderIds = [...new Set(data.map(m => m.sender_id))];
-        const { data: senders } = await supabase
-          .from('agents')
-          .select('id, full_name, avatar_url, current_team')
-          .in('id', senderIds);
-
-        const sendersMap = new Map(senders?.map(s => [s.id, s]) || []);
-        
-        const messagesWithSenders = data.map(m => ({
-          ...m,
-          sender: sendersMap.get(m.sender_id)
-        })) as ChatMessage[];
-
-        setMessages(messagesWithSenders);
-      }
-      
+    if (error) {
+      console.error('Error fetching messages:', error);
       setIsLoading(false);
-    };
+      return;
+    }
 
+    if (data && data.length > 0) {
+      const senderIds = [...new Set(data.map(m => m.sender_id))];
+      const { data: senders } = await supabase
+        .from('agents')
+        .select('id, full_name, avatar_url, current_team')
+        .in('id', senderIds);
+
+      const sendersMap = new Map(senders?.map(s => [s.id, s]) || []);
+      
+      const messagesWithSenders = data.map(m => ({
+        ...m,
+        sender: sendersMap.get(m.sender_id)
+      })) as ChatMessage[];
+
+      setMessages(messagesWithSenders);
+    } else {
+      setMessages([]);
+    }
+    
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
     fetchMessages();
 
-    // Subscribe to new messages
+    // Subscribe to changes
     const channel = supabase
-      .channel(`chat-history-${agent.id}`)
+      .channel(`chat-history-${agent?.id}`)
       .on('postgres_changes', {
-        event: 'INSERT',
+        event: '*',
         schema: 'public',
         table: 'chat_messages'
       }, async (payload) => {
-        const newMsg = payload.new as ChatMessage;
+        if (payload.eventType === 'DELETE') {
+          setMessages(prev => prev.filter(m => m.id !== payload.old.id));
+          return;
+        }
         
-        const { data: sender } = await supabase
-          .from('agents')
-          .select('id, full_name, avatar_url, current_team')
-          .eq('id', newMsg.sender_id)
-          .single();
+        if (payload.eventType === 'INSERT') {
+          const newMsg = payload.new as ChatMessage;
+          
+          const { data: sender } = await supabase
+            .from('agents')
+            .select('id, full_name, avatar_url, current_team')
+            .eq('id', newMsg.sender_id)
+            .single();
 
-        const messageWithSender = { ...newMsg, sender };
-        
-        setMessages(prev => {
-          if (prev.some(m => m.id === newMsg.id)) return prev;
-          return [messageWithSender, ...prev];
-        });
+          const messageWithSender = { ...newMsg, sender };
+          
+          setMessages(prev => {
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            return [messageWithSender, ...prev];
+          });
+        }
       })
       .subscribe();
 
@@ -238,6 +281,29 @@ const ChatHistoryPanel = ({ onBack, onOpenGlobalChat, onOpenTeamChat }: ChatHist
       supabase.removeChannel(channel);
     };
   }, [agent?.id]);
+
+  // Handle delete message
+  const handleDeleteMessage = async () => {
+    if (!deleteMessageId) return;
+    
+    setIsDeleting(true);
+    
+    const { error } = await supabase
+      .from('chat_messages')
+      .delete()
+      .eq('id', deleteMessageId);
+    
+    if (error) {
+      console.error('Error deleting message:', error);
+      toast.error('Erro ao apagar mensagem');
+    } else {
+      setMessages(prev => prev.filter(m => m.id !== deleteMessageId));
+      toast.success('Mensagem apagada');
+    }
+    
+    setIsDeleting(false);
+    setDeleteMessageId(null);
+  };
 
   // Filter messages
   const filteredMessages = messages.filter(m => {
@@ -290,6 +356,31 @@ const ChatHistoryPanel = ({ onBack, onOpenGlobalChat, onOpenTeamChat }: ChatHist
 
   return (
     <div className="h-full flex flex-col">
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteMessageId} onOpenChange={() => setDeleteMessageId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" />
+              Apagar Mensagem
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja apagar esta mensagem? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteMessage}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Apagando...' : 'Apagar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border/50 bg-gradient-to-r from-primary/10 to-transparent">
         <div className="flex items-center gap-3">
@@ -314,6 +405,15 @@ const ChatHistoryPanel = ({ onBack, onOpenGlobalChat, onOpenTeamChat }: ChatHist
         
         <div className="flex gap-2">
           <Button
+            variant="ghost"
+            size="icon"
+            onClick={fetchMessages}
+            className="h-8 w-8"
+            title="Atualizar"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+          <Button
             variant="outline"
             size="sm"
             onClick={onOpenGlobalChat}
@@ -332,6 +432,14 @@ const ChatHistoryPanel = ({ onBack, onOpenGlobalChat, onOpenTeamChat }: ChatHist
             Chat Equipe
           </Button>
         </div>
+      </div>
+
+      {/* Info banner */}
+      <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/20">
+        <p className="text-xs text-amber-400 flex items-center gap-2">
+          <Clock className="w-3.5 h-3.5" />
+          As mensagens são automaticamente apagadas após 24 horas
+        </p>
       </div>
 
       {/* Filters */}
@@ -403,6 +511,15 @@ const ChatHistoryPanel = ({ onBack, onOpenGlobalChat, onOpenTeamChat }: ChatHist
             <p className="text-xs">
               {searchTerm ? 'Tente outro termo de busca' : 'As mensagens aparecerão aqui'}
             </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-4"
+              onClick={onOpenGlobalChat}
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Enviar Mensagem
+            </Button>
           </div>
         ) : (
           <div className="p-3 space-y-4">
@@ -430,14 +547,27 @@ const ChatHistoryPanel = ({ onBack, onOpenGlobalChat, onOpenTeamChat }: ChatHist
                           key={message.id}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
                           className={`
-                            p-3 rounded-xl border border-border/30
+                            group relative p-3 rounded-xl border border-border/30
                             ${isOwn 
                               ? 'bg-primary/5 border-primary/20' 
                               : 'bg-muted/30'
                             }
                           `}
                         >
+                          {/* Delete button for own messages */}
+                          {isOwn && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteMessageId(message.id)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          )}
+                          
                           <div className="flex items-start gap-3">
                             <Avatar className="w-8 h-8 flex-shrink-0">
                               <AvatarImage src={message.sender?.avatar_url || ''} />
@@ -460,6 +590,7 @@ const ChatHistoryPanel = ({ onBack, onOpenGlobalChat, onOpenTeamChat }: ChatHist
                                   </Badge>
                                 </div>
                                 <div className="flex items-center gap-2">
+                                  <TimeRemaining createdAt={message.created_at} />
                                   <Badge 
                                     variant="secondary" 
                                     className="text-[10px] px-1.5 py-0"
