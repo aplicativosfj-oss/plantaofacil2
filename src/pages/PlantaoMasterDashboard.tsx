@@ -25,6 +25,7 @@ import OnlineIndicator from '@/components/plantao/OnlineIndicator';
 import LicenseManagement from '@/components/plantao/LicenseManagement';
 import AccessLogsPanel from '@/components/plantao/AccessLogsPanel';
 import SendMessagesPanel from '@/components/plantao/SendMessagesPanel';
+import OnlineAgentsPanel from '@/components/plantao/OnlineAgentsPanel';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 
 interface AgentWithDetails {
@@ -1186,6 +1187,11 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                 </CardContent>
               </Card>
 
+              {/* Grid de painéis: Agentes Online + BH Recentes */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Online Agents Panel */}
+                <OnlineAgentsPanel />
+
               {/* Recent Overtime */}
               <Card>
                 <CardHeader>
@@ -1224,6 +1230,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                   )}
                 </CardContent>
               </Card>
+              </div>
             </TabsContent>
 
             {/* Licenses Tab */}
