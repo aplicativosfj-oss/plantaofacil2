@@ -2300,6 +2300,63 @@ export type Database = {
         }
         Relationships: []
       }
+      unit_transfer_requests: {
+        Row: {
+          agent_id: string
+          created_at: string | null
+          current_unit: string
+          id: string
+          reason: string | null
+          requested_unit: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string | null
+          current_unit: string
+          id?: string
+          reason?: string | null
+          requested_unit: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string | null
+          current_unit?: string
+          id?: string
+          reason?: string | null
+          requested_unit?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unit_transfer_requests_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unit_transfer_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       units: {
         Row: {
           city: string | null
