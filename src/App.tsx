@@ -115,8 +115,55 @@ const PageLoader = () => (
 const App = () => {
   // Clear expired caches on app start (defer para não travar o first paint)
   useEffect(() => {
+    // FORÇA BRUTA (1x): em alguns aparelhos o PWA pode manter chunks/caches antigos
+    // e isso impede páginas lazy de carregarem. Aqui limpamos caches + SW e recarregamos.
+    const HARD_RESET_KEY = 'plantao_hard_reset_v1';
+    const shouldHardReset = (() => {
+      try {
+        return localStorage.getItem(HARD_RESET_KEY) !== '1';
+      } catch {
+        return false;
+      }
+    })();
+
+    if (shouldHardReset) {
+      try {
+        localStorage.setItem(HARD_RESET_KEY, '1');
+      } catch {}
+
+      (async () => {
+        try {
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map((r) => r.unregister()));
+          }
+        } catch {}
+
+        try {
+          if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map((k) => caches.delete(k)));
+          }
+        } catch {}
+
+        try {
+          // Limpa caches internos (não apaga login)
+          clearLocalStorageCache();
+        } catch {}
+        try {
+          await clearIndexedDBCache();
+        } catch {}
+
+        window.location.reload();
+      })();
+
+      return;
+    }
+
     const runIdle = (fn: () => void) => {
-      const ric = (window as any).requestIdleCallback as undefined | ((cb: () => void, opts?: { timeout: number }) => number);
+      const ric = (window as any).requestIdleCallback as
+        | undefined
+        | ((cb: () => void, opts?: { timeout: number }) => number);
       if (typeof ric === 'function') {
         ric(fn, { timeout: 1500 });
         return;
@@ -203,8 +250,8 @@ const App = () => {
         <PlantaoAuthProvider>
           <TooltipProvider delayDuration={200}>
             <Toaster />
-            <Sonner 
-              position="top-center" 
+            <Sonner
+              position="top-center"
               toastOptions={{
                 duration: 2500,
                 className: 'bg-card border-border',
