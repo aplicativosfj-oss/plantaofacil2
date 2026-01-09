@@ -7,25 +7,30 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig(({ mode }) => ({
   build: {
     chunkSizeWarningLimit: 3000,
-    target: 'esnext',
-    minify: 'esbuild',
+    // "esnext" pode gerar bundles que quebram em alguns browsers/webviews.
+    // Mantemos um target mais compatível para garantir que a tela inicial carregue.
+    target: "es2018",
+    minify: "esbuild",
     cssMinify: true,
     sourcemap: false,
+    modulePreload: {
+      polyfill: true,
+    },
     rollupOptions: {
       output: {
         manualChunks: (id) => {
           // Evita chunk manual para charts (recharts/d3) pois pode causar
           // problemas de ordem de inicialização em alguns browsers/builds.
-          if (id.includes('node_modules')) {
-            if (id.includes('react-dom')) return 'vendor-react-dom';
-            if (id.includes('react-router')) return 'vendor-router';
-            if (id.includes('react')) return 'vendor-react';
-            if (id.includes('@radix-ui')) return 'vendor-radix';
-            if (id.includes('framer-motion')) return 'vendor-motion';
-            if (id.includes('@tanstack')) return 'vendor-query';
-            if (id.includes('date-fns')) return 'vendor-date';
-            if (id.includes('lucide')) return 'vendor-icons';
-            if (id.includes('@supabase')) return 'vendor-supabase';
+          if (id.includes("node_modules")) {
+            if (id.includes("react-dom")) return "vendor-react-dom";
+            if (id.includes("react-router")) return "vendor-router";
+            if (id.includes("react")) return "vendor-react";
+            if (id.includes("@radix-ui")) return "vendor-radix";
+            if (id.includes("framer-motion")) return "vendor-motion";
+            if (id.includes("@tanstack")) return "vendor-query";
+            if (id.includes("date-fns")) return "vendor-date";
+            if (id.includes("lucide")) return "vendor-icons";
+            if (id.includes("@supabase")) return "vendor-supabase";
           }
         },
       },
@@ -197,15 +202,23 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     // Prebundle do recharts + lodash deep-imports (evita erro "lodash/get ... no default export")
     include: [
-      'react',
-      'react-dom',
-      'react-router-dom',
-      '@tanstack/react-query',
-      'recharts',
-      'lodash/get',
-      'lodash/isNil',
-      'lodash/isNumber',
-      'lodash/isString',
+      "react",
+      "react-dom",
+      "react-router-dom",
+      "@tanstack/react-query",
+      "recharts",
+      "lodash/get",
+      "lodash/isNil",
+      "lodash/isNumber",
+      "lodash/isString",
+    ],
+    // Força interop CJS->ESM em alguns ambientes (evita falhas na tela inicial)
+    needsInterop: [
+      "recharts",
+      "lodash/get",
+      "lodash/isNil",
+      "lodash/isNumber",
+      "lodash/isString",
     ],
   },
   esbuild: {
