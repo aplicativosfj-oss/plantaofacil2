@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar, Flame, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, KeyRound, ShieldAlert, Car, Route, CircleAlert, Radar, ScanEye, Cctv, Building2, UserRoundCheck, BadgeCheck, RotateCcw, Settings, Sparkles, icons as LucideIcons, LucideIcon } from 'lucide-react';
+import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, Building, Info, Users, Crown, ChevronRight, Radio, Siren, Star, Zap, Target, Crosshair, Ban, CheckCircle, Fingerprint, Eye, EyeOff, Palette, Save, Calendar, Flame, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, KeyRound, ShieldAlert, Car, Route, CircleAlert, Radar, ScanEye, Cctv, Building2, UserRoundCheck, BadgeCheck, RotateCcw, Settings, Sparkles, Volume2, VolumeX, icons as LucideIcons, LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
@@ -21,6 +21,7 @@ import plantaoBg from '@/assets/plantao-bg.png';
 import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
 import ThemeSelector from '@/components/plantao/ThemeSelector';
 import VideoSplash from '@/components/plantao/VideoSplash';
+import StyledTeamButton from '@/components/plantao/StyledTeamButton';
 
 
 // Saved credentials type
@@ -314,8 +315,8 @@ const AlertPulse = () => (
 
 const PlantaoHome = () => {
   const { signIn, signInMaster, signUp, isLoading, agent } = usePlantaoAuth();
-  const { themeConfig } = usePlantaoTheme();
-  const { effectsEnabled, toggleEffects, playClickSound } = usePlantaoEffects();
+  const { themeConfig, soundEnabled, setSoundEnabled, playSound } = usePlantaoTheme();
+  const { effectsEnabled, toggleEffects, playClickSound, soundEnabled: effectsSoundEnabled, toggleSound } = usePlantaoEffects();
   const { isSupported: biometricSupported, isRegistered: biometricRegistered, authenticateWithBiometric, registerBiometric } = useBiometricAuth();
   const navigate = useNavigate();
   const [showSplash, setShowSplash] = useState(() => {
@@ -770,6 +771,30 @@ const PlantaoHome = () => {
                   </span>
                 </HUDElement>
                 <div className="flex items-center gap-2">
+                  {/* Sound Toggle */}
+                  <motion.button
+                    onClick={() => {
+                      toggleSound();
+                      if (!effectsSoundEnabled) {
+                        playClickSound();
+                      }
+                    }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className={`p-2 rounded-lg border transition-all duration-200 ${
+                      effectsSoundEnabled 
+                        ? 'bg-primary/20 border-primary/40 hover:bg-primary/30' 
+                        : 'bg-muted/50 border-transparent hover:bg-muted'
+                    }`}
+                    title={effectsSoundEnabled ? 'Desativar som' : 'Ativar som'}
+                  >
+                    {effectsSoundEnabled ? (
+                      <Volume2 className="w-4 h-4 text-primary" />
+                    ) : (
+                      <VolumeX className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </motion.button>
+
                   <ThemeSelector 
                     trigger={
                       <button 
@@ -860,9 +885,9 @@ const PlantaoHome = () => {
                       : '[ Selecione sua Equipe ]'}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   {TEAMS.map((team, index) => (
-                    <TeamButton
+                    <StyledTeamButton
                       key={team.value}
                       team={team}
                       index={index}
@@ -870,10 +895,7 @@ const PlantaoHome = () => {
                       isBlocked={false}
                       isBlockedClicked={blockedTeamClicked === team.value}
                       isAutoLogging={isAutoLogging}
-                      themeConfig={themeConfig}
                       onTeamClick={handleTeamClick}
-                      onPlaySound={playClickSound}
-                      effectsEnabled={effectsEnabled}
                     />
                   ))}
                 </div>
