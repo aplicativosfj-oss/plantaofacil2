@@ -14,6 +14,8 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
+          // Evita chunk manual para charts (recharts/d3) pois pode causar
+          // problemas de ordem de inicialização em alguns browsers/builds.
           if (id.includes('node_modules')) {
             if (id.includes('react-dom')) return 'vendor-react-dom';
             if (id.includes('react-router')) return 'vendor-router';
@@ -22,7 +24,6 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('framer-motion')) return 'vendor-motion';
             if (id.includes('@tanstack')) return 'vendor-query';
             if (id.includes('date-fns')) return 'vendor-date';
-            if (id.includes('recharts') || id.includes('d3')) return 'vendor-charts';
             if (id.includes('lucide')) return 'vendor-icons';
             if (id.includes('@supabase')) return 'vendor-supabase';
           }
@@ -194,8 +195,18 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query'],
-    exclude: ['recharts']
+    // Prebundle do recharts + lodash deep-imports (evita erro "lodash/get ... no default export")
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@tanstack/react-query',
+      'recharts',
+      'lodash/get',
+      'lodash/isNil',
+      'lodash/isNumber',
+      'lodash/isString',
+    ],
   },
   esbuild: {
     drop: mode === 'production' ? ['console', 'debugger'] : [],
