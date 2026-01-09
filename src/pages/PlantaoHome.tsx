@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { usePlantaoTheme } from '@/contexts/PlantaoThemeContext';
@@ -6,6 +6,7 @@ import { useBiometricAuth } from '@/hooks/useBiometricAuth';
 import { useAgentCpfValidation, useAgentRegistrationValidation } from '@/hooks/useAgentValidation';
 import { usePlantaoEffects } from '@/hooks/usePlantaoEffects';
 import { useGlobalSound } from '@/hooks/useGlobalSound';
+import { usePlantaoEscapeBack } from '@/hooks/usePlantaoEscapeBack';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -359,6 +360,37 @@ const PlantaoHome = () => {
   // Real-time validation hooks
   const cpfValidation = useAgentCpfValidation(signupCpf.replace(/\D/g, ''));
   const registrationValidation = useAgentRegistrationValidation(signupRegistration);
+
+  // Fechar painéis de login com ESC
+  const closeAuthPanels = useCallback(() => {
+    if (showMasterLogin) {
+      setShowMasterLogin(false);
+      setMasterUsername('');
+      setMasterPassword('');
+      setMasterError('');
+      return;
+    }
+    if (showAuthPanel) {
+      setShowAuthPanel(false);
+      setLoginCpf('');
+      setLoginPassword('');
+      setLoginError('');
+      return;
+    }
+    if (showAbout) {
+      setShowAbout(false);
+      return;
+    }
+    if (showUnitSelector) {
+      setShowUnitSelector(false);
+      return;
+    }
+  }, [showMasterLogin, showAuthPanel, showAbout, showUnitSelector]);
+
+  usePlantaoEscapeBack({
+    enabled: showMasterLogin || showAuthPanel || showAbout || showUnitSelector,
+    onEscape: closeAuthPanels,
+  });
   
   // Limpeza de credenciais antigas (reset v3 - NÃO limpa intro_shown para carregar rápido)
   useEffect(() => {

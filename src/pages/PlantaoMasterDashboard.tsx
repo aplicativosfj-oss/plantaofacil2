@@ -26,6 +26,7 @@ import LicenseManagement from '@/components/plantao/LicenseManagement';
 import AccessLogsPanel from '@/components/plantao/AccessLogsPanel';
 import SendMessagesPanel from '@/components/plantao/SendMessagesPanel';
 import OnlineAgentsPanel from '@/components/plantao/OnlineAgentsPanel';
+import { usePlantaoEscapeBack } from '@/hooks/usePlantaoEscapeBack';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 
 interface AgentWithDetails {
@@ -171,6 +172,12 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
   const [agentPasswordInfo, setAgentPasswordInfo] = useState<{ cpf: string; password: string } | null>(null);
   const [loadingPassword, setLoadingPassword] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
+
+  // ESC para voltar à tela inicial (desabilitado quando dialogs estão abertos)
+  usePlantaoEscapeBack({
+    to: '/',
+    disableWhen: [showPasswordDialog, !!editingAgent, !!deletingAgent, !!showAgentPassword],
+  });
 
   useEffect(() => {
     if (!isLoading && !master) {
