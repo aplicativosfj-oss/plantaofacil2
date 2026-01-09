@@ -23,10 +23,10 @@ interface AgentPresence {
 
 const getTeamColor = (team: string | null) => {
   switch (team) {
-    case 'alfa': return 'bg-team-alfa text-white';
-    case 'bravo': return 'bg-team-bravo text-white';
-    case 'charlie': return 'bg-team-charlie text-white';
-    case 'delta': return 'bg-team-delta text-white';
+    case 'alfa': return 'bg-team-alfa text-primary-foreground';
+    case 'bravo': return 'bg-team-bravo text-primary-foreground';
+    case 'charlie': return 'bg-team-charlie text-primary-foreground';
+    case 'delta': return 'bg-team-delta text-primary-foreground';
     default: return 'bg-muted';
   }
 };
