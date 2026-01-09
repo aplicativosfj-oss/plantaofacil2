@@ -41,6 +41,7 @@ import ChatHistoryPanel from '@/components/plantao/ChatHistoryPanel';
 import MaintenanceFeeDialog from '@/components/plantao/MaintenanceFeeDialog';
 import useClickSound from '@/hooks/useClickSound';
 import { useOvertimeAlerts } from '@/hooks/useOvertimeAlerts';
+import { usePlantaoEscapeBack } from '@/hooks/usePlantaoEscapeBack';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 
 interface Shift {
@@ -102,6 +103,13 @@ const AgentDashboard = () => {
   const [nextEvent, setNextEvent] = useState<{ date: Date; type: 'plantao' | 'folga' | 'bh' | 'permuta'; description: string } | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [newMessagePopup, setNewMessagePopup] = useState<{ sender: string; content: string } | null>(null);
+
+  // ESC para voltar à tela inicial (desabilitado quando dialogs estão abertos)
+  usePlantaoEscapeBack({
+    to: '/',
+    disableWhen: [showAbout, showWelcome, showChangePassword, showProfile, showChat, showGlobalChat],
+    onEscape: playClick,
+  });
 
   // Helper to handle panel change with sound
   const handlePanelChange = (panel: typeof activePanel) => {
