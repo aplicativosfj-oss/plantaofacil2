@@ -20,7 +20,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoBg from '@/assets/plantao-bg.png';
 import teamsHomeBg from '@/assets/teams-home-bg.png';
-import plantaoHomeBg from '@/assets/teams-background.png';
 import PlantaoMusicPlayer from '@/components/plantao/PlantaoMusicPlayer';
 import loginBg from '@/assets/login-bg.png';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
@@ -721,15 +720,11 @@ const PlantaoHome = () => {
       {/* Background Effects (somente quando efeitos estiverem habilitados) */}
       {effectsEnabled && (
         <>
-          {/* New Home Background Image */}
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${plantaoHomeBg})` }}
-          />
-          {/* Dark gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/60" />
+          {/* FORÇA BRUTA: removido fundo em imagem para evitar travamentos em alguns aparelhos */}
+          <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/60 to-background" />
           <ScanLine />
           <CornerBrackets />
+
 
           {/* Grid overlay */}
           <div

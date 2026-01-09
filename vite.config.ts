@@ -39,7 +39,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "pwa-*.png", "audio/*", "videos/*"],
+      includeAssets: ["favicon.ico", "pwa-*.png", "audio/*"],
       manifest: {
         name: "Plantão PRO - Gestão de Escalas",
         short_name: "Plantão PRO",
@@ -156,17 +156,6 @@ export default defineConfig(({ mode }) => ({
               expiration: {
                 maxEntries: 30,
                 maxAgeSeconds: 60 * 60 * 24 * 30
-              }
-            }
-          },
-          {
-            urlPattern: /\.(?:mp4|webm)$/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "video-cache",
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 7
               }
             }
           },
