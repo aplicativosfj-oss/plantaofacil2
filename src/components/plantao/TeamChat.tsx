@@ -389,24 +389,24 @@ const TeamChat: React.FC<TeamChatProps> = ({ isOpen, onClose }) => {
 
           {/* Dialog */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-lg md:w-full md:h-[80vh] z-50 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.15 }}
+            className="fixed left-2 right-2 top-[5%] bottom-[5%] md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-md md:w-full md:h-[75vh] z-50 bg-card border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-border">
+            <div className="flex items-center justify-between p-3 border-b border-border">
               <div className="flex items-center gap-2">
-                <MessageCircle className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-semibold">Chat Equipe</h2>
+                <MessageCircle className="w-4 h-4 text-primary" />
+                <h2 className="text-sm font-semibold">Chat Equipe</h2>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-full hover:bg-muted transition-colors"
+                className="p-1.5 rounded-full hover:bg-muted transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 

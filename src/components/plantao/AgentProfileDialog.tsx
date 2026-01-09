@@ -62,15 +62,17 @@ const AgentProfileDialog: React.FC<AgentProfileDialogProps> = ({
   const [unit, setUnit] = useState('');
   const [registrationNumber, setRegistrationNumber] = useState('');
 
-  // Sync form with agent data when dialog opens
+  // Sync form with agent data when dialog opens or agent changes
   useEffect(() => {
-    if (agent && isOpen) {
+    if (agent) {
       setFullName(agent.full_name || '');
       setPhone(agent.phone || '');
       setEmail(agent.email || '');
       setCity(agent.city || '');
       setUnit(agent.unit || '');
       setRegistrationNumber(agent.registration_number || '');
+    }
+    if (isOpen) {
       setIsEditing(false);
     }
   }, [agent, isOpen]);
@@ -193,43 +195,43 @@ const AgentProfileDialog: React.FC<AgentProfileDialogProps> = ({
 
           {/* Dialog */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.1 }}
-            className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-md md:w-full z-50 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.15 }}
+            className="fixed left-2 right-2 top-[5%] bottom-[5%] md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-sm md:w-full md:max-h-[85vh] z-50 bg-card border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="sticky top-0 bg-card/95 backdrop-blur z-10 flex items-center justify-between p-4 border-b border-border">
-              <h2 className="text-lg font-semibold">Meu Perfil</h2>
-              <div className="flex items-center gap-2">
+            <div className="flex-shrink-0 flex items-center justify-between p-3 border-b border-border bg-card">
+              <h2 className="text-sm font-semibold">Meu Perfil</h2>
+              <div className="flex items-center gap-1">
                 {!isEditing && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsEditing(true)}
-                    className="gap-1"
+                    className="gap-1 h-7 text-xs"
                   >
-                    <Edit2 className="w-4 h-4" />
+                    <Edit2 className="w-3 h-3" />
                     Editar
                   </Button>
                 )}
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-full hover:bg-muted transition-colors"
+                  className="p-1.5 rounded-full hover:bg-muted transition-colors"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {/* Profile Photo */}
               <div className="flex flex-col items-center">
                 <div className="relative">
-                  <div className={`w-24 h-24 rounded-full flex items-center justify-center overflow-hidden border-4 ${getTeamColor(agent.current_team)} shadow-lg`}>
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center overflow-hidden border-3 ${getTeamColor(agent.current_team)} shadow-lg`}>
                     {agent.avatar_url ? (
                       <img 
                         src={agent.avatar_url} 
@@ -237,7 +239,7 @@ const AgentProfileDialog: React.FC<AgentProfileDialogProps> = ({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <User className="w-12 h-12 text-white" />
+                      <User className="w-8 h-8 text-white" />
                     )}
                   </div>
                   
@@ -245,12 +247,12 @@ const AgentProfileDialog: React.FC<AgentProfileDialogProps> = ({
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingPhoto}
-                    className="absolute bottom-0 right-0 p-2 bg-primary rounded-full shadow-lg hover:bg-primary/90 transition-colors"
+                    className="absolute bottom-0 right-0 p-1.5 bg-primary rounded-full shadow-lg hover:bg-primary/90 transition-colors"
                   >
                     {uploadingPhoto ? (
-                      <Loader2 className="w-4 h-4 text-white animate-spin" />
+                      <Loader2 className="w-3 h-3 text-white animate-spin" />
                     ) : (
-                      <Camera className="w-4 h-4 text-white" />
+                      <Camera className="w-3 h-3 text-white" />
                     )}
                   </button>
                   <input
@@ -264,141 +266,142 @@ const AgentProfileDialog: React.FC<AgentProfileDialogProps> = ({
 
                 {!isEditing ? (
                   <>
-                    <h3 className="mt-3 text-lg font-medium">{agent.full_name}</h3>
-                    <Badge className={`${getTeamColor(agent.current_team)} text-white mt-1`}>
-                      Equipe {teamName}
+                    <h3 className="mt-2 text-sm font-medium">{agent.full_name}</h3>
+                    <Badge className={`${getTeamColor(agent.current_team)} text-white text-xs mt-1`}>
+                      {teamName}
                     </Badge>
                   </>
                 ) : (
-                  <Badge className={`${getTeamColor(agent.current_team)} text-white mt-3`}>
-                    Equipe {teamName}
+                  <Badge className={`${getTeamColor(agent.current_team)} text-white text-xs mt-2`}>
+                    {teamName}
                   </Badge>
                 )}
               </div>
 
-              {/* CPF - Only visible to the agent themselves (this dialog is only for the logged-in agent) */}
-              <div className="bg-muted/30 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <IdCard className="w-5 h-5 text-muted-foreground" />
+              {/* CPF - Only visible to the agent themselves */}
+              <div className="bg-muted/30 rounded-lg p-2.5">
+                <div className="flex items-center gap-2">
+                  <IdCard className="w-4 h-4 text-muted-foreground" />
                   <div>
-                    <p className="text-xs text-muted-foreground">CPF (visível apenas para você)</p>
-                    <p className="font-medium font-mono">{formatCPF(agent.cpf)}</p>
+                    <p className="text-[10px] text-muted-foreground">CPF (visível apenas para você)</p>
+                    <p className="text-xs font-medium font-mono">{formatCPF(agent.cpf)}</p>
                   </div>
                 </div>
               </div>
 
               {isEditing ? (
                 /* Editing Mode */
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName">Nome Completo *</Label>
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="fullName" className="text-xs">Nome Completo *</Label>
                     <div className="relative">
-                      <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <UserCircle className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                       <Input
                         id="fullName"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        className="pl-10"
+                        className="pl-8 h-8 text-sm"
                         placeholder="Seu nome completo"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="registrationNumber">Matrícula</Label>
-                    <div className="relative">
-                      <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="registrationNumber"
-                        value={registrationNumber}
-                        onChange={(e) => setRegistrationNumber(e.target.value.toUpperCase())}
-                        className="pl-10 uppercase"
-                        placeholder="Sua matrícula"
-                      />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="registrationNumber" className="text-xs">Matrícula</Label>
+                      <div className="relative">
+                        <IdCard className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <Input
+                          id="registrationNumber"
+                          value={registrationNumber}
+                          onChange={(e) => setRegistrationNumber(e.target.value.toUpperCase())}
+                          className="pl-8 h-8 text-sm uppercase"
+                          placeholder="Matrícula"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="unit" className="text-xs">Unidade</Label>
+                      <div className="relative">
+                        <Building className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <Input
+                          id="unit"
+                          value={unit}
+                          onChange={(e) => setUnit(e.target.value)}
+                          className="pl-8 h-8 text-sm"
+                          placeholder="Unidade"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="unit">Unidade</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="city" className="text-xs">Cidade</Label>
                     <div className="relative">
-                      <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="unit"
-                        value={unit}
-                        onChange={(e) => setUnit(e.target.value)}
-                        className="pl-10"
-                        placeholder="Sua unidade"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="city">Cidade</Label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                       <Input
                         id="city"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
-                        className="pl-10"
+                        className="pl-8 h-8 text-sm"
                         placeholder="Sua cidade"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Telefone</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="phone"
-                        value={phone}
-                        onChange={(e) => setPhone(formatPhone(e.target.value))}
-                        className="pl-10"
-                        placeholder="(00) 00000-0000"
-                        maxLength={15}
-                      />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="phone" className="text-xs">Telefone</Label>
+                      <div className="relative">
+                        <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <Input
+                          id="phone"
+                          value={phone}
+                          onChange={(e) => setPhone(formatPhone(e.target.value))}
+                          className="pl-8 h-8 text-sm"
+                          placeholder="(00) 00000-0000"
+                          maxLength={15}
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10"
-                        placeholder="seu@email.com"
-                      />
+                    <div className="space-y-1">
+                      <Label htmlFor="email" className="text-xs">E-mail</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                        <Input
+                          id="email"
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="pl-8 h-8 text-sm"
+                          placeholder="seu@email.com"
+                        />
+                      </div>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-3 pt-2">
+                  <div className="flex gap-2 pt-2">
                     <Button
                       variant="outline"
-                      className="flex-1"
+                      className="flex-1 h-8 text-xs"
                       onClick={handleCancel}
                       disabled={loading}
                     >
                       Cancelar
                     </Button>
                     <Button
-                      className="flex-1"
+                      className="flex-1 h-8 text-xs"
                       onClick={handleSave}
                       disabled={loading}
                     >
                       {loading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Salvando...
-                        </>
+                        <Loader2 className="w-3 h-3 animate-spin" />
                       ) : (
                         <>
-                          <Save className="w-4 h-4 mr-2" />
+                          <Save className="w-3 h-3 mr-1" />
                           Salvar
                         </>
                       )}
@@ -408,51 +411,40 @@ const AgentProfileDialog: React.FC<AgentProfileDialogProps> = ({
               ) : (
                 /* View Mode */
                 <>
-                  <div className="space-y-3 bg-muted/30 rounded-lg p-4">
-                    <div className="flex items-center gap-3">
-                      <User className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Matrícula</p>
-                        <p className="font-medium uppercase">{agent.registration_number || 'N/A'}</p>
-                      </div>
+                  <div className="space-y-2 bg-muted/30 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground text-xs">Mat:</span>
+                      <span className="font-medium text-xs uppercase">{agent.registration_number || 'N/A'}</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Building className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Unidade</p>
-                        <p className="font-medium">{agent.unit || 'N/A'}</p>
-                      </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Building className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground text-xs">Unidade:</span>
+                      <span className="font-medium text-xs">{agent.unit || 'N/A'}</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <MapPin className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Cidade</p>
-                        <p className="font-medium">{agent.city || 'N/A'}</p>
-                      </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground text-xs">Cidade:</span>
+                      <span className="font-medium text-xs">{agent.city || 'N/A'}</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Phone className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Telefone</p>
-                        <p className="font-medium">{agent.phone || 'N/A'}</p>
-                      </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground text-xs">Tel:</span>
+                      <span className="font-medium text-xs">{agent.phone || 'N/A'}</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">E-mail</p>
-                        <p className="font-medium">{agent.email || 'N/A'}</p>
-                      </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-medium text-xs truncate">{agent.email || 'N/A'}</span>
                     </div>
                   </div>
 
                   {/* Password Change */}
                   <Button
                     variant="outline"
-                    className="w-full"
+                    className="w-full h-8 text-xs"
                     onClick={onChangePassword}
                   >
-                    <Lock className="w-4 h-4 mr-2" />
+                    <Lock className="w-3 h-3 mr-1" />
                     Alterar Senha
                   </Button>
                 </>
