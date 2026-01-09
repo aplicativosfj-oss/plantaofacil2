@@ -37,6 +37,7 @@ import TeamBanner from '@/components/plantao/TeamBanner';
 import SoundButton from '@/components/plantao/SoundButton';
 import UnitTransferPanel from '@/components/plantao/UnitTransferPanel';
 import TeamShiftsPanel from '@/components/plantao/TeamShiftsPanel';
+import ChatHistoryPanel from '@/components/plantao/ChatHistoryPanel';
 import MaintenanceFeeDialog from '@/components/plantao/MaintenanceFeeDialog';
 import useClickSound from '@/hooks/useClickSound';
 import { useOvertimeAlerts } from '@/hooks/useOvertimeAlerts';
@@ -88,7 +89,7 @@ const AgentDashboard = () => {
   const [overtimeSummary, setOvertimeSummary] = useState<OvertimeSummary | null>(null);
   const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [pendingSwaps, setPendingSwaps] = useState(0);
-  const [activePanel, setActivePanel] = useState<'overview' | 'team' | 'overtime' | 'swaps' | 'alerts' | 'calendar' | 'monitoring' | 'unit' | 'team-shifts'>('overview');
+  const [activePanel, setActivePanel] = useState<'overview' | 'team' | 'overtime' | 'swaps' | 'alerts' | 'calendar' | 'monitoring' | 'unit' | 'team-shifts' | 'chat-history'>('overview');
   const [countdown, setCountdown] = useState<string>('');
   const [showAbout, setShowAbout] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -561,8 +562,9 @@ const AgentDashboard = () => {
               <SoundButton
                 variant="ghost"
                 size="icon"
-                onClick={handleOpenChat}
+                onClick={() => handlePanelChange('chat-history')}
                 className="relative h-7 w-7"
+                title="Mensagens"
               >
                 <MessageCircle className="w-4 h-4" />
                 {unreadMessages > 0 && (
@@ -1080,6 +1082,32 @@ const AgentDashboard = () => {
               </Card>
             )}
 
+            {/* Chat History Card */}
+            <Card 
+              className="cursor-pointer transition-colors border-border/50 hover:border-green-500/50"
+              onClick={() => handlePanelChange('chat-history')}
+            >
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded bg-green-500/20 relative">
+                      <MessageCircle className="w-4 h-4 text-green-500" />
+                      {unreadMessages > 0 && (
+                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Mensagens</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {unreadMessages > 0 ? `${unreadMessages} novas mensagens` : 'Ver histórico de chats'}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Team Members Card */}
             <TeamMembersCard />
           </motion.div>
@@ -1170,6 +1198,26 @@ const AgentDashboard = () => {
             </div>
 
             <TeamShiftsPanel />
+          </motion.div>
+        )}
+
+        {activePanel === 'chat-history' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.1 }}
+          >
+            <ChatHistoryPanel 
+              onBack={() => handlePanelChange('overview')}
+              onOpenGlobalChat={() => {
+                handlePanelChange('overview');
+                setShowGlobalChat(true);
+              }}
+              onOpenTeamChat={() => {
+                handlePanelChange('overview');
+                setShowChat(true);
+              }}
+            />
           </motion.div>
         )}
       </main>
