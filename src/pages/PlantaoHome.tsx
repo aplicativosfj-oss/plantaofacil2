@@ -1024,23 +1024,28 @@ const PlantaoHome = () => {
             {/* Top Bar with Back Button */}
             {/* Dark overlay for better readability */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
-            <header className="relative z-10 py-2 px-4 border-b border-primary/30 bg-black/40 backdrop-blur-sm">
+            <header className="relative z-10 py-3 px-4 border-b border-primary/30 bg-black/50 backdrop-blur-md">
               <div className="container mx-auto flex items-center justify-between">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAuthPanel(false)}
-                  className="text-muted-foreground hover:text-foreground gap-2 px-3"
+                <motion.button
+                  onClick={() => {
+                    playClick();
+                    setShowAuthPanel(false);
+                    setShowMasterLogin(false);
+                    setSelectedTeam(null);
+                  }}
+                  whileHover={{ scale: 1.05, x: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 hover:border-primary/50 text-white hover:text-primary transition-all duration-200 backdrop-blur-sm"
                 >
-                  <ChevronRight className="w-4 h-4 rotate-180" />
-                  Voltar
-                </Button>
+                  <ChevronRight className="w-5 h-5 rotate-180" />
+                  <span className="font-medium text-sm">Voltar</span>
+                </motion.button>
                 <img 
                   src={plantaoLogo} 
                   alt="PlantãoPro" 
                   className="h-10 w-auto object-contain"
                 />
-                <div className="w-20" /> {/* Spacer for centering */}
+                <div className="w-24" /> {/* Spacer for centering */}
               </div>
             </header>
 
