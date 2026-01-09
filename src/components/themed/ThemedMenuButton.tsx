@@ -83,11 +83,10 @@ export const ThemedMenuButton: React.FC<ThemedMenuButtonProps> = memo(({
     }
   }, [themeConfig.id]);
 
-  const iconStyleClasses = themeConfig.icons.style === 'glow' 
-    ? 'drop-shadow-[0_0_6px_currentColor]' 
-    : themeConfig.icons.style === 'filled'
-      ? 'fill-current opacity-80'
-      : '';
+  // Remove glow effects for better readability
+  const iconStyleClasses = themeConfig.icons.style === 'filled'
+    ? 'fill-current opacity-80'
+    : '';
 
   return (
     <motion.button
@@ -147,22 +146,11 @@ export const ThemedMenuButton: React.FC<ThemedMenuButtonProps> = memo(({
         'relative p-3 rounded-xl',
         iconBackground
       )}>
-        <motion.div
-          animate={themeConfig.icons.style === 'glow' ? {
-            filter: [
-              'drop-shadow(0 0 4px currentColor)',
-              'drop-shadow(0 0 10px currentColor)',
-              'drop-shadow(0 0 4px currentColor)',
-            ]
-          } : {}}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <Icon className={cn(
-            color,
-            'w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12',
-            iconStyleClasses
-          )} />
-        </motion.div>
+        <Icon className={cn(
+          color,
+          'w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12',
+          iconStyleClasses
+        )} />
 
         {/* Badge */}
         {badge && (
@@ -175,11 +163,12 @@ export const ThemedMenuButton: React.FC<ThemedMenuButtonProps> = memo(({
             {badge}
           </motion.span>
         )}
+
       </div>
 
-      {/* Label */}
+      {/* Label - improved readability */}
       <span className={cn(
-        'font-bebas text-sm sm:text-base md:text-lg tracking-wider text-center leading-tight line-clamp-2',
+        'text-sm sm:text-base md:text-lg tracking-wide text-center leading-tight line-clamp-2 text-foreground',
         fontWeightClass
       )}>
         {label}

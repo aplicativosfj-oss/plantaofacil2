@@ -18,9 +18,9 @@ interface LoginDialogProps {
   panelType: 'client' | 'instructor' | 'admin';
 }
 
-const STORAGE_KEY = 'francgym_saved_credentials';
-const BIOMETRIC_KEY = 'francgym_biometric_enabled';
-const LOCKOUT_KEY = 'francgym_login_lockout';
+const STORAGE_KEY = 'system_saved_credentials';
+const BIOMETRIC_KEY = 'system_biometric_enabled';
+const LOCKOUT_KEY = 'system_login_lockout';
 
 // Escalating lockout durations in seconds: 30s, 1min, 2min, 5min, 15min
 const LOCKOUT_DURATIONS = [30, 60, 120, 300, 900];
@@ -247,7 +247,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onSuccess, p
 
         toast({
           title: 'Login biométrico realizado!',
-          description: 'Bem-vindo ao FrancGymPro',
+          description: 'Bem-vindo ao sistema',
           duration: 2000,
         });
 
@@ -294,7 +294,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onSuccess, p
       const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
         challenge,
         rp: {
-          name: 'FrancGymPro',
+          name: 'Sistema',
           id: window.location.hostname,
         },
         user: {
@@ -505,7 +505,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onSuccess, p
 
     toast({
       title: 'Login realizado com sucesso!',
-      description: 'Bem-vindo ao FrancGymPro',
+      description: 'Bem-vindo ao sistema',
       duration: 2000,
     });
 
@@ -625,7 +625,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose, onSuccess, p
               >
                 <motion.img
                   src={logomarca}
-                  alt="FrancGymPro"
+                  alt="Sistema"
                   className="w-16 h-16 object-contain"
                   animate={{ 
                     filter: ['drop-shadow(0 0 10px hsl(var(--primary)/0.3))', 'drop-shadow(0 0 20px hsl(var(--primary)/0.6))', 'drop-shadow(0 0 10px hsl(var(--primary)/0.3))']

@@ -44,7 +44,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
             <div className="relative p-8 text-center bg-gradient-to-b from-primary/20 to-transparent">
               <motion.img
                 src={logomarca}
-                alt="FrancGymPro"
+                alt="Sistema de Gestão"
                 className="w-48 h-48 mx-auto object-contain"
                 animate={{ 
                   filter: ['drop-shadow(0 0 20px hsl(var(--primary)/0.5))', 'drop-shadow(0 0 40px hsl(var(--primary)/0.8))', 'drop-shadow(0 0 20px hsl(var(--primary)/0.5))']
@@ -61,13 +61,13 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
               {/* Description */}
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  <span className="text-primary font-semibold">FrancGymPro</span> é um aplicativo completo de gestão de academias e acompanhamento de treinos, desenvolvido para conectar academias, instrutores profissionais e pessoas do mundo fitness em um único ambiente moderno e eficiente.
+                  Este é um <span className="text-primary font-semibold">sistema completo de gestão</span> desenvolvido para conectar profissionais e usuários em um único ambiente moderno e eficiente.
                 </p>
                 <p>
-                  O aplicativo permite que instrutores acompanhem seus alunos de forma organizada, com foco em treinos, rotinas, evolução e disciplina, enquanto os alunos têm acesso fácil às suas atividades, orientações e acompanhamento profissional.
+                  O aplicativo permite gerenciamento organizado, com foco em acompanhamento, evolução e eficiência operacional.
                 </p>
                 <p>
-                  Criado para suprir uma grande necessidade do mercado, o FrancGymPro nasce com o objetivo de oferecer uma solução realmente completa, já que não existiam alternativas que unissem gestão de academia e acompanhamento profissional de forma simples, prática e funcional.
+                  Criado para suprir necessidades do mercado, oferecendo uma solução completa de forma simples, prática e funcional.
                 </p>
               </div>
 
@@ -110,12 +110,12 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ isOpen, onClose }) => {
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 text-muted-foreground">
                     <Smartphone className="text-primary" size={20} />
-                    <span>GymPro Oficial</span>
+                    <span>Suporte Oficial</span>
                   </div>
                   <div className="flex items-center gap-3 text-muted-foreground">
                     <Mail className="text-primary" size={20} />
-                    <a href="mailto:oficialgympro@gmail.com" className="hover:text-primary transition-colors">
-                      oficialgympro@gmail.com
+                    <a href="mailto:suporte@sistema.com" className="hover:text-primary transition-colors">
+                      suporte@sistema.com
                     </a>
                   </div>
                   <div className="flex items-center gap-3 text-muted-foreground">

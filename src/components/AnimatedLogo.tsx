@@ -208,7 +208,7 @@ const AnimatedLogo = forwardRef<HTMLDivElement, AnimatedLogoProps>(({
       
       <img
         src={logomarca}
-        alt="Franc's Gym Pro"
+        alt="Sistema"
         className={`${sizeClasses[size]} object-contain ${isLoaded ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}
         onLoad={() => setIsLoaded(true)}
       />
