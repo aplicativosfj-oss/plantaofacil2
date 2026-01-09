@@ -22,11 +22,13 @@ interface LicenseExpiredOverlayProps {
   onLogout: () => void;
 }
 
-// Informações de contato do administrador
-const ADMIN_CONTACT = {
-  email: 'francdenis@gmail.com',
-  whatsapp: '5568999461733',
-  whatsappDisplay: '(68) 99946-1733',
+// Informações de contato do desenvolvedor
+const DEVELOPER_CONTACT = {
+  name: 'Franc Denis',
+  email: 'francdenisbr@gmail.com',
+  whatsapp: '5568992031340',
+  whatsappDisplay: '(68) 99203-1340',
+  pixCpf: '695.981.932-68',
 };
 
 const LicenseExpiredOverlay = ({ onLogout }: LicenseExpiredOverlayProps) => {
@@ -94,7 +96,7 @@ const LicenseExpiredOverlay = ({ onLogout }: LicenseExpiredOverlayProps) => {
       `Olá! Sou ${agent?.full_name || 'um agente'} (Matrícula: ${agent?.registration_number || 'N/A'}). ` +
       `Minha licença do PlantãoPro expirou há ${daysExpired} dia(s) e gostaria de solicitar o desbloqueio/renovação.`
     );
-    window.open(`https://wa.me/${ADMIN_CONTACT.whatsapp}?text=${message}`, '_blank');
+    window.open(`https://wa.me/${DEVELOPER_CONTACT.whatsapp}?text=${message}`, '_blank');
   };
 
   const openEmail = () => {
@@ -108,7 +110,7 @@ const LicenseExpiredOverlay = ({ onLogout }: LicenseExpiredOverlayProps) => {
       `Gostaria de solicitar o desbloqueio/renovação do meu acesso.\n\n` +
       `Agradeço a atenção.`
     );
-    window.open(`mailto:${ADMIN_CONTACT.email}?subject=${subject}&body=${body}`, '_blank');
+    window.open(`mailto:${DEVELOPER_CONTACT.email}?subject=${subject}&body=${body}`, '_blank');
   };
 
   return (
@@ -200,7 +202,7 @@ const LicenseExpiredOverlay = ({ onLogout }: LicenseExpiredOverlayProps) => {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            {ADMIN_CONTACT.whatsappDisplay} • {ADMIN_CONTACT.email}
+            {DEVELOPER_CONTACT.whatsappDisplay} • {DEVELOPER_CONTACT.email}
           </p>
         </div>
 

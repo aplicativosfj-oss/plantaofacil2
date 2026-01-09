@@ -16,7 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { 
   CreditCard, Upload, CheckCircle, Copy, Clock, 
-  QrCode, Smartphone, Building, FileImage, X, Send
+  QrCode, Smartphone, Building, FileImage, X, Send,
+  MessageCircle, Phone, User, ExternalLink
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -36,23 +37,23 @@ interface PaymentDialogProps {
   license: License;
 }
 
+// Dados de pagamento do desenvolvedor
+const DEVELOPER_INFO = {
+  name: 'Franc Denis',
+  cpf: '695.981.932-68',
+  cpfRaw: '69598193268',
+  whatsapp: '68992031340',
+  whatsappFormatted: '(68) 99203-1340',
+};
+
 const PaymentDialog = ({ isOpen, onClose, license }: PaymentDialogProps) => {
   const { agent } = usePlantaoAuth();
-  const [step, setStep] = useState<'info' | 'payment' | 'upload' | 'success'>('info');
+  const [step, setStep] = useState<'info' | 'payment' | 'upload' | 'whatsapp' | 'success'>('info');
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const PIX_KEY = 'contato@plantaopro.app'; // Configurable PIX key
-  const BANK_DETAILS = {
-    bank: 'Banco do Brasil',
-    agency: '1234-5',
-    account: '12345-6',
-    name: 'PlantãoPro LTDA',
-    cnpj: '00.000.000/0001-00'
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -118,9 +119,16 @@ const PaymentDialog = ({ isOpen, onClose, license }: PaymentDialogProps) => {
     }
   };
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, label?: string) => {
     navigator.clipboard.writeText(text);
-    toast.success('Copiado!');
+    toast.success(label ? `${label} copiado!` : 'Copiado!');
+  };
+
+  const openWhatsApp = () => {
+    const message = encodeURIComponent(
+      `Olá! Sou ${agent?.full_name || 'agente'} e acabei de fazer o pagamento da taxa de manutenção do PlantãoPro (R$ ${license.monthly_fee.toFixed(2)}). Segue comprovante em anexo.`
+    );
+    window.open(`https://wa.me/55${DEVELOPER_INFO.whatsapp}?text=${message}`, '_blank');
   };
 
   const handleClose = () => {
@@ -181,6 +189,18 @@ const PaymentDialog = ({ isOpen, onClose, license }: PaymentDialogProps) => {
                 </p>
               </div>
 
+              {/* Dados do desenvolvedor */}
+              <div className="p-4 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <User className="w-4 h-4 text-emerald-500" />
+                  <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Desenvolvedor</span>
+                </div>
+                <p className="font-medium">{DEVELOPER_INFO.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Responsável pelo desenvolvimento e suporte do PlantãoPro
+                </p>
+              </div>
+
               <Button className="w-full" onClick={() => setStep('payment')}>
                 Escolher forma de pagamento
               </Button>
@@ -214,26 +234,7 @@ const PaymentDialog = ({ isOpen, onClose, license }: PaymentDialogProps) => {
                     </div>
                     <div>
                       <p className="font-medium">PIX</p>
-                      <p className="text-xs text-muted-foreground">Pagamento instantâneo</p>
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
-                    paymentMethod === 'transfer' 
-                      ? 'border-primary bg-primary/10' 
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                  onClick={() => setPaymentMethod('transfer')}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-blue-500/20">
-                      <Building className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Transferência Bancária</p>
-                      <p className="text-xs text-muted-foreground">TED/DOC</p>
+                      <p className="text-xs text-muted-foreground">Pagamento instantâneo via CPF</p>
                     </div>
                   </div>
                 </button>
@@ -243,60 +244,129 @@ const PaymentDialog = ({ isOpen, onClose, license }: PaymentDialogProps) => {
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  className="p-4 bg-muted/30 rounded-xl space-y-3"
+                  className="p-4 bg-gradient-to-br from-[#32BCAD]/10 to-emerald-500/10 border border-[#32BCAD]/30 rounded-xl space-y-4"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Chave PIX (Email)</span>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => copyToClipboard(PIX_KEY)}
-                    >
-                      <Copy className="w-4 h-4 mr-1" />
-                      Copiar
-                    </Button>
+                  {/* Chave PIX CPF */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Chave PIX (CPF)</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => copyToClipboard(DEVELOPER_INFO.cpfRaw, 'CPF')}
+                        className="h-7 text-xs"
+                      >
+                        <Copy className="w-3 h-3 mr-1" />
+                        Copiar
+                      </Button>
+                    </div>
+                    <div className="p-3 bg-background/80 rounded-lg font-mono text-lg font-bold text-center tracking-wider">
+                      {DEVELOPER_INFO.cpf}
+                    </div>
                   </div>
-                  <div className="p-3 bg-background rounded-lg font-mono text-sm break-all">
-                    {PIX_KEY}
+
+                  {/* Nome do titular */}
+                  <div className="p-3 bg-background/50 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Nome do titular:</p>
+                    <p className="font-medium">{DEVELOPER_INFO.name}</p>
                   </div>
+
+                  {/* Valor */}
+                  <div className="p-3 bg-primary/10 rounded-lg flex items-center justify-between">
+                    <span className="text-sm">Valor a pagar:</span>
+                    <span className="text-lg font-bold text-primary">R$ {license.monthly_fee.toFixed(2)}</span>
+                  </div>
+
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Smartphone className="w-4 h-4" />
-                    Use o app do seu banco para pagar
+                    Use o app do seu banco para pagar via PIX
                   </div>
-                </motion.div>
-              )}
-
-              {paymentMethod === 'transfer' && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="p-4 bg-muted/30 rounded-xl space-y-2"
-                >
-                  {Object.entries(BANK_DETAILS).map(([key, value]) => (
-                    <div key={key} className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground capitalize">{key}:</span>
-                      <span className="font-medium">{value}</span>
-                    </div>
-                  ))}
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-full mt-2"
-                    onClick={() => copyToClipboard(Object.values(BANK_DETAILS).join(' | '))}
-                  >
-                    <Copy className="w-4 h-4 mr-1" />
-                    Copiar dados
-                  </Button>
                 </motion.div>
               )}
 
               {paymentMethod && (
-                <Button className="w-full" onClick={() => setStep('upload')}>
-                  Já fiz o pagamento
-                </Button>
+                <div className="space-y-2">
+                  <Button className="w-full" onClick={() => setStep('upload')}>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Enviar comprovante pelo app
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-green-500 text-green-600 hover:bg-green-500/10"
+                    onClick={() => setStep('whatsapp')}
+                  >
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Enviar pelo WhatsApp
+                  </Button>
+                </div>
               )}
 
               <Button variant="ghost" className="w-full" onClick={() => setStep('info')}>
+                Voltar
+              </Button>
+            </motion.div>
+          )}
+
+          {step === 'whatsapp' && (
+            <motion.div
+              key="whatsapp"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-4"
+            >
+              <div className="text-center mb-4">
+                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <MessageCircle className="w-8 h-8 text-green-500" />
+                </div>
+                <h3 className="font-bold text-lg">Enviar pelo WhatsApp</h3>
+                <p className="text-sm text-muted-foreground">
+                  Envie o comprovante diretamente para o desenvolvedor
+                </p>
+              </div>
+
+              {/* WhatsApp Info */}
+              <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-xl space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                    <Phone className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-bold">{DEVELOPER_INFO.name}</p>
+                    <p className="text-sm text-muted-foreground">{DEVELOPER_INFO.whatsappFormatted}</p>
+                  </div>
+                </div>
+
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="w-full"
+                  onClick={() => copyToClipboard(DEVELOPER_INFO.whatsapp, 'Número')}
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copiar número
+                </Button>
+              </div>
+
+              {/* Instructions */}
+              <div className="p-3 bg-muted/30 rounded-lg text-sm">
+                <p className="font-medium mb-2">📝 Ao enviar, informe:</p>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>• Seu nome completo</li>
+                  <li>• Comprovante do PIX</li>
+                  <li>• Valor: R$ {license.monthly_fee.toFixed(2)}</li>
+                </ul>
+              </div>
+
+              <Button 
+                className="w-full bg-green-500 hover:bg-green-600 text-white"
+                onClick={openWhatsApp}
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Abrir WhatsApp
+              </Button>
+
+              <Button variant="ghost" className="w-full" onClick={() => setStep('payment')}>
                 Voltar
               </Button>
             </motion.div>
@@ -372,6 +442,20 @@ const PaymentDialog = ({ isOpen, onClose, license }: PaymentDialogProps) => {
                   </>
                 )}
               </Button>
+
+              {/* Alternative WhatsApp */}
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-2">ou envie pelo WhatsApp</p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="border-green-500 text-green-600 hover:bg-green-500/10"
+                  onClick={openWhatsApp}
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  {DEVELOPER_INFO.whatsappFormatted}
+                </Button>
+              </div>
 
               <Button variant="ghost" className="w-full" onClick={() => setStep('payment')}>
                 Voltar
