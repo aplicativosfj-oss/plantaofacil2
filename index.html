@@ -131,13 +131,24 @@
     <div id="root"></div>
     
     <script>
-      // App version bump: força limpar cache/SW quando mudar versão (remove restos de splash antigo)
+      // App version bump: força limpar cache/SW quando mudar versão
+      // IMPORTANTE: em alguns navegadores/modos (ex: privativo no iOS) o localStorage pode falhar.
+      // Se não conseguirmos persistir a versão, NÃO tentamos recarregar automaticamente (evita loop).
       (function () {
         var APP_VERSION = '2026-01-09-2';
         try {
           var prev = localStorage.getItem('__app_version');
           if (prev !== APP_VERSION) {
-            localStorage.setItem('__app_version', APP_VERSION);
+            var ok = false;
+            try {
+              localStorage.setItem('__app_version', APP_VERSION);
+              ok = localStorage.getItem('__app_version') === APP_VERSION;
+            } catch (e) {
+              ok = false;
+            }
+
+            if (!ok) return;
+
             if ('serviceWorker' in navigator || 'caches' in window) {
               Promise.resolve()
                 .then(function () {
