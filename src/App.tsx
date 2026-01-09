@@ -30,8 +30,8 @@ const retryImport = <T extends { default: unknown }>(
   });
 };
 
-// Lazy load pages - PlantaoHome loads immediately, others on demand
-const PlantaoHome = lazy(() => import("./pages/PlantaoHome"));
+// PlantaoHome carrega de forma síncrona para abrir instantaneamente
+import PlantaoHome from "./pages/PlantaoHome";
 const AgentDashboard = lazy(() => retryImport(() => import("./pages/AgentDashboard")));
 const PlantaoMasterDashboard = lazy(() => retryImport(() => import("./pages/PlantaoMasterDashboard")));
 const Install = lazy(() => retryImport(() => import("./pages/Install")));
@@ -257,6 +257,7 @@ const App = () => {
                 <LazyErrorBoundary>
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
+                      {/* PlantaoHome carrega imediatamente (import síncrono) */}
                       <Route path="/" element={<PlantaoHome />} />
                       <Route path="/dashboard" element={<AgentDashboard />} />
                       <Route path="/master" element={<PlantaoMasterDashboard />} />
