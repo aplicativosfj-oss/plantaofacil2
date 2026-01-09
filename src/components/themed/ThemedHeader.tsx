@@ -35,25 +35,10 @@ export const ThemedHeader: React.FC<ThemedHeaderProps> = ({ children, className 
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Animated border glow for high/extreme glow themes */}
-      {(themeConfig.glowIntensity === 'high' || themeConfig.glowIntensity === 'extreme') && (
-        <motion.div
-          className="absolute bottom-0 left-0 right-0 h-[2px]"
-          style={{
-            background: `linear-gradient(90deg, 
-              transparent 0%, 
-              hsl(${themeConfig.primary}) 20%, 
-              hsl(${themeConfig.accent}) 50%, 
-              hsl(${themeConfig.primary}) 80%, 
-              transparent 100%
-            )`
-          }}
-          animate={{
-            opacity: [0.5, 1, 0.5],
-          }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
-      )}
+      {/* Subtle bottom border - removed animated glow for better readability */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent"
+      />
 
       {/* Pattern overlay */}
       {themeConfig.pattern !== 'none' && (

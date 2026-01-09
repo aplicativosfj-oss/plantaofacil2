@@ -112,37 +112,45 @@ const AdminDashboard: React.FC = () => {
     setLogoutDialogOpen(true);
   };
 
-  // Memoize menu items to prevent recreation on every render
-  const menuItems = useMemo(() => [
-    { icon: UserPlus, label: 'Cadastrar Cliente', path: 'register-client', color: 'text-blue-500' },
-    { icon: Dumbbell, label: 'Cadastrar Instrutor', path: 'register-instructor', color: 'text-green-500' },
-    { icon: Users, label: 'Consultar Cadastros', path: 'list-users', color: 'text-purple-500' },
-    { icon: DollarSign, label: 'Receber Mensalidade', path: 'receive-payment', color: 'text-emerald-500' },
-    { icon: FileText, label: 'Gerar Carnês', path: 'payment-plans', color: 'text-cyan-500' },
-    { icon: BarChart3, label: 'Dashboard Financeiro', path: 'dashboard', color: 'text-indigo-500' },
-    { icon: CreditCard, label: 'Financeiro', path: 'finance', color: 'text-teal-500' },
-    { icon: AlertTriangle, label: 'Inadimplentes', path: 'defaulters', color: 'text-red-500' },
-    { icon: Bell, label: 'Enviar Alertas', path: 'alerts', color: 'text-pink-500' },
-    { icon: QrCode, label: 'Leitor QR Code', path: 'qr-scanner', color: 'text-amber-500' },
-    { icon: HardDrive, label: 'Backup & Sync', path: 'backup', color: 'text-slate-500' },
-    { icon: Settings, label: 'Configurações', path: 'settings', color: 'text-gray-500' },
-  ], []);
+  // Menu items organizados por categoria
+  const menuCategories = useMemo(() => ({
+    cadastros: [
+      { icon: UserPlus, label: 'Cadastrar Cliente', path: 'register-client', color: 'text-blue-500' },
+      { icon: Dumbbell, label: 'Cadastrar Instrutor', path: 'register-instructor', color: 'text-green-500' },
+      { icon: Users, label: 'Consultar Cadastros', path: 'list-users', color: 'text-purple-500' },
+    ],
+    financeiro: [
+      { icon: DollarSign, label: 'Receber Mensalidade', path: 'receive-payment', color: 'text-emerald-500' },
+      { icon: FileText, label: 'Gerar Carnês', path: 'payment-plans', color: 'text-cyan-500' },
+      { icon: BarChart3, label: 'Dashboard', path: 'dashboard', color: 'text-indigo-500' },
+      { icon: CreditCard, label: 'Financeiro', path: 'finance', color: 'text-teal-500' },
+      { icon: AlertTriangle, label: 'Inadimplentes', path: 'defaulters', color: 'text-red-500' },
+    ],
+    operacional: [
+      { icon: Bell, label: 'Enviar Alertas', path: 'alerts', color: 'text-pink-500' },
+      { icon: QrCode, label: 'Leitor QR Code', path: 'qr-scanner', color: 'text-amber-500' },
+      { icon: HardDrive, label: 'Backup & Sync', path: 'backup', color: 'text-slate-500' },
+      { icon: Settings, label: 'Configurações', path: 'settings', color: 'text-gray-500' },
+    ],
+    master: isMaster ? [
+      { icon: Trash2, label: 'Lixeira', path: 'trash', color: 'text-red-500' },
+      { icon: Activity, label: 'Logs de Acesso', path: 'access-logs', color: 'text-cyan-500' },
+      { icon: Dumbbell, label: 'Ver Instrutores', path: 'view-instructors', color: 'text-green-500' },
+      { icon: DollarSign, label: 'Finanças Instrutores', path: 'instructor-finance', color: 'text-emerald-500' },
+      { icon: Key, label: 'Senhas Trial', path: 'trial-passwords', color: 'text-cyan-500' },
+      { icon: Key, label: 'Contas Pré-Geradas', path: 'pre-generated', color: 'text-yellow-500' },
+      { icon: FlaskConical, label: 'Contas de Teste', path: 'test-accounts', color: 'text-orange-500' },
+      { icon: Shield, label: 'Painel Master', path: 'master', color: 'text-primary' },
+    ] : [],
+  }), [isMaster]);
 
-  const masterItems = useMemo(() => [
-    { icon: Trash2, label: 'Lixeira', path: 'trash', color: 'text-red-500' },
-    { icon: Activity, label: 'Logs de Acesso', path: 'access-logs', color: 'text-cyan-500' },
-    { icon: Dumbbell, label: 'Ver Instrutores', path: 'view-instructors', color: 'text-green-500' },
-    { icon: DollarSign, label: 'Financeiro Instrutores', path: 'instructor-finance', color: 'text-emerald-500' },
-    { icon: Key, label: 'Senhas Trial', path: 'trial-passwords', color: 'text-cyan-500' },
-    { icon: Key, label: 'Contas Pré-Geradas', path: 'pre-generated', color: 'text-yellow-500' },
-    { icon: FlaskConical, label: 'Contas de Teste', path: 'test-accounts', color: 'text-orange-500' },
-    { icon: Shield, label: 'Painel Master', path: 'master', color: 'text-primary' },
-  ], []);
-
-  const allMenuItems = useMemo(() => 
-    isMaster ? [...menuItems, ...masterItems] : menuItems,
-    [isMaster, menuItems, masterItems]
-  );
+  // Flatten all menu items
+  const allMenuItems = useMemo(() => [
+    ...menuCategories.cadastros,
+    ...menuCategories.financeiro,
+    ...menuCategories.operacional,
+    ...menuCategories.master,
+  ], [menuCategories]);
 
   return (
     <div 
@@ -216,22 +224,88 @@ const AdminDashboard: React.FC = () => {
           <Suspense fallback={<ComponentLoader />}>
             <Routes>
               <Route path="/" element={
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <Suspense fallback={null}>
                     <UserCPFSearch />
                   </Suspense>
                   
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4">
-                    {allMenuItems.map((item) => (
-                      <ThemedMenuButton
-                        key={item.path}
-                        icon={item.icon}
-                        label={item.label}
-                        color={item.color}
-                        onClick={() => { playClickSound(); navigate(item.path); }}
-                      />
-                    ))}
-                  </div>
+                  {/* Seção Cadastros */}
+                  <section className="space-y-3">
+                    <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1 flex items-center gap-2">
+                      <Users size={14} />
+                      Cadastros
+                    </h2>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4">
+                      {menuCategories.cadastros.map((item) => (
+                        <ThemedMenuButton
+                          key={item.path}
+                          icon={item.icon}
+                          label={item.label}
+                          color={item.color}
+                          onClick={() => { playClickSound(); navigate(item.path); }}
+                        />
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* Seção Financeiro */}
+                  <section className="space-y-3">
+                    <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1 flex items-center gap-2">
+                      <DollarSign size={14} />
+                      Financeiro
+                    </h2>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4">
+                      {menuCategories.financeiro.map((item) => (
+                        <ThemedMenuButton
+                          key={item.path}
+                          icon={item.icon}
+                          label={item.label}
+                          color={item.color}
+                          onClick={() => { playClickSound(); navigate(item.path); }}
+                        />
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* Seção Operacional */}
+                  <section className="space-y-3">
+                    <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1 flex items-center gap-2">
+                      <Settings size={14} />
+                      Operacional
+                    </h2>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4">
+                      {menuCategories.operacional.map((item) => (
+                        <ThemedMenuButton
+                          key={item.path}
+                          icon={item.icon}
+                          label={item.label}
+                          color={item.color}
+                          onClick={() => { playClickSound(); navigate(item.path); }}
+                        />
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* Seção Master */}
+                  {isMaster && menuCategories.master.length > 0 && (
+                    <section className="space-y-3 pt-4 border-t border-border/50">
+                      <h2 className="text-sm font-semibold text-primary uppercase tracking-wider px-1 flex items-center gap-2">
+                        <Shield size={14} />
+                        Área Master
+                      </h2>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4">
+                        {menuCategories.master.map((item) => (
+                          <ThemedMenuButton
+                            key={item.path}
+                            icon={item.icon}
+                            label={item.label}
+                            color={item.color}
+                            onClick={() => { playClickSound(); navigate(item.path); }}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  )}
                 </div>
               } />
               <Route path="register-client" element={<RegisterClient />} />

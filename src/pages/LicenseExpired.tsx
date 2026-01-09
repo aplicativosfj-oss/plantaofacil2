@@ -52,7 +52,7 @@ const LicenseExpired: React.FC = () => {
           
           <motion.img
             src={logomarca}
-            alt="FrancGymPro"
+            alt="Sistema"
             className="w-32 h-32 mx-auto object-contain opacity-50"
           />
         </div>
@@ -82,7 +82,7 @@ const LicenseExpired: React.FC = () => {
 
           <div className="space-y-4">
             <p className="text-lg font-medium text-foreground">
-              Para continuar usando o FrancGymPro, adquira uma licença válida:
+              Para continuar usando o sistema, adquira uma licença válida:
             </p>
 
             <motion.button
@@ -90,7 +90,7 @@ const LicenseExpired: React.FC = () => {
               whileTap={{ scale: 0.98 }}
               onClick={() => {
                 playClickSound();
-                window.open('mailto:oficialgympro@gmail.com?subject=Solicitar Licença FrancGymPro', '_blank');
+                window.open('mailto:suporte@sistema.com?subject=Solicitar Licença', '_blank');
               }}
               className="w-full py-4 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-bebas text-xl tracking-wider rounded-lg flex items-center justify-center gap-3 hover:from-primary/90 hover:to-primary/70 transition-all shadow-lg shadow-primary/30"
             >
@@ -104,11 +104,11 @@ const LicenseExpired: React.FC = () => {
             <p className="text-sm text-muted-foreground">Entre em contato:</p>
             <div className="flex flex-col items-center gap-2">
               <a
-                href="mailto:oficialgympro@gmail.com"
+                href="mailto:suporte@sistema.com"
                 className="flex items-center gap-2 text-sm text-primary hover:underline"
               >
                 <Mail size={16} />
-                oficialgympro@gmail.com
+                suporte@sistema.com
               </a>
             </div>
           </div>
