@@ -15,27 +15,14 @@ import { clearExpiredCache as clearIndexedDBCache } from "@/lib/indexedDB";
 const InstallBanner = lazy(() => import("@/components/InstallBanner"));
 const OfflineBanner = lazy(() => import("@/components/shared/OfflineBanner"));
 
-// Lazy load pages with retry logic for failed imports
-const retryImport = <T extends { default: unknown }>(
-  importFn: () => Promise<T>,
-  retries = 2
-): Promise<T> => {
-  return importFn().catch((error) => {
-    if (retries > 0) {
-      return new Promise<T>((resolve) => {
-        setTimeout(() => resolve(retryImport(importFn, retries - 1)), 300);
-      });
-    }
-    throw error;
-  });
-};
 
-// Entrada ultra-rápida (carrega PlantaoHome em background)
+// Páginas (FORÇA BRUTA): sem lazy import para evitar falha de chunks/caches no PWA
 import PlantaoEntry from "./pages/PlantaoEntry";
-const AgentDashboard = lazy(() => retryImport(() => import("./pages/AgentDashboard")));
-const PlantaoMasterDashboard = lazy(() => retryImport(() => import("./pages/PlantaoMasterDashboard")));
-const Install = lazy(() => retryImport(() => import("./pages/Install")));
-const NotFound = lazy(() => retryImport(() => import("./pages/NotFound")));
+import AgentDashboard from "./pages/AgentDashboard";
+import PlantaoMasterDashboard from "./pages/PlantaoMasterDashboard";
+import Install from "./pages/Install";
+import NotFound from "./pages/NotFound";
+
 
 // Optimized query client with better caching
 const queryClient = new QueryClient({
