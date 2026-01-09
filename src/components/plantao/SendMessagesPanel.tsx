@@ -423,7 +423,7 @@ const SendMessagesPanel = () => {
       {/* Sent Messages History */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-foreground">
             <MessageCircle className="w-5 h-5 text-primary" />
             Histórico de Mensagens
           </CardTitle>

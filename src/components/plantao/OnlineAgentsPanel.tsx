@@ -143,7 +143,7 @@ const OnlineAgentsPanel = () => {
   return (
     <Card className="border border-border">
       <CardHeader className="pb-2 px-4 pt-4">
-        <CardTitle className="flex items-center justify-between text-base font-semibold">
+        <CardTitle className="flex items-center justify-between text-base font-semibold text-foreground">
           <div className="flex items-center gap-2">
             <Wifi className="w-5 h-5 text-green-500" />
             <span>Status Agentes</span>

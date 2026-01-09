@@ -1301,7 +1301,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               {/* Team Stats */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
                     <Users className="w-5 h-5 text-primary" />
                     Estatísticas por Equipe
                   </CardTitle>
@@ -1309,13 +1309,13 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                 <CardContent>
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {(['alfa', 'bravo', 'charlie', 'delta'] as const).map(team => (
-                      <div key={team} className={`p-4 rounded-lg ${getTeamColor(team)}`}>
-                        <p className="text-lg font-bold capitalize">{team}</p>
+                      <div key={team} className={`p-4 rounded-lg ${getTeamColor(team)} shadow-lg`}>
+                        <p className="text-lg font-bold capitalize drop-shadow-sm">{team}</p>
                         <div className="mt-2 space-y-1">
-                          <p className="text-sm font-medium">
+                          <p className="text-sm font-medium drop-shadow-sm">
                             {teamStats[team].count} agente(s)
                           </p>
-                          <p className="text-sm font-medium">
+                          <p className="text-sm font-medium drop-shadow-sm">
                             {teamStats[team].overtime.toFixed(1)}h BH
                           </p>
                         </div>
@@ -1333,7 +1333,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               {/* Recent Overtime */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
                     <TrendingUp className="w-5 h-5 text-primary" />
                     BH Recentes (Mês Atual)
                   </CardTitle>
@@ -1375,7 +1375,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
             <TabsContent value="licenses" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-foreground">
                     <Key className="w-5 h-5 text-primary" />
                     Gestão de Licenças
                   </CardTitle>
@@ -1391,7 +1391,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-foreground">
                       <Users className="w-5 h-5 text-primary" />
                       Todos os Agentes
                     </CardTitle>
@@ -1574,8 +1574,8 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               {/* President Card */}
               <Card className="bg-gradient-to-br from-amber-500/10 to-yellow-500/10 border-amber-500/30">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-amber-500">
-                    <Crown className="w-6 h-6" />
+                  <CardTitle className="flex items-center gap-2 text-foreground">
+                    <Crown className="w-6 h-6 text-amber-500" />
                     Presidente do Sistema Socioeducativo
                   </CardTitle>
                 </CardHeader>
@@ -1628,7 +1628,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                 {['CS Feijó', 'CS Juruá', 'CS Rio Branco', 'CS Purus', 'CS Alto Acre'].map(unitName => (
                   <Card key={unitName}>
                     <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2">
+                      <CardTitle className="flex items-center gap-2 text-foreground">
                         <Building2 className="w-5 h-5 text-primary" />
                         {unitName}
                       </CardTitle>
@@ -1738,7 +1738,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               {/* Monthly Revenue */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
                     <TrendingUp className="w-5 h-5 text-primary" />
                     Faturamento Mensal
                   </CardTitle>
@@ -1778,7 +1778,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               {/* Pending Payments */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
                     <AlertTriangle className="w-5 h-5 text-amber-500" />
                     Pagamentos Pendentes
                   </CardTitle>
@@ -1839,7 +1839,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               {/* Recent Payments History */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
                     <Receipt className="w-5 h-5 text-primary" />
                     Histórico de Pagamentos
                   </CardTitle>
