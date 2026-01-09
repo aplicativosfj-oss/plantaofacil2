@@ -77,10 +77,10 @@ const validateCPF = (cpf: string): boolean => {
 
 const UNITS = [
   { id: 'cs-feijo', name: 'CS Feijó', active: true },
-  { id: 'cs-jurua', name: 'CS Juruá', active: false },
-  { id: 'cs-rio-branco', name: 'CS Rio Branco', active: false },
-  { id: 'cs-purus', name: 'CS Purus', active: false },
-  { id: 'cs-alto-acre', name: 'CS Alto Acre', active: false },
+  { id: 'cs-tarauaca', name: 'CS Tarauacá', active: true },
+  { id: 'cs-cruzeiro', name: 'CS Cruzeiro do Sul', active: true },
+  { id: 'cs-sena', name: 'CS Sena Madureira', active: true },
+  { id: 'cs-rio-branco', name: 'CS Rio Branco', active: true },
 ];
 const CITIES = ['Feijó', 'Rio Branco', 'Cruzeiro do Sul', 'Tarauacá', 'Sena Madureira', 'Brasileia'];
 
@@ -923,9 +923,7 @@ const PlantaoHome = () => {
                     </div>
                     <div className="text-left">
                       <p className="font-semibold text-sm">{selectedUnit}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {UNITS.find(u => u.name === selectedUnit)?.active ? 'Sistema Ativo' : 'Em breve'}
-                      </p>
+                      <p className="text-[10px] text-muted-foreground">Sistema Ativo</p>
                     </div>
                   </div>
                   <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${showUnitSelector ? 'rotate-90' : ''}`} />
@@ -952,7 +950,7 @@ const PlantaoHome = () => {
                               selectedUnit === unit.name 
                                 ? 'bg-primary/20 border border-primary/30' 
                                 : 'hover:bg-muted/50'
-                            } ${!unit.active ? 'opacity-60' : ''}`}
+                            }`}
                           >
                             <div className="flex items-center gap-2">
                               <Building2 className={`w-4 h-4 ${selectedUnit === unit.name ? 'text-primary' : 'text-muted-foreground'}`} />
@@ -962,11 +960,6 @@ const PlantaoHome = () => {
                             </div>
                             {selectedUnit === unit.name && (
                               <CheckCircle className="w-4 h-4 text-primary" />
-                            )}
-                            {!unit.active && selectedUnit !== unit.name && (
-                              <span className="text-[10px] text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded">
-                                Em breve
-                              </span>
                             )}
                           </motion.button>
                         ))}
@@ -1439,49 +1432,21 @@ const PlantaoHome = () => {
                             <Label htmlFor="signup-unit" className="flex items-center gap-2 text-xs">
                               <Building className="w-3.5 h-3.5" /> Unidade *
                             </Label>
-                            <Select 
-                              value={signupUnit} 
-                              onValueChange={(value) => {
-                                if (value !== 'CS Feijó') {
-                                  toast.error(
-                                    <div className="space-y-1">
-                                      <p className="font-bold">🚫 Funcionalidade Indisponível</p>
-                                      <p>O cadastro para <span className="font-semibold">{value}</span> ainda não está disponível.</p>
-                                      <p className="text-xs opacity-80">Entre em contato com o administrador para mais informações.</p>
-                                    </div>,
-                                    { duration: 5000 }
-                                  );
-                                  setSignupUnit('');
-                                } else {
-                                  setSignupUnit(value);
-                                }
-                              }}
-                            >
+                            <Select value={signupUnit} onValueChange={setSignupUnit}>
                               <SelectTrigger className="bg-background/50 border-border/50 h-9">
-                                <SelectValue placeholder="Selecione" />
+                                <SelectValue placeholder="Selecione sua unidade" />
                               </SelectTrigger>
                               <SelectContent>
-                                {UNITS.map((unit) => (
-                                  <SelectItem 
-                                    key={unit.id} 
-                                    value={unit.name}
-                                    className={!unit.active ? 'opacity-60' : ''}
-                                  >
+                                {UNITS.filter(u => u.active).map((unit) => (
+                                  <SelectItem key={unit.id} value={unit.name}>
                                     <span className="flex items-center gap-2">
+                                      <Building className="w-3.5 h-3.5 text-primary" />
                                       {unit.name}
-                                      {!unit.active && (
-                                        <span className="text-[10px] text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                                          Em breve
-                                        </span>
-                                      )}
                                     </span>
                                   </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
-                            {signupUnit === '' && (
-                              <p className="text-[10px] text-muted-foreground">Apenas CS Feijó disponível no momento</p>
-                            )}
                           </div>
 
                           {/* Team Selection - show pre-selected team or selector */}
