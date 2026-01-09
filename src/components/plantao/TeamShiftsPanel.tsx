@@ -205,7 +205,7 @@ const TeamShiftsPanel = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Shield className={`w-5 h-5 ${getTeamColor()} text-white p-1 rounded`} />
-              <CardTitle className="text-base">
+              <CardTitle className="text-base text-foreground">
                 Escala Equipe {agent.current_team?.charAt(0).toUpperCase()}{agent.current_team?.slice(1)}
               </CardTitle>
             </div>

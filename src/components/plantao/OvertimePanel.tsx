@@ -473,7 +473,7 @@ const OvertimePanel = ({ onBack }: Props) => {
           {/* Evolution Chart */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
+              <CardTitle className="text-sm flex items-center gap-2 text-foreground">
                 <TrendingUp className="w-4 h-4 text-cyan-400" />
                 Evolução Mensal
               </CardTitle>
@@ -514,7 +514,7 @@ const OvertimePanel = ({ onBack }: Props) => {
           {/* Value Chart */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
+              <CardTitle className="text-sm flex items-center gap-2 text-foreground">
                 <DollarSign className="w-4 h-4 text-green-400" />
                 Valores por Mês
               </CardTitle>
@@ -550,7 +550,7 @@ const OvertimePanel = ({ onBack }: Props) => {
           {shiftDistribution.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
+                <CardTitle className="text-sm flex items-center gap-2 text-foreground">
                   <BarChart3 className="w-4 h-4 text-primary" />
                   Distribuição por Turno
                 </CardTitle>
@@ -599,7 +599,7 @@ const OvertimePanel = ({ onBack }: Props) => {
         <TabsContent value="details" className="mt-3 space-y-3">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">Estatísticas Gerais</CardTitle>
+              <CardTitle className="text-sm font-semibold text-foreground">Estatísticas Gerais</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-3">

@@ -301,7 +301,7 @@ const SwapPanel = ({ onBack, agentId, agentTeam }: Props) => {
       {/* Formulário de Nova Permuta */}
       <Card className="border-primary/30">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <CardTitle className="flex items-center gap-2 text-lg text-foreground">
             <ArrowLeftRight className="w-5 h-5 text-primary" /> Nova Solicitação de Permuta
           </CardTitle>
         </CardHeader>
@@ -465,7 +465,7 @@ const SwapPanel = ({ onBack, agentId, agentTeam }: Props) => {
       {/* Minhas Solicitações Enviadas */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <CardTitle className="flex items-center gap-2 text-lg text-foreground">
             <Send className="w-5 h-5 text-primary" /> Minhas Solicitações
           </CardTitle>
         </CardHeader>
