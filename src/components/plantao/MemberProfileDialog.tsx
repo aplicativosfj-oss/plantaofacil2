@@ -112,7 +112,7 @@ const MemberProfileDialog: React.FC<MemberProfileDialogProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-3 border-b border-border bg-muted/30">
+            <div className="flex items-center justify-between p-3 border-b border-border bg-card">
               <h2 className="text-sm font-semibold">Perfil do Membro</h2>
               <button
                 onClick={onClose}
@@ -161,12 +161,12 @@ const MemberProfileDialog: React.FC<MemberProfileDialogProps> = ({
                 </div>
 
                 {/* Info */}
-                <div className="space-y-2 bg-muted/30 rounded-lg p-3">
+                <div className="space-y-2 bg-card border border-border rounded-lg p-3">
                   {member.registration_number && (
                     <div className="flex items-center gap-2 text-sm">
                       <IdCard className="w-4 h-4 text-muted-foreground" />
                       <span className="text-muted-foreground">Mat:</span>
-                      <span className="font-medium uppercase">{member.registration_number}</span>
+                      <span className="font-semibold uppercase">{member.registration_number}</span>
                     </div>
                   )}
                   {member.unit && (

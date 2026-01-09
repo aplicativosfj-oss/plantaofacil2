@@ -448,7 +448,7 @@ const SendMessagesPanel = () => {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="p-4 bg-muted/30 rounded-lg border border-border/50"
+                      className="p-4 bg-card rounded-lg border border-border"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
@@ -468,7 +468,7 @@ const SendMessagesPanel = () => {
                               {format(parseISO(message.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                             </span>
                           </div>
-                          <p className="text-sm">{message.content}</p>
+                          <p className="text-sm font-medium">{message.content}</p>
                         </div>
                         <Button
                           variant="ghost"

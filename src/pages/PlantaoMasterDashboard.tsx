@@ -798,8 +798,8 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
           
           {showAgentPassword && (
             <div className="space-y-4">
-              <div className="p-3 bg-muted/30 rounded-lg">
-                <p className="font-medium">{showAgentPassword.full_name}</p>
+              <div className="p-3 bg-card border border-border/50 rounded-lg">
+                <p className="font-semibold">{showAgentPassword.full_name}</p>
                 <p className="text-sm text-muted-foreground">Mat: {showAgentPassword.registration_number || 'N/A'}</p>
               </div>
               
@@ -1279,7 +1279,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                           className="border border-border/50 rounded-lg overflow-hidden"
                         >
                           <button
-                            className="w-full p-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
+                            className="w-full p-4 flex items-center justify-between hover:bg-card transition-colors"
                             onClick={() => setExpandedAgent(expandedAgent === agent.id ? null : agent.id)}
                           >
                             <div className="flex items-center gap-3">
@@ -1445,7 +1445,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                   {unitLeadership
                     .filter(l => l.position_type === 'presidente')
                     .map(leadership => (
-                      <div key={leadership.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                      <div key={leadership.id} className="flex items-center justify-between p-4 bg-card border border-border/50 rounded-lg">
                         <div className="flex items-center gap-4">
                           <div className="w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center">
                             <Crown className="w-7 h-7 text-amber-500" />
@@ -1500,7 +1500,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                         .filter(l => l.unit_name === unitName)
                         .sort((a, b) => (a.position_type === 'diretor' ? -1 : 1))
                         .map(leadership => (
-                          <div key={leadership.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                          <div key={leadership.id} className="flex items-center justify-between p-3 bg-card border border-border/50 rounded-lg">
                             <div className="flex items-center gap-3">
                               <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                                 leadership.position_type === 'diretor' 

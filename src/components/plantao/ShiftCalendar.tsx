@@ -752,10 +752,10 @@ const ShiftCalendar = () => {
     <div className="space-y-3">
       {/* Edit Shift Button - Compact */}
       {shiftSchedule && (
-        <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30 border text-sm">
+        <div className="flex items-center justify-between p-2 rounded-lg bg-card border border-border text-sm">
           <div className="flex items-center gap-2">
             <Clock className="w-3.5 h-3.5 text-amber-500" />
-            <span className="text-xs">
+            <span className="text-xs font-medium">
               1º plantão: <strong>{format(parseDateOnly(shiftSchedule.first_shift_date), "dd/MM/yy")}</strong>
             </span>
           </div>
@@ -1856,11 +1856,11 @@ const ShiftCalendar = () => {
 
               {/* BH Details Grid */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 rounded-lg bg-muted/30 border border-border">
+                <div className="p-3 rounded-lg bg-card border border-border">
                   <span className="text-xs text-muted-foreground">Horas Trabalhadas</span>
                   <div className="font-bold text-xl text-cyan-400">{viewingOvertime.hours_worked}h</div>
                 </div>
-                <div className="p-3 rounded-lg bg-muted/30 border border-border">
+                <div className="p-3 rounded-lg bg-card border border-border">
                   <span className="text-xs text-muted-foreground">Turno</span>
                   <div className="font-bold text-lg flex items-center gap-1">
                     {viewingOvertime.shift_type === 'night' ? (
@@ -1875,11 +1875,11 @@ const ShiftCalendar = () => {
               {/* Schedule Times */}
               {viewingOvertime.scheduled_time && (
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 rounded-lg bg-muted/30 border border-border">
+                  <div className="p-3 rounded-lg bg-card border border-border">
                     <span className="text-xs text-muted-foreground">Horário de Início</span>
                     <div className="font-bold text-lg">{viewingOvertime.scheduled_time}</div>
                   </div>
-                  <div className="p-3 rounded-lg bg-muted/30 border border-border">
+                  <div className="p-3 rounded-lg bg-card border border-border">
                     <span className="text-xs text-muted-foreground">Término (estimado)</span>
                     <div className="font-bold text-lg">
                       {(() => {
@@ -1897,7 +1897,7 @@ const ShiftCalendar = () => {
 
               {/* Description */}
               {viewingOvertime.description && (
-                <div className="p-3 rounded-lg bg-muted/30 border border-border">
+                <div className="p-3 rounded-lg bg-card border border-border">
                   <span className="text-xs text-muted-foreground">Descrição</span>
                   <div className="font-medium mt-1">{viewingOvertime.description}</div>
                 </div>

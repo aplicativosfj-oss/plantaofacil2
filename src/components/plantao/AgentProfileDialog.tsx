@@ -279,12 +279,12 @@ const AgentProfileDialog: React.FC<AgentProfileDialogProps> = ({
               </div>
 
               {/* CPF - Only visible to the agent themselves */}
-              <div className="bg-muted/30 rounded-lg p-2.5">
+              <div className="bg-card border border-border rounded-lg p-2.5">
                 <div className="flex items-center gap-2">
                   <IdCard className="w-4 h-4 text-muted-foreground" />
                   <div>
-                    <p className="text-[10px] text-muted-foreground">CPF (visível apenas para você)</p>
-                    <p className="text-xs font-medium font-mono">{formatCPF(agent.cpf)}</p>
+                    <p className="text-xs text-muted-foreground">CPF (visível apenas para você)</p>
+                    <p className="text-sm font-semibold font-mono">{formatCPF(agent.cpf)}</p>
                   </div>
                 </div>
               </div>
@@ -411,11 +411,11 @@ const AgentProfileDialog: React.FC<AgentProfileDialogProps> = ({
               ) : (
                 /* View Mode */
                 <>
-                  <div className="space-y-2 bg-muted/30 rounded-lg p-3">
+                  <div className="space-y-2 bg-card border border-border rounded-lg p-3">
                     <div className="flex items-center gap-2 text-sm">
                       <User className="w-4 h-4 text-muted-foreground" />
                       <span className="text-muted-foreground text-xs">Mat:</span>
-                      <span className="font-medium text-xs uppercase">{agent.registration_number || 'N/A'}</span>
+                      <span className="font-semibold text-xs uppercase">{agent.registration_number || 'N/A'}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Building className="w-4 h-4 text-muted-foreground" />
