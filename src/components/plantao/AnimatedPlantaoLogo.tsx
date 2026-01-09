@@ -88,27 +88,21 @@ const AnimatedPlantaoLogo = () => {
         transition={{ delay: 0.15 }}
       >
         <span className="text-foreground">PLANTÃO</span>
-        <motion.span
-          className="text-primary ml-1"
-          animate={{ opacity: [1, 0.7, 1] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          PRO
-        </motion.span>
+        <span className="text-primary ml-1">PRO</span>
       </motion.h1>
 
       {/* Subtitle with lines */}
       <motion.div
-        className="flex items-center gap-3 mt-1"
+        className="flex items-center gap-3 mt-2"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.25 }}
       >
-        <span className="w-8 h-px bg-gradient-to-r from-transparent to-primary/50" />
-        <span className="text-[10px] md:text-xs font-mono text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+        <span className="w-8 h-px bg-gradient-to-r from-transparent to-primary/60" />
+        <span className="text-xs md:text-sm font-medium text-foreground/80 uppercase tracking-wide flex items-center gap-1.5">
           {themeConfig.emoji} {themeConfig.subtitle}
         </span>
-        <span className="w-8 h-px bg-gradient-to-l from-transparent to-primary/50" />
+        <span className="w-8 h-px bg-gradient-to-l from-transparent to-primary/60" />
       </motion.div>
 
     </motion.div>
