@@ -15,23 +15,21 @@ import { clearExpiredCache as clearIndexedDBCache } from "@/lib/indexedDB";
 const InstallBanner = lazy(() => import("@/components/InstallBanner"));
 const OfflineBanner = lazy(() => import("@/components/shared/OfflineBanner"));
 
-
-// Páginas (FORÇA BRUTA): sem lazy import para evitar falha de chunks/caches no PWA
+// Páginas: sem lazy import para evitar falha de chunks/caches no PWA
 import PlantaoEntry from "./pages/PlantaoEntry";
 import AgentDashboard from "./pages/AgentDashboard";
 import PlantaoMasterDashboard from "./pages/PlantaoMasterDashboard";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
-
 // Optimized query client with better caching
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
+      gcTime: 1000 * 60 * 30, // 30 minutes
       retry: 2,
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
     },
@@ -57,14 +55,17 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundary
   }
 
   handleRetry = () => {
-    // Clear caches and reload
-    if ('caches' in window) {
-      caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
+    if ("caches" in window) {
+      caches
+        .keys()
+        .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+        .catch(() => {});
     }
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(regs => 
-        Promise.all(regs.map(r => r.unregister()))
-      ).catch(() => {});
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => Promise.all(regs.map((r) => r.unregister())))
+        .catch(() => {});
     }
     window.location.reload();
   };
@@ -102,77 +103,13 @@ const PageLoader = () => (
 const App = () => {
   // Clear expired caches on app start (defer para não travar o first paint)
   useEffect(() => {
-    // FORÇA BRUTA (segura): só tenta “hard reset” se o browser permitir gravar em storage.
-    // Em alguns navegadores/modos (ex: privativo no iOS), localStorage.setItem pode falhar e causar loop de reload.
-    const HARD_RESET_KEY = "plantao_hard_reset_v1";
-
-    const canPersistStorage = (() => {
-      try {
-        const k = "__storage_test__";
-        localStorage.setItem(k, "1");
-        localStorage.removeItem(k);
-        return true;
-      } catch {
-        return false;
-      }
-    })();
-
-    const shouldHardReset = (() => {
-      if (!canPersistStorage) return false;
-      try {
-        return localStorage.getItem(HARD_RESET_KEY) !== "1";
-      } catch {
-        return false;
-      }
-    })();
-
-    if (shouldHardReset) {
-      // Marca primeiro; se não conseguir gravar, NÃO faz reload.
-      let markerSet = false;
-      try {
-        localStorage.setItem(HARD_RESET_KEY, "1");
-        markerSet = localStorage.getItem(HARD_RESET_KEY) === "1";
-      } catch {
-        markerSet = false;
-      }
-
-      if (markerSet) {
-        (async () => {
-          try {
-            if ("serviceWorker" in navigator) {
-              const regs = await navigator.serviceWorker.getRegistrations();
-              await Promise.all(regs.map((r) => r.unregister()));
-            }
-          } catch {}
-
-          try {
-            if ("caches" in window) {
-              const keys = await caches.keys();
-              await Promise.all(keys.map((k) => caches.delete(k)));
-            }
-          } catch {}
-
-          try {
-            // Limpa caches internos (não apaga login)
-            clearLocalStorageCache();
-          } catch {}
-          try {
-            await clearIndexedDBCache();
-          } catch {}
-
-          // replace() evita “voltar” para uma página quebrada no histórico
-          window.location.replace(window.location.href);
-        })();
-
-        return;
-      }
-    }
-
     const runIdle = (fn: () => void) => {
-      const ric = (window as any).requestIdleCallback as
-        | undefined
-        | ((cb: () => void, opts?: { timeout: number }) => number);
-      if (typeof ric === 'function') {
+      const ric = (
+        window as unknown as {
+          requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+        }
+      ).requestIdleCallback;
+      if (typeof ric === "function") {
         ric(fn, { timeout: 1500 });
         return;
       }
@@ -180,75 +117,21 @@ const App = () => {
     };
 
     runIdle(() => {
-      // Clear both localStorage and IndexedDB caches
       try {
         clearLocalStorageCache();
       } catch {}
-      clearIndexedDBCache().catch(console.warn);
+      clearIndexedDBCache().catch(() => {});
     });
-
-    // Apenas silenciar vídeos de background que não têm controls (exceto intro)
-    const sanitizeVideoElement = (el: Element) => {
-      try {
-        const tag = (el.tagName || '').toUpperCase();
-        if (tag === 'VIDEO') {
-          const video = el as HTMLVideoElement;
-          const src = video.currentSrc || video.src || '';
-          const isIntroVideo = src.includes('intro-plantao');
-          // Only mute background videos without controls (not the intro)
-          if (!video.controls && !isIntroVideo) {
-            try {
-              video.muted = true;
-              video.volume = 0;
-            } catch {}
-          }
-        }
-      } catch {}
-    };
-
-    // Reforço inicial para vídeos de background (uma vez só)
-    try {
-      document.querySelectorAll('video').forEach((el) => sanitizeVideoElement(el));
-    } catch {}
-
-    // Observa elementos adicionados dinamicamente - versão otimizada (não varre o DOM inteiro)
-    const mo = new MutationObserver((mutations) => {
-      try {
-        for (const m of mutations) {
-          for (const node of Array.from(m.addedNodes)) {
-            if (!(node instanceof Element)) continue;
-
-            // Se o próprio nó é vídeo
-            if (node.tagName === 'VIDEO') {
-              sanitizeVideoElement(node);
-            }
-
-            // Se contém vídeo internamente
-            const innerVideos = node.querySelectorAll?.('video');
-            if (innerVideos && innerVideos.length) {
-              innerVideos.forEach((el) => sanitizeVideoElement(el));
-            }
-          }
-        }
-      } catch {}
-    });
-
-    try {
-      mo.observe(document.documentElement, { childList: true, subtree: true });
-    } catch {}
 
     // Register for online/offline events
     const handleOnline = () => {
-      console.log('App is online - syncing data...');
+      console.log("App is online - syncing data...");
       queryClient.refetchQueries();
     };
 
-    window.addEventListener('online', handleOnline);
+    window.addEventListener("online", handleOnline);
     return () => {
-      window.removeEventListener('online', handleOnline);
-      try {
-        mo?.disconnect?.();
-      } catch {}
+      window.removeEventListener("online", handleOnline);
     };
   }, []);
 
@@ -262,7 +145,7 @@ const App = () => {
               position="top-center"
               toastOptions={{
                 duration: 2500,
-                className: 'bg-card border-border',
+                className: "bg-card border-border",
               }}
             />
             <MotionConfig reducedMotion="user">
