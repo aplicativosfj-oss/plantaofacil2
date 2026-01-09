@@ -6,11 +6,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PlantaoAuthProvider } from "@/contexts/PlantaoAuthContext";
 import { PlantaoThemeProvider } from "@/contexts/PlantaoThemeContext";
-import { Loader2, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { clearExpiredCache as clearLocalStorageCache } from "@/hooks/useOfflineStorage";
 import { clearExpiredCache as clearIndexedDBCache } from "@/lib/indexedDB";
-import InstallBanner from "@/components/InstallBanner";
-import OfflineBanner from "@/components/shared/OfflineBanner";
+
+// Lazy load non-critical components
+const InstallBanner = lazy(() => import("@/components/InstallBanner"));
+const OfflineBanner = lazy(() => import("@/components/shared/OfflineBanner"));
 
 // Lazy load pages with retry logic for failed imports
 const retryImport = <T extends { default: unknown }>(
@@ -27,8 +29,8 @@ const retryImport = <T extends { default: unknown }>(
   });
 };
 
-// Preload critical pages
-const PlantaoHome = lazy(() => retryImport(() => import("./pages/PlantaoHome")));
+// Lazy load pages - PlantaoHome loads immediately, others on demand
+const PlantaoHome = lazy(() => import("./pages/PlantaoHome"));
 const AgentDashboard = lazy(() => retryImport(() => import("./pages/AgentDashboard")));
 const PlantaoMasterDashboard = lazy(() => retryImport(() => import("./pages/PlantaoMasterDashboard")));
 const Install = lazy(() => retryImport(() => import("./pages/Install")));
@@ -104,11 +106,8 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundary
 }
 
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="flex flex-col items-center gap-3">
-      <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      <p className="text-sm text-muted-foreground">Carregando...</p>
-    </div>
+  <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+    <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
   </div>
 );
 
@@ -248,8 +247,10 @@ const App = () => {
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>
-                <InstallBanner />
-                <OfflineBanner />
+                <Suspense fallback={null}>
+                  <InstallBanner />
+                  <OfflineBanner />
+                </Suspense>
               </LazyErrorBoundary>
             </BrowserRouter>
           </TooltipProvider>
