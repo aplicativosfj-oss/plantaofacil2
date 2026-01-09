@@ -757,10 +757,10 @@ const PlantaoHome = () => {
           /* Landing Screen */
           <motion.div
             key="landing"
-            initial={{ opacity: 0 }}
+            initial={{ opacity: 1 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.1 }}
+            transition={{ duration: 0.05 }}
             className="relative z-10 flex flex-col min-h-screen"
           >
             {/* Top HUD Bar */}
@@ -1010,10 +1010,10 @@ const PlantaoHome = () => {
           /* Auth Panel */
           <motion.div
             key="auth"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.15 }}
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.05 }}
             className="relative z-10 flex flex-col min-h-screen"
             style={{
               backgroundImage: `url(${loginBg})`,
@@ -1052,9 +1052,9 @@ const PlantaoHome = () => {
             {/* Main Content */}
             <main className="relative z-10 flex-1 flex items-start justify-center px-4 pt-4 pb-2 overflow-y-auto">
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.15 }}
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.02 }}
                 className="w-full max-w-md"
               >
 
