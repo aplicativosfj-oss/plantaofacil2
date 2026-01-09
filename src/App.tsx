@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PlantaoAuthProvider } from "@/contexts/PlantaoAuthContext";
 import { PlantaoThemeProvider } from "@/contexts/PlantaoThemeContext";
+import { MotionConfig } from "framer-motion";
 import { RefreshCw } from "lucide-react";
 import { clearExpiredCache as clearLocalStorageCache } from "@/hooks/useOfflineStorage";
 import { clearExpiredCache as clearIndexedDBCache } from "@/lib/indexedDB";
@@ -112,17 +113,54 @@ const PageLoader = () => (
 );
 
 const App = () => {
-  // Clear expired caches on app start
+  // Clear expired caches on app start (defer para não travar o first paint)
   useEffect(() => {
-    // Clear both localStorage and IndexedDB caches
-    clearLocalStorageCache();
-    clearIndexedDBCache().catch(console.warn);
+    const runIdle = (fn: () => void) => {
+      const ric = (window as any).requestIdleCallback as undefined | ((cb: () => void, opts?: { timeout: number }) => number);
+      if (typeof ric === 'function') {
+        ric(fn, { timeout: 1500 });
+        return;
+      }
+      setTimeout(fn, 50);
+    };
+
+    runIdle(() => {
+      // Clear both localStorage and IndexedDB caches
+      try {
+        clearLocalStorageCache();
+      } catch {}
+      clearIndexedDBCache().catch(console.warn);
+    });
 
     // Bloqueio de áudio HTML: evita qualquer “música/player” nos painéis.
     // Sons do app ficam apenas via WebAudio (cliques), e o vídeo de intro pode ter som.
     const originalPlay = HTMLMediaElement.prototype.play;
 
     const isIntroSplash = (src: string) => src.includes('/video/intro-splash.mp4');
+
+    const sanitizeMediaElement = (el: Element) => {
+      try {
+        const tag = (el.tagName || '').toUpperCase();
+        if (tag === 'AUDIO') {
+          const media = el as HTMLAudioElement;
+          try {
+            media.pause();
+            media.currentTime = 0;
+          } catch {}
+          return;
+        }
+        if (tag === 'VIDEO') {
+          const video = el as HTMLVideoElement;
+          const src = (video.currentSrc || (video as any).src || '').toString();
+          try {
+            if (!video.controls && !isIntroSplash(src)) {
+              video.muted = true;
+              video.volume = 0;
+            }
+          } catch {}
+        }
+      } catch {}
+    };
 
     HTMLMediaElement.prototype.play = function (this: HTMLMediaElement, ...args: any[]) {
       try {
@@ -153,57 +191,36 @@ const App = () => {
       return (originalPlay as any).apply(this, args);
     };
 
-    // Reforço: parar qualquer <audio> já tocando
+    // Reforço inicial (uma vez só)
     try {
-      document.querySelectorAll('audio').forEach((el) => {
-        const media = el as HTMLAudioElement;
-        try {
-          media.pause();
-          media.currentTime = 0;
-        } catch {}
-      });
-
-      // Reforço: garantir que vídeos de fundo (sem controles) fiquem mudos
-      document.querySelectorAll('video').forEach((el) => {
-        const video = el as HTMLVideoElement;
-        const src = (video.currentSrc || (video as any).src || '').toString();
-        try {
-          if (!video.controls && !isIntroSplash(src)) {
-            video.muted = true;
-            video.volume = 0;
-          }
-        } catch {}
-      });
+      document.querySelectorAll('audio, video').forEach((el) => sanitizeMediaElement(el));
     } catch {}
 
-    // Observa elementos adicionados dinamicamente (ex: modais, splash, etc.)
-    const mo = new MutationObserver(() => {
+    // Observa elementos adicionados dinamicamente - versão otimizada (não varre o DOM inteiro)
+    const mo = new MutationObserver((mutations) => {
       try {
-        document.querySelectorAll('audio').forEach((el) => {
-          const media = el as HTMLAudioElement;
-          try {
-            media.pause();
-            media.currentTime = 0;
-          } catch {}
-        });
-        document.querySelectorAll('video').forEach((el) => {
-          const video = el as HTMLVideoElement;
-          const src = (video.currentSrc || (video as any).src || '').toString();
-          try {
-            if (!video.controls && !isIntroSplash(src)) {
-              video.muted = true;
-              video.volume = 0;
+        for (const m of mutations) {
+          for (const node of Array.from(m.addedNodes)) {
+            if (!(node instanceof Element)) continue;
+
+            // Se o próprio nó é mídia
+            if (node.tagName === 'AUDIO' || node.tagName === 'VIDEO') {
+              sanitizeMediaElement(node);
             }
-          } catch {}
-        });
+
+            // Se contém mídia internamente
+            const innerMedia = node.querySelectorAll?.('audio, video');
+            if (innerMedia && innerMedia.length) {
+              innerMedia.forEach((el) => sanitizeMediaElement(el));
+            }
+          }
+        }
       } catch {}
     });
 
     try {
       mo.observe(document.documentElement, { childList: true, subtree: true });
     } catch {}
-
-
 
     // Register for online/offline events
     const handleOnline = () => {
@@ -222,7 +239,6 @@ const App = () => {
     };
   }, []);
 
-
   return (
     <QueryClientProvider client={queryClient}>
       <PlantaoThemeProvider>
@@ -236,23 +252,25 @@ const App = () => {
                 className: 'bg-card border-border',
               }}
             />
-            <BrowserRouter>
-              <LazyErrorBoundary>
-                <Suspense fallback={<PageLoader />}>
-                  <Routes>
-                    <Route path="/" element={<PlantaoHome />} />
-                    <Route path="/dashboard" element={<AgentDashboard />} />
-                    <Route path="/master" element={<PlantaoMasterDashboard />} />
-                    <Route path="/install" element={<Install />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Suspense>
-                <Suspense fallback={null}>
-                  <InstallBanner />
-                  <OfflineBanner />
-                </Suspense>
-              </LazyErrorBoundary>
-            </BrowserRouter>
+            <MotionConfig reducedMotion="always">
+              <BrowserRouter>
+                <LazyErrorBoundary>
+                  <Suspense fallback={<PageLoader />}>
+                    <Routes>
+                      <Route path="/" element={<PlantaoHome />} />
+                      <Route path="/dashboard" element={<AgentDashboard />} />
+                      <Route path="/master" element={<PlantaoMasterDashboard />} />
+                      <Route path="/install" element={<Install />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
+                  <Suspense fallback={null}>
+                    <InstallBanner />
+                    <OfflineBanner />
+                  </Suspense>
+                </LazyErrorBoundary>
+              </BrowserRouter>
+            </MotionConfig>
           </TooltipProvider>
         </PlantaoAuthProvider>
       </PlantaoThemeProvider>
