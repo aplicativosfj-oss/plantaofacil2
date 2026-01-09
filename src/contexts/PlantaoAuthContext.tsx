@@ -137,56 +137,80 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, [user?.id, fetchAgentProfile]);
 
-  // Check for master session on load
+  // Combined auth initialization - prevents race conditions
   useEffect(() => {
-    const storedMaster = sessionStorage.getItem('masterSession');
-    if (storedMaster) {
+    let isMounted = true;
+    let subscription: { unsubscribe: () => void } | null = null;
+
+    const initAuth = async () => {
+      // First check for master session
+      const storedMaster = sessionStorage.getItem('masterSession');
+      if (storedMaster) {
+        try {
+          const parsed = JSON.parse(storedMaster) as MasterInfo;
+          if (isMounted) {
+            setMaster(parsed);
+            setRole('master');
+            setIsLoading(false);
+          }
+          return; // Master session found, skip Supabase auth
+        } catch {
+          sessionStorage.removeItem('masterSession');
+        }
+      }
+
+      // Set up auth state listener BEFORE checking session
+      const { data } = supabase.auth.onAuthStateChange((event, newSession) => {
+        if (!isMounted) return;
+        
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+
+        if (!newSession) {
+          clearAuthState();
+          setIsLoading(false);
+          return;
+        }
+
+        // Defer hydration to avoid blocking
+        setTimeout(() => {
+          if (isMounted) {
+            hydrateUserContext(newSession);
+          }
+        }, 0);
+      });
+      
+      subscription = data.subscription;
+
+      // Check for existing session
       try {
-        const parsed = JSON.parse(storedMaster) as MasterInfo;
-        setMaster(parsed);
-        setRole('master');
-        setIsLoading(false);
-      } catch {
-        sessionStorage.removeItem('masterSession');
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        
+        if (!isMounted) return;
+        
+        setSession(existingSession);
+        setUser(existingSession?.user ?? null);
+
+        if (existingSession) {
+          await hydrateUserContext(existingSession);
+        } else {
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('Error getting session:', err);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-    }
-  }, []);
+    };
 
-  useEffect(() => {
-    // Skip if master is logged in
-    if (master) {
-      setIsLoading(false);
-      return;
-    }
+    initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
-      setSession(newSession);
-      setUser(newSession?.user ?? null);
-
-      if (!newSession) {
-        clearAuthState();
-        setIsLoading(false);
-        return;
-      }
-
-      setTimeout(() => {
-        hydrateUserContext(newSession);
-      }, 0);
-    });
-
-    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      setSession(existingSession);
-      setUser(existingSession?.user ?? null);
-
-      if (existingSession) {
-        hydrateUserContext(existingSession);
-      } else {
-        setIsLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [clearAuthState, hydrateUserContext, master]);
+    return () => {
+      isMounted = false;
+      subscription?.unsubscribe();
+    };
+  }, [clearAuthState, hydrateUserContext]);
 
   const signIn = useCallback(async (cpf: string, password: string): Promise<{ error: string | null }> => {
     try {
