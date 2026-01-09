@@ -2300,6 +2300,33 @@ export type Database = {
         }
         Relationships: []
       }
+      units: {
+        Row: {
+          city: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          state: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          state?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          state?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
