@@ -84,17 +84,10 @@ const UNITS = [
 ];
 const CITIES = ['Feijó', 'Rio Branco', 'Cruzeiro do Sul', 'Tarauacá', 'Sena Madureira', 'Brasileia'];
 
-// Mapa de ícones para uso dinâmico
-const ICON_MAP: Record<string, LucideIcon> = {
-  Shield, Star, Target, Crosshair, Flame, Siren, Truck, AlertTriangle,
-  Ambulance, HeartPulse, Stethoscope, Activity, Lock, KeyRound, ShieldAlert,
-  Car, Route, CircleAlert, Eye, Radar, ScanEye, Cctv, Building2, UserRoundCheck, MapPin, BadgeCheck
-};
-
-// Função para obter ícone baseado no tema
-const getTeamIcon = (teamValue: string, themeConfig: any): LucideIcon => {
-  const iconName = themeConfig.teamIcons[teamValue];
-  return ICON_MAP[iconName] || Shield;
+// Função para obter ícone baseado no tema usando contexto
+const getTeamIconFromTheme = (teamValue: string, themeConfig: any): LucideIcon => {
+  const teamIconData = themeConfig.teamIcons[teamValue];
+  return teamIconData?.icon || Shield;
 };
 
 const TEAMS = [
@@ -121,7 +114,7 @@ interface TeamButtonProps {
 const TeamButton = ({ team, index, isUserTeam, isBlocked, isBlockedClicked, isAutoLogging, themeConfig, onTeamClick, onPlaySound, effectsEnabled = true }: TeamButtonProps) => {
   const [isPressed, setIsPressed] = useState(false);
   const [ripples, setRipples] = useState<{x: number, y: number, id: number}[]>([]);
-  const TeamIcon = getTeamIcon(team.value, themeConfig);
+  const TeamIcon = getTeamIconFromTheme(team.value, themeConfig);
   
   const handlePress = (e: React.MouseEvent<HTMLButtonElement>) => {
     // Play sound effect
@@ -775,7 +768,7 @@ const PlantaoHome = () => {
               <div className="container mx-auto flex items-center justify-between">
                 <HUDElement>
                   <span className="flex items-center gap-1">
-                    {themeConfig.icon} {themeConfig.name}
+                    {themeConfig.emoji} {themeConfig.name}
                   </span>
                 </HUDElement>
                 <div className="flex items-center gap-2">
@@ -1498,7 +1491,7 @@ const PlantaoHome = () => {
                                 {(() => {
                                   const team = TEAMS.find(t => t.value === selectedTeam);
                                   if (!team) return null;
-                                      const TeamIcon = getTeamIcon(team.value, themeConfig);
+                                      const TeamIcon = getTeamIconFromTheme(team.value, themeConfig);
                                       return (
                                         <>
                                           <div className={`p-1.5 rounded ${team.bgColor}`}>
@@ -1519,7 +1512,7 @@ const PlantaoHome = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                   {TEAMS.map((team) => {
-                                    const TeamIcon = getTeamIcon(team.value, themeConfig);
+                                    const TeamIcon = getTeamIconFromTheme(team.value, themeConfig);
                                     return (
                                       <SelectItem key={team.value} value={team.value}>
                                         <span className="flex items-center gap-2">

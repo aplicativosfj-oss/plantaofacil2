@@ -298,7 +298,7 @@ const AnimatedPlantaoLogo = () => {
           }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          {themeConfig.icon}
+          {themeConfig.emoji}
         </motion.span>
       </motion.div>
     </motion.div>

@@ -101,8 +101,8 @@ const StyledTeamButton = ({
   const [isHovered, setIsHovered] = useState(false);
   
   // Get team icon from theme
-  const iconName = themeConfig.teamIcons[team.value];
-  const TeamIcon = ICON_MAP[iconName] || Shield;
+  const teamIconData = themeConfig.teamIcons[team.value];
+  const TeamIcon = teamIconData?.icon || Shield;
   const teamEffects = getTeamEffects(team.value);
 
   const handlePress = (e: React.MouseEvent<HTMLButtonElement>) => {

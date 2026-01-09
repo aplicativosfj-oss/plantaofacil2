@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { LucideIcon, Shield, Star, Target, Crosshair, Flame, Siren, Truck, AlertTriangle, Ambulance, HeartPulse, Stethoscope, Activity, Lock, KeyRound, ShieldAlert, Link2, Car, Construction, Route, CircleAlert, Eye, Radar, ScanEye, Cctv, Building2, UserRoundCheck, MapPin, BadgeCheck, Sword, Zap, Radio, Fingerprint, Scale, Gavel, FileSearch, Users, Megaphone, Bell, Timer, Clock } from 'lucide-react';
 
 // Definição dos temas de segurança pública
 export type PlantaoThemeType = 
@@ -10,17 +11,26 @@ export type PlantaoThemeType =
   | 'vigilancia'
   | 'guarda_municipal';
 
+// Ícone com metadata
+export interface ThemeIcon {
+  icon: LucideIcon;
+  name: string;
+}
+
 interface ThemeConfig {
   id: PlantaoThemeType;
   name: string;
   subtitle: string;
-  icon: string; // emoji for simplicity
+  slogan: string;
+  emoji: string;
+  mainIcon: LucideIcon;
   teamIcons: {
-    alfa: string;
-    bravo: string;
-    charlie: string;
-    delta: string;
+    alfa: ThemeIcon;
+    bravo: ThemeIcon;
+    charlie: ThemeIcon;
+    delta: ThemeIcon;
   };
+  decorativeIcons: LucideIcon[];
   colors: {
     primary: string;
     accent: string;
@@ -30,27 +40,40 @@ interface ThemeConfig {
     teamBravo: string;
     teamCharlie: string;
     teamDelta: string;
+    gradient: string;
   };
   sounds: {
     click: string;
     notification: string;
     alert: string;
   };
-  font: string;
+  font: {
+    display: string;
+    body: string;
+  };
+  style: {
+    titleSize: string;
+    iconSize: string;
+    borderRadius: string;
+    buttonStyle: string;
+  };
 }
 
 export const PLANTAO_THEMES: Record<PlantaoThemeType, ThemeConfig> = {
   policia: {
     id: 'policia',
-    name: 'Operações Táticas',
-    subtitle: 'Ação e patrulhamento',
-    icon: '🛡️',
+    name: 'FORÇA TÁTICA',
+    subtitle: 'Operações Especiais',
+    slogan: 'Servir e Proteger',
+    emoji: '🛡️',
+    mainIcon: Shield,
     teamIcons: {
-      alfa: 'Shield',
-      bravo: 'Star',
-      charlie: 'Target',
-      delta: 'Crosshair',
+      alfa: { icon: Shield, name: 'Escudo' },
+      bravo: { icon: Star, name: 'Estrela' },
+      charlie: { icon: Target, name: 'Alvo' },
+      delta: { icon: Crosshair, name: 'Mira' },
     },
+    decorativeIcons: [Shield, Radio, Fingerprint, Sword, Star, Target],
     colors: {
       primary: '210 80% 45%',
       accent: '152 60% 40%',
@@ -60,25 +83,38 @@ export const PLANTAO_THEMES: Record<PlantaoThemeType, ThemeConfig> = {
       teamBravo: '45 90% 50%',
       teamCharlie: '152 60% 45%',
       teamDelta: '0 70% 50%',
+      gradient: 'from-blue-600 via-blue-700 to-slate-800',
     },
     sounds: {
       click: '/audio/click.mp3',
       notification: '/audio/notification.mp3',
       alert: '/audio/notification.mp3',
     },
-    font: "'Inter', sans-serif",
+    font: {
+      display: "'Bebas Neue', sans-serif",
+      body: "'Inter', sans-serif",
+    },
+    style: {
+      titleSize: 'text-3xl',
+      iconSize: 'w-7 h-7',
+      borderRadius: 'rounded-lg',
+      buttonStyle: 'uppercase tracking-wider font-bold',
+    },
   },
   bombeiros: {
     id: 'bombeiros',
-    name: 'Resgate & Incêndio',
-    subtitle: 'Emergência e salvamento',
-    icon: '🔥',
+    name: 'RESGATE',
+    subtitle: 'Combate a Incêndio',
+    slogan: 'Vida Alheia e Riquezas Salvar',
+    emoji: '🔥',
+    mainIcon: Flame,
     teamIcons: {
-      alfa: 'Flame',
-      bravo: 'Siren',
-      charlie: 'Truck',
-      delta: 'AlertTriangle',
+      alfa: { icon: Flame, name: 'Chama' },
+      bravo: { icon: Siren, name: 'Sirene' },
+      charlie: { icon: Truck, name: 'Viatura' },
+      delta: { icon: AlertTriangle, name: 'Alerta' },
     },
+    decorativeIcons: [Flame, Siren, Truck, AlertTriangle, Bell, Timer],
     colors: {
       primary: '0 75% 50%',
       accent: '35 95% 55%',
@@ -88,25 +124,38 @@ export const PLANTAO_THEMES: Record<PlantaoThemeType, ThemeConfig> = {
       teamBravo: '35 90% 50%',
       teamCharlie: '45 95% 55%',
       teamDelta: '20 85% 50%',
+      gradient: 'from-red-600 via-orange-600 to-yellow-600',
     },
     sounds: {
       click: '/audio/click.mp3',
       notification: '/audio/notification.mp3',
       alert: '/audio/notification.mp3',
     },
-    font: "'Inter', sans-serif",
+    font: {
+      display: "'Bebas Neue', sans-serif",
+      body: "'Inter', sans-serif",
+    },
+    style: {
+      titleSize: 'text-4xl',
+      iconSize: 'w-8 h-8',
+      borderRadius: 'rounded-xl',
+      buttonStyle: 'uppercase tracking-widest font-black',
+    },
   },
   samu: {
     id: 'samu',
-    name: 'Atendimento Móvel',
-    subtitle: 'Primeiros socorros',
-    icon: '⚕️',
+    name: 'SAMU 192',
+    subtitle: 'Urgência Médica',
+    slogan: 'Atendimento Pré-Hospitalar',
+    emoji: '⚕️',
+    mainIcon: HeartPulse,
     teamIcons: {
-      alfa: 'Ambulance',
-      bravo: 'HeartPulse',
-      charlie: 'Stethoscope',
-      delta: 'Activity',
+      alfa: { icon: Ambulance, name: 'UTI Móvel' },
+      bravo: { icon: HeartPulse, name: 'Pulso' },
+      charlie: { icon: Stethoscope, name: 'Médico' },
+      delta: { icon: Activity, name: 'Monitor' },
     },
+    decorativeIcons: [Ambulance, HeartPulse, Stethoscope, Activity, Clock, Bell],
     colors: {
       primary: '35 95% 50%',
       accent: '0 70% 50%',
@@ -116,25 +165,38 @@ export const PLANTAO_THEMES: Record<PlantaoThemeType, ThemeConfig> = {
       teamBravo: '0 70% 50%',
       teamCharlie: '45 90% 55%',
       teamDelta: '25 85% 50%',
+      gradient: 'from-orange-500 via-amber-500 to-yellow-500',
     },
     sounds: {
       click: '/audio/click.mp3',
       notification: '/audio/notification.mp3',
       alert: '/audio/notification.mp3',
     },
-    font: "'Inter', sans-serif",
+    font: {
+      display: "'Inter', sans-serif",
+      body: "'Inter', sans-serif",
+    },
+    style: {
+      titleSize: 'text-3xl',
+      iconSize: 'w-7 h-7',
+      borderRadius: 'rounded-2xl',
+      buttonStyle: 'font-bold tracking-wide',
+    },
   },
   penitenciario: {
     id: 'penitenciario',
-    name: 'Custódia',
-    subtitle: 'Controle e escolta',
-    icon: '⛓️',
+    name: 'CUSTÓDIA',
+    subtitle: 'Sistema Prisional',
+    slogan: 'Ordem e Disciplina',
+    emoji: '⛓️',
+    mainIcon: Lock,
     teamIcons: {
-      alfa: 'Lock',
-      bravo: 'KeyRound',
-      charlie: 'ShieldAlert',
-      delta: 'Handcuffs',
+      alfa: { icon: Lock, name: 'Cadeado' },
+      bravo: { icon: KeyRound, name: 'Chave' },
+      charlie: { icon: ShieldAlert, name: 'Segurança' },
+      delta: { icon: Link2, name: 'Algema' },
     },
+    decorativeIcons: [Lock, KeyRound, ShieldAlert, Link2, Scale, Gavel],
     colors: {
       primary: '220 15% 45%',
       accent: '35 60% 45%',
@@ -144,25 +206,38 @@ export const PLANTAO_THEMES: Record<PlantaoThemeType, ThemeConfig> = {
       teamBravo: '35 50% 45%',
       teamCharlie: '200 15% 50%',
       teamDelta: '0 40% 45%',
+      gradient: 'from-slate-600 via-gray-700 to-zinc-800',
     },
     sounds: {
       click: '/audio/click.mp3',
       notification: '/audio/notification.mp3',
       alert: '/audio/notification.mp3',
     },
-    font: "'Inter', sans-serif",
+    font: {
+      display: "'Bebas Neue', sans-serif",
+      body: "'Inter', sans-serif",
+    },
+    style: {
+      titleSize: 'text-3xl',
+      iconSize: 'w-6 h-6',
+      borderRadius: 'rounded-md',
+      buttonStyle: 'uppercase tracking-widest font-semibold',
+    },
   },
   transito: {
     id: 'transito',
-    name: 'Patrulha Viária',
-    subtitle: 'Rondas e fiscalização',
-    icon: '🚧',
+    name: 'TRÂNSITO',
+    subtitle: 'Patrulha Rodoviária',
+    slogan: 'Segurança nas Vias',
+    emoji: '🚧',
+    mainIcon: Car,
     teamIcons: {
-      alfa: 'Car',
-      bravo: 'TrafficCone',
-      charlie: 'Route',
-      delta: 'CircleAlert',
+      alfa: { icon: Car, name: 'Viatura' },
+      bravo: { icon: Construction, name: 'Operação' },
+      charlie: { icon: Route, name: 'Rota' },
+      delta: { icon: CircleAlert, name: 'Atenção' },
     },
+    decorativeIcons: [Car, Construction, Route, CircleAlert, MapPin, Timer],
     colors: {
       primary: '145 70% 40%',
       accent: '45 90% 50%',
@@ -172,25 +247,38 @@ export const PLANTAO_THEMES: Record<PlantaoThemeType, ThemeConfig> = {
       teamBravo: '45 90% 50%',
       teamCharlie: '35 80% 50%',
       teamDelta: '0 70% 50%',
+      gradient: 'from-green-600 via-emerald-600 to-teal-600',
     },
     sounds: {
       click: '/audio/click.mp3',
       notification: '/audio/notification.mp3',
       alert: '/audio/notification.mp3',
     },
-    font: "'Inter', sans-serif",
+    font: {
+      display: "'Bebas Neue', sans-serif",
+      body: "'Inter', sans-serif",
+    },
+    style: {
+      titleSize: 'text-3xl',
+      iconSize: 'w-7 h-7',
+      borderRadius: 'rounded-lg',
+      buttonStyle: 'uppercase font-bold tracking-wide',
+    },
   },
   vigilancia: {
     id: 'vigilancia',
-    name: 'Sentinela',
-    subtitle: 'Monitoramento e apoio',
-    icon: '🛰️',
+    name: 'SENTINELA',
+    subtitle: 'Vigilância Eletrônica',
+    slogan: 'Olhos que Protegem',
+    emoji: '🛰️',
+    mainIcon: Eye,
     teamIcons: {
-      alfa: 'Eye',
-      bravo: 'Radar',
-      charlie: 'ScanEye',
-      delta: 'Cctv',
+      alfa: { icon: Eye, name: 'Observador' },
+      bravo: { icon: Radar, name: 'Radar' },
+      charlie: { icon: ScanEye, name: 'Scanner' },
+      delta: { icon: Cctv, name: 'CFTV' },
     },
+    decorativeIcons: [Eye, Radar, ScanEye, Cctv, FileSearch, Radio],
     colors: {
       primary: '270 60% 50%',
       accent: '200 70% 50%',
@@ -200,25 +288,38 @@ export const PLANTAO_THEMES: Record<PlantaoThemeType, ThemeConfig> = {
       teamBravo: '200 70% 50%',
       teamCharlie: '230 60% 50%',
       teamDelta: '300 50% 50%',
+      gradient: 'from-purple-600 via-violet-600 to-indigo-600',
     },
     sounds: {
       click: '/audio/click.mp3',
       notification: '/audio/notification.mp3',
       alert: '/audio/notification.mp3',
     },
-    font: "'Inter', sans-serif",
+    font: {
+      display: "'Inter', sans-serif",
+      body: "'Inter', sans-serif",
+    },
+    style: {
+      titleSize: 'text-2xl',
+      iconSize: 'w-6 h-6',
+      borderRadius: 'rounded-xl',
+      buttonStyle: 'font-medium tracking-wider',
+    },
   },
   guarda_municipal: {
     id: 'guarda_municipal',
-    name: 'Guarda Urbana',
-    subtitle: 'Proteção comunitária',
-    icon: '🏙️',
+    name: 'GUARDA CIVIL',
+    subtitle: 'Proteção Urbana',
+    slogan: 'Cidadão em Primeiro Lugar',
+    emoji: '🏙️',
+    mainIcon: Building2,
     teamIcons: {
-      alfa: 'Building2',
-      bravo: 'UserRoundCheck',
-      charlie: 'MapPin',
-      delta: 'BadgeCheck',
+      alfa: { icon: Building2, name: 'Sede' },
+      bravo: { icon: UserRoundCheck, name: 'Agente' },
+      charlie: { icon: MapPin, name: 'Ponto' },
+      delta: { icon: BadgeCheck, name: 'Distintivo' },
     },
+    decorativeIcons: [Building2, UserRoundCheck, MapPin, BadgeCheck, Users, Megaphone],
     colors: {
       primary: '200 75% 45%',
       accent: '170 60% 45%',
@@ -228,14 +329,34 @@ export const PLANTAO_THEMES: Record<PlantaoThemeType, ThemeConfig> = {
       teamBravo: '170 60% 45%',
       teamCharlie: '180 65% 45%',
       teamDelta: '220 70% 50%',
+      gradient: 'from-sky-600 via-cyan-600 to-teal-600',
     },
     sounds: {
       click: '/audio/click.mp3',
       notification: '/audio/notification.mp3',
       alert: '/audio/notification.mp3',
     },
-    font: "'Inter', sans-serif",
+    font: {
+      display: "'Bebas Neue', sans-serif",
+      body: "'Inter', sans-serif",
+    },
+    style: {
+      titleSize: 'text-3xl',
+      iconSize: 'w-7 h-7',
+      borderRadius: 'rounded-lg',
+      buttonStyle: 'uppercase font-bold tracking-wide',
+    },
   },
+};
+
+// Helper para obter ícone da equipe
+export const getTeamIcon = (team: 'alfa' | 'bravo' | 'charlie' | 'delta', themeConfig: ThemeConfig): LucideIcon => {
+  return themeConfig.teamIcons[team].icon;
+};
+
+// Helper para compatibilidade com código antigo
+export const getTeamIconName = (team: 'alfa' | 'bravo' | 'charlie' | 'delta', themeConfig: ThemeConfig): string => {
+  return themeConfig.teamIcons[team].name;
 };
 
 interface PlantaoThemeContextType {
@@ -245,6 +366,7 @@ interface PlantaoThemeContextType {
   playSound: (type: 'click' | 'notification' | 'alert') => void;
   soundEnabled: boolean;
   setSoundEnabled: (enabled: boolean) => void;
+  getTeamIcon: (team: 'alfa' | 'bravo' | 'charlie' | 'delta') => LucideIcon;
 }
 
 const PlantaoThemeContext = createContext<PlantaoThemeContextType | undefined>(undefined);
@@ -256,9 +378,8 @@ export const PlantaoThemeProvider = ({ children }: { children: ReactNode }) => {
   });
   
   const [soundEnabled, setSoundEnabled] = useState(() => {
-    // Som desativado por padrão
     const saved = localStorage.getItem('plantao_sound_enabled');
-    return saved === 'true'; // Só ativa se explicitamente salvo como 'true'
+    return saved === 'true';
   });
 
   const themeConfig = PLANTAO_THEMES[currentTheme];
@@ -278,6 +399,10 @@ export const PlantaoThemeProvider = ({ children }: { children: ReactNode }) => {
     root.style.setProperty('--team-delta', config.colors.teamDelta);
     root.style.setProperty('--ring', config.colors.primary);
     
+    // Aplicar fonte do tema
+    root.style.setProperty('--font-display', config.font.display);
+    root.style.setProperty('--font-body', config.font.body);
+    
     localStorage.setItem('plantao_theme', currentTheme);
   }, [currentTheme]);
 
@@ -296,10 +421,12 @@ export const PlantaoThemeProvider = ({ children }: { children: ReactNode }) => {
     if (soundUrl) {
       const audio = new Audio(soundUrl);
       audio.volume = 0.3;
-      audio.play().catch(() => {
-        // Ignorar erros de autoplay
-      });
+      audio.play().catch(() => {});
     }
+  };
+
+  const getTeamIconForTheme = (team: 'alfa' | 'bravo' | 'charlie' | 'delta'): LucideIcon => {
+    return themeConfig.teamIcons[team].icon;
   };
 
   return (
@@ -310,6 +437,7 @@ export const PlantaoThemeProvider = ({ children }: { children: ReactNode }) => {
       playSound,
       soundEnabled,
       setSoundEnabled,
+      getTeamIcon: getTeamIconForTheme,
     }}>
       {children}
     </PlantaoThemeContext.Provider>
