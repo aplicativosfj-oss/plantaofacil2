@@ -353,7 +353,7 @@ const SendMessagesPanel = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <MessageCircle className="w-6 h-6 text-primary" />
-          <h2 className="text-xl font-bold">Mensagens</h2>
+          <h2 className="text-xl font-bold text-foreground">Mensagens</h2>
         </div>
         <Button onClick={() => setShowComposeDialog(true)} className="gap-2">
           <Send className="w-4 h-4" />
