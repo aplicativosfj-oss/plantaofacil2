@@ -191,12 +191,9 @@
       // Fallback for load event
       window.addEventListener('load', removeLoader);
 
-      // Register service worker early
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
-          navigator.serviceWorker.register('/sw.js').catch(function () {});
-        });
-      }
+      // Service worker registration removido daqui.
+      // O VitePWA plugin cuida disso automaticamente quando necessário.
+      // Registro manual causava conflitos e bloqueios em alguns navegadores.
     </script>
     
     <script type="module" src="/src/main.tsx"></script>
