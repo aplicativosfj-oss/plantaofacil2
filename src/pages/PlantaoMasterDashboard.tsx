@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { 
   Shield, LogOut, Users, DollarSign, Calendar, User, Search, 
@@ -164,7 +165,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
   // Agent management dialogs
   const [editingAgent, setEditingAgent] = useState<AgentWithDetails | null>(null);
   const [deletingAgent, setDeletingAgent] = useState<AgentWithDetails | null>(null);
-  const [editForm, setEditForm] = useState({ full_name: '', phone: '', email: '', unit: '', city: '' });
+  const [editForm, setEditForm] = useState({ full_name: '', phone: '', email: '', unit: '', city: '', current_team: '', registration_number: '' });
   const [savingAgent, setSavingAgent] = useState(false);
   
   // Password management
@@ -441,6 +442,8 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
       email: agent.email || '',
       unit: agent.unit || '',
       city: agent.city || '',
+      current_team: agent.current_team || '',
+      registration_number: agent.registration_number || '',
     });
   };
 
@@ -448,6 +451,8 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
     if (!editingAgent) return;
     setSavingAgent(true);
     try {
+      const teamChanged = editForm.current_team !== (editingAgent.current_team || '');
+      
       const { error } = await supabase
         .from('agents')
         .update({
@@ -456,6 +461,9 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
           email: editForm.email || null,
           unit: editForm.unit || null,
           city: editForm.city || null,
+          current_team: (editForm.current_team as 'alfa' | 'bravo' | 'charlie' | 'delta') || null,
+          registration_number: editForm.registration_number || null,
+          ...(teamChanged && { team_joined_at: new Date().toISOString() }),
         })
         .eq('id', editingAgent.id);
 
@@ -696,41 +704,122 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
 
       {/* Edit Agent Dialog */}
       <Dialog open={!!editingAgent} onOpenChange={(open) => !open && setEditingAgent(null)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit className="w-5 h-5 text-primary" />
               Editar Agente
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Nome Completo</Label>
-              <Input
-                value={editForm.full_name}
-                onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
-                placeholder="Nome do agente"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+          {editingAgent && (
+            <div className="space-y-4">
+              {/* Info do CPF (não editável) */}
+              <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+                <p className="text-xs text-muted-foreground">CPF (não editável)</p>
+                <p className="font-mono font-medium">
+                  {editingAgent.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}
+                </p>
+              </div>
+              
               <div className="space-y-2">
-                <Label>Telefone</Label>
+                <Label>Nome Completo</Label>
                 <Input
-                  value={editForm.phone}
-                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                  placeholder="(00) 00000-0000"
+                  value={editForm.full_name}
+                  onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value.toUpperCase() })}
+                  placeholder="Nome do agente"
+                  className="uppercase"
                 />
               </div>
+              
               <div className="space-y-2">
-                <Label>Email</Label>
+                <Label>Matrícula</Label>
                 <Input
-                  value={editForm.email}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                  placeholder="email@exemplo.com"
+                  value={editForm.registration_number}
+                  onChange={(e) => setEditForm({ ...editForm, registration_number: e.target.value })}
+                  placeholder="Número da matrícula"
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Equipe</Label>
+                  <Select 
+                    value={editForm.current_team || 'none'} 
+                    onValueChange={(v) => setEditForm({ ...editForm, current_team: v === 'none' ? '' : v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a equipe" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem equipe</SelectItem>
+                      <SelectItem value="alfa">
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-team-alfa" />
+                          Alfa
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="bravo">
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-team-bravo" />
+                          Bravo
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="charlie">
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-team-charlie" />
+                          Charlie
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="delta">
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-team-delta" />
+                          Delta
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Unidade</Label>
+                  <Select 
+                    value={editForm.unit || 'none'} 
+                    onValueChange={(v) => setEditForm({ ...editForm, unit: v === 'none' ? '' : v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a unidade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem unidade</SelectItem>
+                      <SelectItem value="CS Feijó">CS Feijó</SelectItem>
+                      <SelectItem value="CS Juruá">CS Juruá</SelectItem>
+                      <SelectItem value="CS Rio Branco">CS Rio Branco</SelectItem>
+                      <SelectItem value="CS Purus">CS Purus</SelectItem>
+                      <SelectItem value="CS Alto Acre">CS Alto Acre</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Telefone</Label>
+                  <Input
+                    value={editForm.phone}
+                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    placeholder="email@exemplo.com"
+                    type="email"
+                  />
+                </div>
+              </div>
+              
               <div className="space-y-2">
                 <Label>Cidade</Label>
                 <Input
@@ -739,16 +828,58 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                   placeholder="Cidade"
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Unidade</Label>
-                <Input
-                  value={editForm.unit}
-                  onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
-                  placeholder="CS Feijó"
-                />
+              
+              {/* Ações rápidas */}
+              <div className="pt-2 border-t border-border/50">
+                <p className="text-xs text-muted-foreground mb-2">Ações Rápidas</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={editingAgent.is_active ? "outline" : "default"}
+                    size="sm"
+                    className={editingAgent.is_active ? "text-red-500 border-red-500/50 hover:bg-red-500/10" : "bg-green-600 hover:bg-green-700"}
+                    onClick={() => {
+                      handleToggleAgentStatus(editingAgent);
+                      setEditingAgent(null);
+                    }}
+                  >
+                    {editingAgent.is_active ? (
+                      <>
+                        <Ban className="w-4 h-4 mr-1" />
+                        Bloquear Acesso
+                      </>
+                    ) : (
+                      <>
+                        <UserCheck className="w-4 h-4 mr-1" />
+                        Desbloquear Acesso
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      handleViewAgentPassword(editingAgent);
+                      setEditingAgent(null);
+                    }}
+                  >
+                    <KeyRound className="w-4 h-4 mr-1" />
+                    Ver/Resetar Senha
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setDeletingAgent(editingAgent);
+                      setEditingAgent(null);
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Excluir Agente
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingAgent(null)}>
               Cancelar
