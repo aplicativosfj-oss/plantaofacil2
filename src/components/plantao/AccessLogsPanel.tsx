@@ -199,7 +199,7 @@ const AccessLogsPanel = () => {
                   <div className="w-2 h-2 rounded-full bg-green-500" />
                   <span className="text-sm font-semibold">{presence.agent?.full_name || 'Agente'}</span>
                   {presence.agent?.current_team && (
-                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${getTeamColor(presence.agent.current_team)} text-white`}>
+                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${getTeamColor(presence.agent.current_team)} text-primary-foreground`}>
                       {presence.agent.current_team.toUpperCase()}
                     </span>
                   )}

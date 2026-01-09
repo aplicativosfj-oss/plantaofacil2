@@ -102,10 +102,10 @@ interface UnitLeadership {
 
 const getTeamColor = (team: string | null) => {
   switch (team) {
-    case 'alfa': return 'bg-team-alfa text-white';
-    case 'bravo': return 'bg-team-bravo text-white';
-    case 'charlie': return 'bg-team-charlie text-white';
-    case 'delta': return 'bg-team-delta text-white';
+    case 'alfa': return 'bg-team-alfa text-primary-foreground';
+    case 'bravo': return 'bg-team-bravo text-primary-foreground';
+    case 'charlie': return 'bg-team-charlie text-primary-foreground';
+    case 'delta': return 'bg-team-delta text-primary-foreground';
     default: return 'bg-muted';
   }
 };
@@ -1157,7 +1157,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                         selectedTeamFilter === team.id 
                           ? team.id === 'all' 
                             ? 'bg-primary text-primary-foreground' 
-                            : `${team.color} text-white`
+                            : `${team.color} text-primary-foreground`
                           : 'bg-background hover:bg-muted'
                       }`}
                     >
@@ -1185,10 +1185,10 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                 </Badge>
               )}
               {selectedTeamFilter !== 'all' && (
-                <Badge className={`gap-1 ${TEAMS_LIST.find(t => t.id === selectedTeamFilter)?.color} text-white`}>
+                <Badge className={`gap-1 ${TEAMS_LIST.find(t => t.id === selectedTeamFilter)?.color} text-primary-foreground`}>
                   <Users className="w-3 h-3" />
                   Equipe {selectedTeamFilter.charAt(0).toUpperCase() + selectedTeamFilter.slice(1)}
-                  <button onClick={() => setSelectedTeamFilter('all')} className="ml-1 hover:text-white/60">×</button>
+                  <button onClick={() => setSelectedTeamFilter('all')} className="ml-1 hover:opacity-70">×</button>
                 </Badge>
               )}
               <Button 
@@ -1310,12 +1310,12 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {(['alfa', 'bravo', 'charlie', 'delta'] as const).map(team => (
                       <div key={team} className={`p-4 rounded-lg ${getTeamColor(team)} shadow-lg`}>
-                        <p className="text-lg font-bold capitalize drop-shadow-sm">{team}</p>
+                        <p className="text-lg font-bold capitalize">{team}</p>
                         <div className="mt-2 space-y-1">
-                          <p className="text-sm font-medium drop-shadow-sm">
+                          <p className="text-sm font-medium">
                             {teamStats[team].count} agente(s)
                           </p>
-                          <p className="text-sm font-medium drop-shadow-sm">
+                          <p className="text-sm font-medium">
                             {teamStats[team].overtime.toFixed(1)}h BH
                           </p>
                         </div>
