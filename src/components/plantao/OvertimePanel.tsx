@@ -599,27 +599,27 @@ const OvertimePanel = ({ onBack }: Props) => {
         <TabsContent value="details" className="mt-3 space-y-3">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Estatísticas Gerais</CardTitle>
+              <CardTitle className="text-sm font-semibold">Estatísticas Gerais</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg bg-muted/30 border">
+                <div className="p-3 rounded-lg bg-card border border-border">
                   <p className="text-xs text-muted-foreground">Total de Registros</p>
                   <p className="text-xl font-bold">{entries.length}</p>
                 </div>
-                <div className="p-3 rounded-lg bg-muted/30 border">
+                <div className="p-3 rounded-lg bg-card border border-border">
                   <p className="text-xs text-muted-foreground">Média por Registro</p>
                   <p className="text-xl font-bold">
                     {entries.length > 0 ? (entries.reduce((sum, e) => sum + e.hours_worked, 0) / entries.length).toFixed(1) : 0}h
                   </p>
                 </div>
-                <div className="p-3 rounded-lg bg-muted/30 border">
+                <div className="p-3 rounded-lg bg-card border border-border">
                   <p className="text-xs text-muted-foreground">Maior BH</p>
                   <p className="text-xl font-bold">
                     {entries.length > 0 ? Math.max(...entries.map(e => e.hours_worked)).toFixed(1) : 0}h
                   </p>
                 </div>
-                <div className="p-3 rounded-lg bg-muted/30 border">
+                <div className="p-3 rounded-lg bg-card border border-border">
                   <p className="text-xs text-muted-foreground">Valor/Hora Médio</p>
                   <p className="text-xl font-bold">
                     {entries.length > 0 ? formatCurrency(entries.reduce((sum, e) => sum + e.hour_value, 0) / entries.length) : 'R$ 0'}
@@ -629,14 +629,14 @@ const OvertimePanel = ({ onBack }: Props) => {
 
               {/* Monthly Comparison */}
               <div className="pt-3 border-t">
-                <p className="text-sm font-medium mb-2">Comparativo Mensal</p>
+                <p className="text-sm font-semibold mb-2">Comparativo Mensal</p>
                 <div className="space-y-2">
                   {evolutionData.slice(-3).reverse().map((month, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 rounded bg-muted/20">
-                      <span className="text-sm capitalize">{month.monthFull}</span>
+                    <div key={index} className="flex items-center justify-between p-2 rounded bg-card border border-border/50">
+                      <span className="text-sm font-medium capitalize">{month.monthFull}</span>
                       <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-cyan-400">{month.hours.toFixed(1)}h</span>
-                        <span className="text-sm text-green-400">{formatCurrency(month.value)}</span>
+                        <span className="text-sm font-semibold text-cyan-400">{month.hours.toFixed(1)}h</span>
+                        <span className="text-sm font-medium text-green-400">{formatCurrency(month.value)}</span>
                       </div>
                     </div>
                   ))}

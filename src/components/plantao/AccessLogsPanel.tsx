@@ -182,8 +182,8 @@ const AccessLogsPanel = () => {
       {onlineAgents.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-green-500">
-              <Activity className="w-5 h-5 animate-pulse" />
+            <CardTitle className="flex items-center gap-2 text-base font-semibold text-green-500">
+              <Activity className="w-5 h-5" />
               Usuários Online
             </CardTitle>
           </CardHeader>
@@ -194,14 +194,14 @@ const AccessLogsPanel = () => {
                   key={presence.agent_id}
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/40 rounded-full"
                 >
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-sm font-medium">{presence.agent?.full_name || 'Agente'}</span>
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  <span className="text-sm font-semibold">{presence.agent?.full_name || 'Agente'}</span>
                   {presence.agent?.current_team && (
-                    <Badge className={`text-[10px] ${getTeamColor(presence.agent.current_team)} text-white`}>
+                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${getTeamColor(presence.agent.current_team)} text-white`}>
                       {presence.agent.current_team.toUpperCase()}
-                    </Badge>
+                    </span>
                   )}
                 </motion.div>
               ))}
@@ -214,7 +214,7 @@ const AccessLogsPanel = () => {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
               <LogIn className="w-5 h-5 text-primary" />
               Registro de Acessos
             </CardTitle>
@@ -268,12 +268,12 @@ const AccessLogsPanel = () => {
                       key={log.id}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                      className="flex items-center justify-between p-3 bg-card border border-border/50 rounded-lg hover:border-primary/30 transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${actionInfo.color}`} />
+                        <div className={`w-2.5 h-2.5 rounded-full ${actionInfo.color}`} />
                         <div>
-                          <p className="font-medium text-sm">
+                          <p className="font-semibold text-sm">
                             {log.agent?.full_name || 'Sistema'}
                           </p>
                           <p className="text-xs text-muted-foreground">
@@ -283,7 +283,7 @@ const AccessLogsPanel = () => {
                       </div>
                       <div className="flex items-center gap-3 text-muted-foreground">
                         {getDeviceIcon(log.device_info)}
-                        <span className="text-xs">
+                        <span className="text-xs font-medium">
                           {format(parseISO(log.created_at), "dd/MM HH:mm", { locale: ptBR })}
                         </span>
                       </div>

@@ -717,12 +717,12 @@ const AgentDashboard = () => {
                     )}
 
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="text-center p-2 bg-muted/30 rounded">
-                        <p className="text-[10px] text-muted-foreground">Duração</p>
+                      <div className="text-center p-2 bg-card border border-border/50 rounded">
+                        <p className="text-xs text-muted-foreground">Duração</p>
                         <p className="text-sm font-semibold">24h</p>
                       </div>
-                      <div className="text-center p-2 bg-muted/30 rounded">
-                        <p className="text-[10px] text-muted-foreground">Folga até</p>
+                      <div className="text-center p-2 bg-card border border-border/50 rounded">
+                        <p className="text-xs text-muted-foreground">Folga até</p>
                         <p className="text-sm font-semibold">
                           {format(new Date(nextShift.rest_end), 'dd/MM')}
                         </p>
@@ -761,18 +761,18 @@ const AgentDashboard = () => {
                         </motion.span>
                       </motion.div>
                       <div className="flex-1">
-                        <Badge className={`text-[10px] px-1.5 py-0 mb-1 ${
-                          nextEvent.type === 'plantao' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                          nextEvent.type === 'folga' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' :
-                          nextEvent.type === 'bh' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
-                          'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded mb-1 inline-block ${
+                          nextEvent.type === 'plantao' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                          nextEvent.type === 'folga' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' :
+                          nextEvent.type === 'bh' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                          'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                         }`}>
-                          {nextEvent.type === 'plantao' && <Shield className="w-2.5 h-2.5 mr-0.5" />}
-                          {nextEvent.type === 'folga' && <Moon className="w-2.5 h-2.5 mr-0.5" />}
-                          {nextEvent.type === 'bh' && <Timer className="w-2.5 h-2.5 mr-0.5" />}
-                          {nextEvent.type === 'permuta' && <ArrowLeftRight className="w-2.5 h-2.5 mr-0.5" />}
+                          {nextEvent.type === 'plantao' && <Shield className="w-2.5 h-2.5 mr-0.5 inline" />}
+                          {nextEvent.type === 'folga' && <Moon className="w-2.5 h-2.5 mr-0.5 inline" />}
+                          {nextEvent.type === 'bh' && <Timer className="w-2.5 h-2.5 mr-0.5 inline" />}
+                          {nextEvent.type === 'permuta' && <ArrowLeftRight className="w-2.5 h-2.5 mr-0.5 inline" />}
                           {nextEvent.description.toUpperCase()}
-                        </Badge>
+                        </span>
                         <p className="text-base font-semibold capitalize text-foreground">
                           {format(nextEvent.date, "EEEE", { locale: ptBR })}
                         </p>
@@ -787,7 +787,7 @@ const AgentDashboard = () => {
                     
                     {/* Botão para calendário */}
                     <motion.div 
-                      className="flex items-center gap-2 p-2 bg-muted/20 rounded-lg cursor-pointer hover:bg-muted/30 transition-all"
+                      className="flex items-center gap-2 p-2 bg-card border border-border/50 rounded-lg cursor-pointer hover:border-primary/50 transition-all"
                       onClick={() => handlePanelChange('calendar')}
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}

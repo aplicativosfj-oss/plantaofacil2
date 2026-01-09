@@ -221,7 +221,7 @@ const OnlineAgentsPanel = () => {
                     {agents.slice(0, 5).map((presence) => (
                       <div
                         key={presence.id}
-                        className="flex items-center justify-between p-1.5 bg-muted/30 rounded-lg"
+                        className="flex items-center justify-between p-2 bg-card border border-border/50 rounded-lg"
                       >
                         <div className="flex items-center gap-2">
                           <div className="relative">

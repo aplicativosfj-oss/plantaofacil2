@@ -62,17 +62,17 @@ const PlantaoAboutDialog: React.FC<PlantaoAboutDialogProps> = ({ isOpen, onClose
 
               {/* Features Icons */}
               <div className="grid grid-cols-3 gap-2">
-                <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-muted/30">
+                <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-card border border-border">
                   <Clock className="w-5 h-5 text-primary" />
-                  <span className="text-[10px] text-muted-foreground text-center">Plantões</span>
+                  <span className="text-xs text-muted-foreground text-center">Plantões</span>
                 </div>
-                <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-muted/30">
+                <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-card border border-border">
                   <Users className="w-5 h-5 text-accent" />
-                  <span className="text-[10px] text-muted-foreground text-center">Equipes</span>
+                  <span className="text-xs text-muted-foreground text-center">Equipes</span>
                 </div>
-                <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-muted/30">
+                <div className="flex flex-col items-center gap-1.5 p-2 rounded-lg bg-card border border-border">
                   <Heart className="w-5 h-5 text-destructive" />
-                  <span className="text-[10px] text-muted-foreground text-center">Banco de Horas</span>
+                  <span className="text-xs text-muted-foreground text-center">Banco de Horas</span>
                 </div>
               </div>
 
@@ -91,7 +91,7 @@ const PlantaoAboutDialog: React.FC<PlantaoAboutDialogProps> = ({ isOpen, onClose
               </div>
 
               {/* Contact */}
-              <div className="bg-muted/30 rounded-lg p-3">
+              <div className="bg-card border border-border rounded-lg p-3">
                 <div className="flex items-center justify-center gap-2 text-xs">
                   <Mail className="w-4 h-4 text-primary" />
                   <a 

@@ -331,7 +331,7 @@ const TeamSelector = ({ onBack, onTeamChanged }: Props) => {
             </div>
 
             {/* Info about team transfer */}
-            <div className="p-3 rounded-lg bg-muted/30 border border-border">
+            <div className="p-3 rounded-lg bg-card border border-border">
               <p className="text-xs text-muted-foreground flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-500" />
                 <span>

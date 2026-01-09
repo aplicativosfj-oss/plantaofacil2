@@ -305,7 +305,7 @@ const LicenseManagement = ({ onRefresh }: LicenseManagementProps) => {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ delay: index * 0.02 }}
               >
-                <Card className="hover:bg-muted/30 transition-colors">
+                <Card className="hover:border-primary/30 transition-colors border border-border">
                   <CardContent className="p-3">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
