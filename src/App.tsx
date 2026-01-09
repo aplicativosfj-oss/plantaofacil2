@@ -102,49 +102,70 @@ const PageLoader = () => (
 const App = () => {
   // Clear expired caches on app start (defer para não travar o first paint)
   useEffect(() => {
-    // FORÇA BRUTA (1x): em alguns aparelhos o PWA pode manter chunks/caches antigos
-    // e isso impede páginas lazy de carregarem. Aqui limpamos caches + SW e recarregamos.
-    const HARD_RESET_KEY = 'plantao_hard_reset_v1';
-    const shouldHardReset = (() => {
+    // FORÇA BRUTA (segura): só tenta “hard reset” se o browser permitir gravar em storage.
+    // Em alguns navegadores/modos (ex: privativo no iOS), localStorage.setItem pode falhar e causar loop de reload.
+    const HARD_RESET_KEY = "plantao_hard_reset_v1";
+
+    const canPersistStorage = (() => {
       try {
-        return localStorage.getItem(HARD_RESET_KEY) !== '1';
+        const k = "__storage_test__";
+        localStorage.setItem(k, "1");
+        localStorage.removeItem(k);
+        return true;
+      } catch {
+        return false;
+      }
+    })();
+
+    const shouldHardReset = (() => {
+      if (!canPersistStorage) return false;
+      try {
+        return localStorage.getItem(HARD_RESET_KEY) !== "1";
       } catch {
         return false;
       }
     })();
 
     if (shouldHardReset) {
+      // Marca primeiro; se não conseguir gravar, NÃO faz reload.
+      let markerSet = false;
       try {
-        localStorage.setItem(HARD_RESET_KEY, '1');
-      } catch {}
+        localStorage.setItem(HARD_RESET_KEY, "1");
+        markerSet = localStorage.getItem(HARD_RESET_KEY) === "1";
+      } catch {
+        markerSet = false;
+      }
 
-      (async () => {
-        try {
-          if ('serviceWorker' in navigator) {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(regs.map((r) => r.unregister()));
-          }
-        } catch {}
+      if (markerSet) {
+        (async () => {
+          try {
+            if ("serviceWorker" in navigator) {
+              const regs = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(regs.map((r) => r.unregister()));
+            }
+          } catch {}
 
-        try {
-          if ('caches' in window) {
-            const keys = await caches.keys();
-            await Promise.all(keys.map((k) => caches.delete(k)));
-          }
-        } catch {}
+          try {
+            if ("caches" in window) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map((k) => caches.delete(k)));
+            }
+          } catch {}
 
-        try {
-          // Limpa caches internos (não apaga login)
-          clearLocalStorageCache();
-        } catch {}
-        try {
-          await clearIndexedDBCache();
-        } catch {}
+          try {
+            // Limpa caches internos (não apaga login)
+            clearLocalStorageCache();
+          } catch {}
+          try {
+            await clearIndexedDBCache();
+          } catch {}
 
-        window.location.reload();
-      })();
+          // replace() evita “voltar” para uma página quebrada no histórico
+          window.location.replace(window.location.href);
+        })();
 
-      return;
+        return;
+      }
     }
 
     const runIdle = (fn: () => void) => {
