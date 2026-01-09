@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { usePlantaoTheme } from '@/contexts/PlantaoThemeContext';
@@ -23,9 +23,11 @@ import loginBg from '@/assets/login-bg.png';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
 import ThemeSelector from '@/components/plantao/ThemeSelector';
-import VideoSplash from '@/components/plantao/VideoSplash';
 import StyledTeamButton from '@/components/plantao/StyledTeamButton';
 import AnimatedPlantaoLogo from '@/components/plantao/AnimatedPlantaoLogo';
+
+// Lazy load do VideoSplash para não bloquear o carregamento inicial
+const VideoSplash = lazy(() => import('@/components/plantao/VideoSplash'));
 
 
 // Saved credentials type
@@ -317,10 +319,8 @@ const PlantaoHome = () => {
   const { playClick } = useGlobalSound();
   const { isSupported: biometricSupported, isRegistered: biometricRegistered, authenticateWithBiometric, registerBiometric } = useBiometricAuth();
   const navigate = useNavigate();
-  const [showSplash, setShowSplash] = useState(() => {
-    // Mostra intro apenas 1x por instalação (localStorage persiste)
-    return localStorage.getItem('plantao_intro_shown') !== '1';
-  });
+  // Splash desabilitado para carregamento rápido - mostrar apenas se explicitamente ativado
+  const [showSplash, setShowSplash] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showAuthPanel, setShowAuthPanel] = useState(false);
   const [showMasterLogin, setShowMasterLogin] = useState(false);
@@ -371,18 +371,18 @@ const PlantaoHome = () => {
   const cpfValidation = useAgentCpfValidation(signupCpf.replace(/\D/g, ''));
   const registrationValidation = useAgentRegistrationValidation(signupRegistration);
   
-  // Limpeza profunda dos formulários e credenciais (reset v2 - limpa tudo)
+  // Limpeza de credenciais antigas (reset v3 - NÃO limpa intro_shown para carregar rápido)
   useEffect(() => {
-    const RESET_KEY = 'plantao_full_reset_v2';
+    const RESET_KEY = 'plantao_full_reset_v3';
     if (!localStorage.getItem(RESET_KEY)) {
-      // Limpa todas as credenciais e dados salvos do Plantão
+      // Limpa apenas credenciais de login, NÃO limpa intro_shown
       localStorage.removeItem('plantao_credentials');
       localStorage.removeItem('plantao_master_session');
-      localStorage.removeItem('plantao_theme');
       localStorage.removeItem('plantao_biometric_registered');
-      localStorage.removeItem('plantao_intro_shown');
       localStorage.removeItem('plantao_full_reset_v1');
-      sessionStorage.clear();
+      localStorage.removeItem('plantao_full_reset_v2');
+      // Marca intro como já vista para carregamento rápido
+      localStorage.setItem('plantao_intro_shown', '1');
       localStorage.setItem(RESET_KEY, '1');
     }
     
@@ -691,9 +691,17 @@ const PlantaoHome = () => {
   };
 
 
-  // Se estiver mostrando splash, renderiza apenas o vídeo
+  // Se estiver mostrando splash, renderiza o vídeo com lazy loading
   if (showSplash) {
-    return <VideoSplash onComplete={handleSplashComplete} />;
+    return (
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-black">
+          <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
+        </div>
+      }>
+        <VideoSplash onComplete={handleSplashComplete} />
+      </Suspense>
+    );
   }
 
   return (
