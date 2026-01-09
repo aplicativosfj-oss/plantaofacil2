@@ -1,5 +1,5 @@
 import { Loader2 } from "lucide-react";
-import plantaoBg from "@/assets/plantao-bg.png";
+import plantaoHomeBg from "@/assets/plantao-home-bg.jpeg";
 import plantaoLogo from "@/assets/plantao-pro-logo-new.png";
 
 type Props = {
@@ -15,12 +15,12 @@ export default function PlantaoBootSplash({
     <main
       className="min-h-screen w-full relative overflow-hidden bg-background text-foreground"
       style={{
-        backgroundImage: `url(${plantaoBg})`,
+        backgroundImage: `url(${plantaoHomeBg})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
     >
-      <div className="absolute inset-0 bg-gradient-hero" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/60" />
 
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 text-center">
         <img
