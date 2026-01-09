@@ -131,48 +131,38 @@
     <div id="root"></div>
     
     <script>
-      // App version bump: força limpar cache/SW quando mudar versão
-      // IMPORTANTE: em alguns navegadores/modos (ex: privativo no iOS) o localStorage pode falhar.
-      // Se não conseguirmos persistir a versão, NÃO tentamos recarregar automaticamente (evita loop).
+      // App version bump: evita telas quebradas por cache antigo.
+      // IMPORTANTE: alguns navegadores (in-app/privativo) podem limpar storage a cada navegação.
+      // Para não entrar em loop, aqui NÃO recarregamos automaticamente.
       (function () {
         var APP_VERSION = '2026-01-09-2';
         try {
           var prev = localStorage.getItem('__app_version');
           if (prev !== APP_VERSION) {
-            var ok = false;
             try {
               localStorage.setItem('__app_version', APP_VERSION);
-              ok = localStorage.getItem('__app_version') === APP_VERSION;
             } catch (e) {
-              ok = false;
+              // sem storage: não faz nada
+              return;
             }
 
-            if (!ok) return;
-
-            if ('serviceWorker' in navigator || 'caches' in window) {
-              Promise.resolve()
-                .then(function () {
-                  if (!('serviceWorker' in navigator)) return;
-                  return navigator.serviceWorker.getRegistrations().then(function (regs) {
-                    return Promise.all(regs.map(function (r) { return r.unregister(); }));
-                  });
-                })
-                .then(function () {
-                  if (!('caches' in window)) return;
-                  return caches.keys().then(function (keys) {
-                    return Promise.all(keys.map(function (k) { return caches.delete(k); }));
-                  });
-                })
-                .finally(function () {
-                  // Recarrega uma vez para pegar os arquivos novos
-                  window.location.reload();
-                });
+            // Melhor esforço: tenta limpar SW/caches em background, sem forçar reload.
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations()
+                .then(function (regs) { return Promise.all(regs.map(function (r) { return r.unregister(); })); })
+                .catch(function () {});
+            }
+            if ('caches' in window) {
+              caches.keys()
+                .then(function (keys) { return Promise.all(keys.map(function (k) { return caches.delete(k); })); })
+                .catch(function () {});
             }
           }
         } catch (e) {}
       })();
 
-      // Remove initial loader faster
+      // Remove initial loader APENAS quando o React montar.
+      // Se o JS falhar por algum motivo, o loader permanece (melhor que tela preta).
       var loaderRemoved = false;
       function removeLoader() {
         if (loaderRemoved) return;
@@ -180,16 +170,15 @@
         var loader = document.getElementById('initial-loader');
         if (loader) {
           loader.style.opacity = '0';
-          loader.style.transition = 'opacity 0.15s';
+          loader.style.transition = 'opacity 0.2s';
           setTimeout(function () {
             loader.remove();
-          }, 150);
+          }, 200);
         }
       }
-      // Remove on DOMContentLoaded (faster than load)
-      document.addEventListener('DOMContentLoaded', removeLoader);
-      // Fallback for load event
-      window.addEventListener('load', removeLoader);
+      window.__removeInitialLoader = removeLoader;
+      // Fallback: se o app montar mas não chamar, remove depois de 6s.
+      setTimeout(removeLoader, 6000);
 
       // Service worker registration removido daqui.
       // O VitePWA plugin cuida disso automaticamente quando necessário.
