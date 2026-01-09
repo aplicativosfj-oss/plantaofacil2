@@ -230,16 +230,28 @@ const TeamButton = ({ team, index, isUserTeam, isBlocked, isBlockedClicked, isAu
           )}
         </motion.div>
         <div className="flex-1 min-w-0">
-          <motion.span 
+          <motion.span
             className={`font-semibold text-xs block ${isBlocked ? 'text-muted-foreground/50' : 'text-foreground'}`}
-            animate={{ x: isPressed ? 2 : 0 }}
-            transition={{ type: 'spring', stiffness: 400 }}
+            animate={
+              !isBlocked
+                ? { opacity: [1, 0.85, 1], scale: [1, 1.02, 1] }
+                : {}
+            }
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
           >
             {team.label}
           </motion.span>
-          <span className={`text-[9px] font-mono uppercase ${isBlocked ? 'text-red-400/40' : 'text-muted-foreground/60'}`}>
+          <motion.span
+            className={`text-[9px] font-mono uppercase ${isBlocked ? 'text-red-400/40' : 'text-muted-foreground/60'}`}
+            animate={
+              isUserTeam
+                ? { opacity: [0.6, 1, 0.6] }
+                : {}
+            }
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
             {isUserTeam ? '● Online' : isBlocked ? 'Bloqueado' : team.subtitle}
-          </span>
+          </motion.span>
         </div>
         {isUserTeam && (
           <motion.div
