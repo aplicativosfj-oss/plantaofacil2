@@ -1184,7 +1184,7 @@ const ShiftCalendar = () => {
           <Card className="border-cyan-500/40 bg-gradient-to-br from-cyan-500/10 to-cyan-600/5">
             <CardHeader className="pb-2 pt-3 px-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm flex items-center gap-2">
+                <CardTitle className="text-sm flex items-center gap-2 text-foreground">
                   <Banknote className="w-4 h-4 text-cyan-400" />
                   Resumo BH - {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
                 </CardTitle>
@@ -1354,7 +1354,7 @@ const ShiftCalendar = () => {
       {/* My Schedule Panel - Compact */}
       <Card className="border-primary/30">
         <CardHeader className="pb-2 pt-3 px-3">
-          <CardTitle className="text-sm flex items-center gap-2">
+          <CardTitle className="text-sm flex items-center gap-2 text-foreground">
             <Calendar className="w-3.5 h-3.5 text-primary" />
             Minha Agenda
           </CardTitle>

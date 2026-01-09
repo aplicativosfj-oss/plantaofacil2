@@ -254,7 +254,7 @@ const MonitoringRotation = () => {
     <div className="space-y-4">
       <Card className="border-primary/30">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center justify-between text-lg">
+          <CardTitle className="flex items-center justify-between text-lg text-foreground">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-primary" />
               Divisão de Monitoramento
@@ -413,7 +413,7 @@ const MonitoringRotation = () => {
           >
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center justify-between text-base">
+                <CardTitle className="flex items-center justify-between text-base text-foreground">
                   <span>Escala de Monitoramento</span>
                   <Badge variant="outline">
                     {formatDuration(rotationSlots[0]?.duration || 0)} / agente

@@ -161,7 +161,7 @@ const AlertsPanel = ({ onBack }: Props) => {
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex items-center gap-2 text-lg text-foreground">
               <BellRing className="w-5 h-5 text-warning" />
               Alertas
               {unreadCount > 0 && (

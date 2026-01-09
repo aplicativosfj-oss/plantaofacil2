@@ -149,7 +149,7 @@ const TeamMembersCard = () => {
     <>
       <Card className={`border ${getTeamBgColor(agent.current_team)}`}>
         <CardHeader className="pb-2 px-3 pt-3">
-          <CardTitle className="flex items-center justify-between text-sm">
+          <CardTitle className="flex items-center justify-between text-sm text-foreground">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-primary" />
               Equipe {teamName}

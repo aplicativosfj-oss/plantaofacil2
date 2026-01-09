@@ -91,7 +91,7 @@ const PushNotificationSetup: React.FC<PushNotificationSetupProps> = ({ agentId }
       <Card className="border-primary/30 hover:border-primary/50 transition-colors">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex items-center gap-2 text-lg text-foreground">
               {getStatusIcon()}
               Notificações Push
             </CardTitle>
