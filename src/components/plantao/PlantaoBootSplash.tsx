@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import plantaoHomeBg from "@/assets/plantao-home-bg.jpeg";
+import plantaoHomeBg from "@/assets/teams-background.png";
 import plantaoLogo from "@/assets/plantao-pro-logo-new.png";
 
 type Props = {

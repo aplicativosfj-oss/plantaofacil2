@@ -20,7 +20,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoBg from '@/assets/plantao-bg.png';
 import teamsHomeBg from '@/assets/teams-home-bg.png';
-import plantaoHomeBg from '@/assets/plantao-home-bg.jpeg';
+import plantaoHomeBg from '@/assets/teams-background.png';
 import PlantaoMusicPlayer from '@/components/plantao/PlantaoMusicPlayer';
 import loginBg from '@/assets/login-bg.png';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
