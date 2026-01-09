@@ -4,9 +4,8 @@ import { Volume2, VolumeX, Play, Pause, Music } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 
 const MUSIC_TRACKS = [
-  '/audio/background-music.mp3',
-  '/audio/background-lento.mp3',
-  '/audio/background-80.mp3',
+  '/audio/plantao-1.mp3',
+  '/audio/plantao-2.mp3',
 ];
 
 const STORAGE_KEY = 'plantao_music_enabled';
@@ -97,7 +96,7 @@ export default function PlantaoMusicPlayer() {
   };
 
   return (
-    <div className="fixed bottom-20 left-4 z-40">
+    <div className="fixed bottom-28 left-4 z-40">
       <AnimatePresence>
         {showControls && (
           <motion.div
