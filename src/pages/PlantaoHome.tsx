@@ -230,28 +230,16 @@ const TeamButton = ({ team, index, isUserTeam, isBlocked, isBlockedClicked, isAu
           )}
         </motion.div>
         <div className="flex-1 min-w-0">
-          <motion.span
-            className={`font-semibold text-xs block ${isBlocked ? 'text-muted-foreground/50' : 'text-foreground'}`}
-            animate={
-              !isBlocked
-                ? { opacity: [1, 0.85, 1], scale: [1, 1.02, 1] }
-                : {}
-            }
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          <span
+            className={`font-semibold text-sm block ${isBlocked ? 'text-muted-foreground/50' : 'text-foreground'}`}
           >
             {team.label}
-          </motion.span>
-          <motion.span
-            className={`text-[9px] font-mono uppercase ${isBlocked ? 'text-red-400/40' : 'text-muted-foreground/60'}`}
-            animate={
-              isUserTeam
-                ? { opacity: [0.6, 1, 0.6] }
-                : {}
-            }
-            transition={{ duration: 1.5, repeat: Infinity }}
+          </span>
+          <span
+            className={`text-[10px] uppercase tracking-wide ${isBlocked ? 'text-red-400/50' : isUserTeam ? 'text-green-400' : 'text-muted-foreground'}`}
           >
             {isUserTeam ? '● Online' : isBlocked ? 'Bloqueado' : team.subtitle}
-          </motion.span>
+          </span>
         </div>
         {isUserTeam && (
           <motion.div
@@ -307,7 +295,7 @@ const CornerBrackets = () => (
 const HUDElement = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
   <div className={`relative ${className}`}>
     <div className="absolute -left-1 top-0 bottom-0 w-[2px] bg-primary/50" />
-    <div className="pl-3 text-xs font-mono text-primary/80 uppercase tracking-widest">
+    <div className="pl-3 text-sm font-medium text-foreground/80 uppercase tracking-wide">
       {children}
     </div>
   </div>
@@ -830,10 +818,10 @@ const PlantaoHome = () => {
                   </motion.button>
                   <div className="flex items-center gap-2">
                     <AlertPulse />
-                    <span className="text-xs font-mono text-green-400 uppercase">Online</span>
+                    <span className="text-xs font-medium text-green-400">Online</span>
                   </div>
                 </div>
-                <HUDElement>v1.0</HUDElement>
+                <span className="text-xs text-muted-foreground">v1.0</span>
               </div>
             </header>
 
@@ -850,10 +838,10 @@ const PlantaoHome = () => {
                 className="w-full max-w-md"
               >
                 <div className="text-center mb-3">
-                  <span className="text-xs font-mono text-primary/60 uppercase tracking-widest">
+                  <span className="text-sm font-medium text-foreground/80">
                     {savedCredentials 
-                      ? `[ ${savedCredentials.team.toUpperCase()} ]` 
-                      : '[ Selecione sua Equipe ]'}
+                      ? `Equipe ${savedCredentials.team.charAt(0).toUpperCase() + savedCredentials.team.slice(1)}` 
+                      : 'Selecione sua Equipe'}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -890,7 +878,7 @@ const PlantaoHome = () => {
                       className="flex items-center justify-center gap-2 mt-3 py-2"
                     >
                       <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                      <span className="text-xs text-primary font-mono">Autenticando...</span>
+                      <span className="text-sm text-foreground/80">Autenticando...</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -906,7 +894,7 @@ const PlantaoHome = () => {
               >
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Building2 className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
+                  <span className="text-sm font-medium text-foreground/80">
                     Unidade Socioeducativa
                   </span>
                 </div>
@@ -1609,28 +1597,15 @@ const PlantaoHome = () => {
 
             {/* Footer */}
             <div className="relative z-10">
-            <footer className="py-3 text-center text-muted-foreground text-xs space-y-1">
-              <p>
-                © <motion.span
-                  className="inline-block text-primary font-bold"
-                  animate={{ 
-                    scale: [1, 1.1, 1],
-                    textShadow: [
-                      '0 0 5px hsl(var(--primary)/0.5)',
-                      '0 0 15px hsl(var(--primary)/0.9)',
-                      '0 0 5px hsl(var(--primary)/0.5)',
-                    ]
-                  }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >2026</motion.span> PlantãoPro v1.0 • Developed by Franc Denis
-              </p>
-              <button 
-                onClick={() => setShowAbout(true)}
-                className="hover:text-primary transition-colors underline"
-              >
-                Sobre o Sistema
-              </button>
-            </footer>
+              <footer className="py-3 text-center text-muted-foreground text-sm space-y-1">
+                <p>© 2026 Franc Denis</p>
+                <button 
+                  onClick={() => setShowAbout(true)}
+                  className="text-xs hover:text-primary transition-colors underline"
+                >
+                  Sobre o Sistema
+                </button>
+              </footer>
             </div>
           </motion.div>
         )}

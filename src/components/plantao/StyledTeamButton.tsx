@@ -394,27 +394,21 @@ const StyledTeamButton = ({
 
           {/* Text content */}
           <div className="flex-1 min-w-0">
-            <motion.span 
+            <span 
               className={cn(
-                'font-bold text-sm block tracking-wide',
+                'font-semibold text-sm block',
                 isBlocked ? 'text-muted-foreground/50' : 'text-foreground'
               )}
-              animate={{ x: isPressed ? 3 : 0 }}
-              transition={{ type: 'spring', stiffness: 500 }}
             >
               {team.label}
-            </motion.span>
+            </span>
             <span className={cn(
-              'text-[10px] font-mono uppercase tracking-widest',
-              isBlocked ? 'text-red-400/40' : 'text-muted-foreground/70'
+              'text-xs uppercase tracking-wide',
+              isBlocked ? 'text-red-400/50' : isUserTeam ? 'text-green-400' : 'text-muted-foreground'
             )}>
               {isUserTeam ? (
                 <span className="flex items-center gap-1">
-                  <motion.span 
-                    className="w-1.5 h-1.5 rounded-full bg-green-500"
-                    animate={{ opacity: [1, 0.5, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  />
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                   Online
                 </span>
               ) : isBlocked ? 'Bloqueado' : team.subtitle}
