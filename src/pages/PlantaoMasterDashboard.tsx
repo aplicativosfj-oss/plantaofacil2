@@ -1301,8 +1301,8 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               {/* Team Stats */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                    <Users className="w-4 h-4 text-primary" />
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-wide text-foreground">
+                    <Users className="w-5 h-5 text-primary" />
                     Estatísticas por Equipe
                   </CardTitle>
                 </CardHeader>
@@ -1333,8 +1333,8 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               {/* Recent Overtime */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                    <TrendingUp className="w-4 h-4 text-primary" />
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold tracking-wide text-foreground">
+                    <TrendingUp className="w-5 h-5 text-primary" />
                     BH Recentes (Mês Atual)
                   </CardTitle>
                 </CardHeader>
