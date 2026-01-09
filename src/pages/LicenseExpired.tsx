@@ -4,7 +4,7 @@ import { Lock, Phone, Mail, ShoppingCart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAudio } from '@/contexts/AudioContext';
-import logomarca from '@/assets/logomarca.png';
+import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 import background from '@/assets/background.png';
 
 const LicenseExpired: React.FC = () => {
@@ -51,9 +51,9 @@ const LicenseExpired: React.FC = () => {
           </motion.div>
           
           <motion.img
-            src={logomarca}
+            src={plantaoLogo}
             alt="Sistema"
-            className="w-32 h-32 mx-auto object-contain opacity-50"
+            className="w-32 h-auto mx-auto object-contain opacity-50"
           />
         </div>
 

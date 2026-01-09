@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import logomarca from '@/assets/logomarca.png';
+import { Loader2 } from 'lucide-react';
 
 interface LoginLoadingOverlayProps {
   isVisible: boolean;
@@ -21,7 +21,7 @@ const LoginLoadingOverlay: React.FC<LoginLoadingOverlayProps> = ({
           transition={{ duration: 0.3 }}
           className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-md rounded-2xl"
         >
-          {/* Logo com animação pulsante */}
+          {/* Ícone de loading */}
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -42,9 +42,9 @@ const LoginLoadingOverlay: React.FC<LoginLoadingOverlayProps> = ({
               transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
             />
             
-            {/* Logo */}
+            {/* Ícone central */}
             <motion.div
-              className="w-20 h-20 rounded-2xl bg-card border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/20"
+              className="w-20 h-20 rounded-2xl bg-card border border-primary/30 flex items-center justify-center"
               animate={{ 
                 boxShadow: [
                   '0 10px 25px -5px hsl(var(--primary) / 0.2)',
@@ -54,20 +54,7 @@ const LoginLoadingOverlay: React.FC<LoginLoadingOverlayProps> = ({
               }}
               transition={{ duration: 1.5, repeat: Infinity }}
             >
-              <motion.img
-                src={logomarca}
-                alt="Loading"
-                className="w-14 h-14 object-contain"
-                animate={{ 
-                  scale: [1, 1.05, 1],
-                  filter: [
-                    'drop-shadow(0 0 8px hsl(var(--primary)/0.3))',
-                    'drop-shadow(0 0 16px hsl(var(--primary)/0.6))',
-                    'drop-shadow(0 0 8px hsl(var(--primary)/0.3))'
-                  ]
-                }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
+              <Loader2 className="w-10 h-10 text-primary animate-spin" />
             </motion.div>
           </motion.div>
           

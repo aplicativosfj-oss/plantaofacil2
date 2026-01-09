@@ -1,7 +1,7 @@
 import React, { useState, useMemo, forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
-import logomarca from '@/assets/logomarca.png';
+import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 
 interface AnimatedLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -207,7 +207,7 @@ const AnimatedLogo = forwardRef<HTMLDivElement, AnimatedLogoProps>(({
       )}
       
       <img
-        src={logomarca}
+        src={plantaoLogo}
         alt="Sistema"
         className={`${sizeClasses[size]} object-contain ${isLoaded ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}
         onLoad={() => setIsLoaded(true)}
