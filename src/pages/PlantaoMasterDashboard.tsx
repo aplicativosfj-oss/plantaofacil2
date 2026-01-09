@@ -1163,7 +1163,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               {/* Team Stats */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
                     <Users className="w-5 h-5 text-primary" />
                     Estatísticas por Equipe
                   </CardTitle>
@@ -1174,10 +1174,10 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                       <div key={team} className={`p-4 rounded-lg ${getTeamColor(team)}`}>
                         <p className="text-lg font-bold capitalize">{team}</p>
                         <div className="mt-2 space-y-1">
-                          <p className="text-sm opacity-90">
+                          <p className="text-sm font-medium">
                             {teamStats[team].count} agente(s)
                           </p>
-                          <p className="text-sm opacity-90">
+                          <p className="text-sm font-medium">
                             {teamStats[team].overtime.toFixed(1)}h BH
                           </p>
                         </div>
@@ -1195,7 +1195,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
               {/* Recent Overtime */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold">
                     <TrendingUp className="w-5 h-5 text-primary" />
                     BH Recentes (Mês Atual)
                   </CardTitle>
@@ -1209,9 +1209,9 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
                     <ScrollArea className="h-[300px]">
                       <div className="space-y-2">
                         {overtimeRecords.slice(0, 20).map(record => (
-                          <div key={record.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                          <div key={record.id} className="flex items-center justify-between p-3 bg-card border border-border/50 rounded-lg">
                             <div>
-                              <p className="font-medium">{record.agent?.full_name || 'Desconhecido'}</p>
+                              <p className="font-semibold text-sm">{record.agent?.full_name || 'Desconhecido'}</p>
                               <p className="text-sm text-muted-foreground">
                                 {format(parseISO(record.date), "dd/MM/yyyy", { locale: ptBR })}
                                 {record.description && ` - ${record.description}`}

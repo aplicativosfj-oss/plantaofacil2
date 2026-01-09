@@ -141,20 +141,20 @@ const OnlineAgentsPanel = () => {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2 px-3 pt-3">
-        <CardTitle className="flex items-center justify-between text-sm font-semibold">
+    <Card className="border border-border">
+      <CardHeader className="pb-2 px-4 pt-4">
+        <CardTitle className="flex items-center justify-between text-base font-semibold">
           <div className="flex items-center gap-2">
-            <Wifi className="w-4 h-4 text-green-500" />
+            <Wifi className="w-5 h-5 text-green-500" />
             <span>Status Agentes</span>
           </div>
-          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-border text-xs">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            <span>{onlineAgents.length}</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-green-500/50 bg-green-500/10 text-xs font-medium text-green-500">
+            <div className="w-2 h-2 rounded-full bg-green-500" />
+            <span>{onlineAgents.length} online</span>
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-3 pb-3">
+      <CardContent className="px-4 pb-4">
         <ScrollArea className="h-[280px] pr-2">
           {/* Agentes Online */}
           {onlineAgents.length > 0 && (
@@ -171,18 +171,18 @@ const OnlineAgentsPanel = () => {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 10 }}
-                      className="flex items-center justify-between p-2 bg-green-500/10 border border-green-500/30 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-green-500/10 border border-green-500/40 rounded-lg"
                     >
                       <div className="flex items-center gap-2">
                         <div className="relative">
-                          <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center overflow-hidden">
+                          <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center overflow-hidden">
                             {presence.agent?.avatar_url ? (
                               <img src={presence.agent.avatar_url} alt="" className="w-full h-full object-cover" />
                             ) : (
-                              <User className="w-4 h-4 text-green-500" />
+                              <User className="w-5 h-5 text-green-500" />
                             )}
                           </div>
-                          <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
+                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
                         </div>
                         <div>
                           <p className="font-semibold text-sm">{presence.agent?.full_name || 'Desconhecido'}</p>
