@@ -142,28 +142,28 @@ const OnlineAgentsPanel = () => {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between">
+      <CardHeader className="pb-2 px-3 pt-3">
+        <CardTitle className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
-            <Wifi className="w-5 h-5 text-green-500" />
-            Status dos Agentes
+            <Wifi className="w-4 h-4 text-green-500" />
+            Status Agentes
           </div>
-          <Badge variant="outline" className="gap-1">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            {onlineAgents.length} online
+          <Badge variant="outline" className="gap-1 text-xs">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            {onlineAgents.length}
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[400px] pr-4">
+      <CardContent className="px-3 pb-3">
+        <ScrollArea className="h-[280px] pr-2">
           {/* Agentes Online */}
           {onlineAgents.length > 0 && (
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-sm font-medium text-green-500">Online Agora ({onlineAgents.length})</span>
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-xs font-medium text-green-500">Online ({onlineAgents.length})</span>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <AnimatePresence>
                   {onlineAgents.map((presence) => (
                     <motion.div
@@ -171,38 +171,29 @@ const OnlineAgentsPanel = () => {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 10 }}
-                      className="flex items-center justify-between p-3 bg-green-500/10 border border-green-500/30 rounded-lg"
+                      className="flex items-center justify-between p-2 bg-green-500/10 border border-green-500/30 rounded-lg"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <div className="relative">
-                          <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center overflow-hidden">
+                          <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center overflow-hidden">
                             {presence.agent?.avatar_url ? (
                               <img src={presence.agent.avatar_url} alt="" className="w-full h-full object-cover" />
                             ) : (
-                              <User className="w-5 h-5 text-green-500" />
+                              <User className="w-4 h-4 text-green-500" />
                             )}
                           </div>
-                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
+                          <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
                         </div>
                         <div>
-                          <p className="font-medium text-sm">{presence.agent?.full_name || 'Desconhecido'}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Clock className="w-3 h-3" />
-                            <span>Logou {formatTimeAgo(presence.last_seen)}</span>
-                          </div>
+                          <p className="font-medium text-xs">{presence.agent?.full_name || 'Desconhecido'}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {formatTimeAgo(presence.last_seen)}
+                          </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={getTeamColor(presence.agent?.current_team)}>
-                          {presence.agent?.current_team?.toUpperCase() || 'N/A'}
-                        </Badge>
-                        <div className="text-right">
-                          <div className="flex items-center gap-1 text-xs text-green-500">
-                            <Timer className="w-3 h-3" />
-                            <span>{formatSessionDuration(presence.last_seen)}</span>
-                          </div>
-                        </div>
-                      </div>
+                      <Badge className={`${getTeamColor(presence.agent?.current_team)} text-[10px]`}>
+                        {presence.agent?.current_team?.toUpperCase() || 'N/A'}
+                      </Badge>
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -213,44 +204,43 @@ const OnlineAgentsPanel = () => {
           {/* Agentes Offline agrupados por data */}
           {offlineAgents.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 mb-3 mt-4">
-                <WifiOff className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-muted-foreground">Histórico de Acessos</span>
+              <div className="flex items-center gap-2 mb-2 mt-3">
+                <WifiOff className="w-3 h-3 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">Histórico</span>
               </div>
               
-              {groupByDate(offlineAgents).map(([dateKey, agents]) => (
-                <div key={dateKey} className="mb-4">
-                  <div className="flex items-center gap-2 mb-2">
+              {groupByDate(offlineAgents).slice(0, 2).map(([dateKey, agents]) => (
+                <div key={dateKey} className="mb-3">
+                  <div className="flex items-center gap-1 mb-1.5">
                     <Calendar className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase">
                       {formatDateGroup(agents[0].last_seen)}
                     </span>
                   </div>
-                  <div className="space-y-1.5">
-                    {agents.map((presence) => (
+                  <div className="space-y-1">
+                    {agents.slice(0, 5).map((presence) => (
                       <div
                         key={presence.id}
-                        className="flex items-center justify-between p-2.5 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                        className="flex items-center justify-between p-1.5 bg-muted/30 rounded-lg"
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-2">
                           <div className="relative">
-                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center overflow-hidden">
                               {presence.agent?.avatar_url ? (
                                 <img src={presence.agent.avatar_url} alt="" className="w-full h-full object-cover" />
                               ) : (
-                                <User className="w-4 h-4 text-muted-foreground" />
+                                <User className="w-3 h-3 text-muted-foreground" />
                               )}
                             </div>
-                            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-gray-400 rounded-full border-2 border-background" />
                           </div>
                           <div>
-                            <p className="font-medium text-sm">{presence.agent?.full_name || 'Desconhecido'}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Último acesso: {format(parseISO(presence.last_seen), "HH:mm", { locale: ptBR })}
+                            <p className="font-medium text-xs">{presence.agent?.full_name || 'Desconhecido'}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {format(parseISO(presence.last_seen), "HH:mm", { locale: ptBR })}
                             </p>
                           </div>
                         </div>
-                        <Badge variant="outline" className={getTeamColor(presence.agent?.current_team)}>
+                        <Badge variant="outline" className={`${getTeamColor(presence.agent?.current_team)} text-[10px]`}>
                           {presence.agent?.current_team?.toUpperCase() || 'N/A'}
                         </Badge>
                       </div>
@@ -262,9 +252,9 @@ const OnlineAgentsPanel = () => {
           )}
 
           {presences.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              <WifiOff className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>Nenhum registro de acesso encontrado</p>
+            <div className="text-center py-6 text-muted-foreground">
+              <WifiOff className="w-8 h-8 mx-auto mb-1 opacity-50" />
+              <p className="text-xs">Nenhum registro</p>
             </div>
           )}
         </ScrollArea>
