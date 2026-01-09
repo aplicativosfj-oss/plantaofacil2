@@ -132,64 +132,28 @@ const App = () => {
       clearIndexedDBCache().catch(console.warn);
     });
 
-    // Bloqueio de áudio HTML: evita qualquer “música/player” nos painéis.
-    // Sons do app ficam apenas via WebAudio (cliques), e o vídeo de intro pode ter som.
-    const originalPlay = HTMLMediaElement.prototype.play;
-    const sanitizeMediaElement = (el: Element) => {
+    // Apenas silenciar vídeos de background que não têm controls (exceto intro)
+    const sanitizeVideoElement = (el: Element) => {
       try {
         const tag = (el.tagName || '').toUpperCase();
-        if (tag === 'AUDIO') {
-          const media = el as HTMLAudioElement;
-          try {
-            media.pause();
-            media.currentTime = 0;
-          } catch {}
-          return;
-        }
         if (tag === 'VIDEO') {
           const video = el as HTMLVideoElement;
-          try {
-            if (!video.controls) {
+          const src = video.currentSrc || video.src || '';
+          const isIntroVideo = src.includes('intro-plantao');
+          // Only mute background videos without controls (not the intro)
+          if (!video.controls && !isIntroVideo) {
+            try {
               video.muted = true;
               video.volume = 0;
-            }
-          } catch {}
+            } catch {}
+          }
         }
       } catch {}
     };
 
-    HTMLMediaElement.prototype.play = function (this: HTMLMediaElement, ...args: any[]) {
-      try {
-        const tag = (this.tagName || '').toUpperCase();
-        const src = (this.currentSrc || (this as any).src || '').toString();
-
-        // Bloqueia TODO <audio> (inclui players e músicas)
-        if (tag === 'AUDIO') {
-          try {
-            this.pause();
-            this.currentTime = 0;
-          } catch {}
-          return Promise.resolve();
-        }
-
-        // Mantém vídeos de fundo mudos
-        if (tag === 'VIDEO') {
-          try {
-            const videoEl = this as HTMLVideoElement;
-            if (!videoEl.controls) {
-              videoEl.muted = true;
-              videoEl.volume = 0;
-            }
-          } catch {}
-        }
-      } catch {}
-
-      return (originalPlay as any).apply(this, args);
-    };
-
-    // Reforço inicial (uma vez só)
+    // Reforço inicial para vídeos de background (uma vez só)
     try {
-      document.querySelectorAll('audio, video').forEach((el) => sanitizeMediaElement(el));
+      document.querySelectorAll('video').forEach((el) => sanitizeVideoElement(el));
     } catch {}
 
     // Observa elementos adicionados dinamicamente - versão otimizada (não varre o DOM inteiro)
@@ -199,15 +163,15 @@ const App = () => {
           for (const node of Array.from(m.addedNodes)) {
             if (!(node instanceof Element)) continue;
 
-            // Se o próprio nó é mídia
-            if (node.tagName === 'AUDIO' || node.tagName === 'VIDEO') {
-              sanitizeMediaElement(node);
+            // Se o próprio nó é vídeo
+            if (node.tagName === 'VIDEO') {
+              sanitizeVideoElement(node);
             }
 
-            // Se contém mídia internamente
-            const innerMedia = node.querySelectorAll?.('audio, video');
-            if (innerMedia && innerMedia.length) {
-              innerMedia.forEach((el) => sanitizeMediaElement(el));
+            // Se contém vídeo internamente
+            const innerVideos = node.querySelectorAll?.('video');
+            if (innerVideos && innerVideos.length) {
+              innerVideos.forEach((el) => sanitizeVideoElement(el));
             }
           }
         }
@@ -228,10 +192,8 @@ const App = () => {
     return () => {
       window.removeEventListener('online', handleOnline);
       try {
-        // @ts-ignore
         mo?.disconnect?.();
       } catch {}
-      HTMLMediaElement.prototype.play = originalPlay;
     };
   }, []);
 
@@ -248,7 +210,7 @@ const App = () => {
                 className: 'bg-card border-border',
               }}
             />
-            <MotionConfig reducedMotion="always">
+            <MotionConfig reducedMotion="user">
               <BrowserRouter>
                 <LazyErrorBoundary>
                   <Suspense fallback={<PageLoader />}>
