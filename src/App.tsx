@@ -107,7 +107,7 @@ class LazyErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundary
 }
 
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+  <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
   </div>
 );
