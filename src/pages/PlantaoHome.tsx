@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlantaoAuth } from '@/contexts/PlantaoAuthContext';
 import { usePlantaoTheme } from '@/contexts/PlantaoThemeContext';
@@ -25,9 +25,6 @@ import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
 import ThemeSelector from '@/components/plantao/ThemeSelector';
 import StyledTeamButton from '@/components/plantao/StyledTeamButton';
 import AnimatedPlantaoLogo from '@/components/plantao/AnimatedPlantaoLogo';
-
-// Lazy load do VideoSplash para não bloquear o carregamento inicial
-const VideoSplash = lazy(() => import('@/components/plantao/VideoSplash'));
 
 
 // Saved credentials type
@@ -319,8 +316,6 @@ const PlantaoHome = () => {
   const { playClick } = useGlobalSound();
   const { isSupported: biometricSupported, isRegistered: biometricRegistered, authenticateWithBiometric, registerBiometric } = useBiometricAuth();
   const navigate = useNavigate();
-  // Splash desabilitado para carregamento rápido - mostrar apenas se explicitamente ativado
-  const [showSplash, setShowSplash] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showAuthPanel, setShowAuthPanel] = useState(false);
   const [showMasterLogin, setShowMasterLogin] = useState(false);
@@ -331,12 +326,6 @@ const PlantaoHome = () => {
   const [rememberPassword, setRememberPassword] = useState(true);
   const [selectedUnit, setSelectedUnit] = useState('CS Feijó');
   const [showUnitSelector, setShowUnitSelector] = useState(false);
-
-  // Marca que splash já foi exibido (persiste entre sessões)
-  const handleSplashComplete = () => {
-    localStorage.setItem('plantao_intro_shown', '1');
-    setShowSplash(false);
-  };
 
   // Login state
   const [loginCpf, setLoginCpf] = useState('');
@@ -689,20 +678,6 @@ const PlantaoHome = () => {
       navigate('/master');
     }
   };
-
-
-  // Se estiver mostrando splash, renderiza o vídeo com lazy loading
-  if (showSplash) {
-    return (
-      <Suspense fallback={
-        <div className="min-h-screen flex items-center justify-center bg-black">
-          <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
-        </div>
-      }>
-        <VideoSplash onComplete={handleSplashComplete} />
-      </Suspense>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 transition-none">
