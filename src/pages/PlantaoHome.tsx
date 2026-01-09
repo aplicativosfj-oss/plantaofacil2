@@ -18,6 +18,8 @@ import { User, Lock, Phone, Mail, IdCard, Loader2, AlertCircle, Shield, MapPin, 
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoBg from '@/assets/plantao-bg.png';
+import teamsHomeBg from '@/assets/teams-home-bg.png';
+import loginBg from '@/assets/login-bg.png';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
 import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
 import ThemeSelector from '@/components/plantao/ThemeSelector';
@@ -718,7 +720,7 @@ const PlantaoHome = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 transition-none">
       <PlantaoAboutDialog isOpen={showAbout} onClose={() => setShowAbout(false)} />
 
       {/* About Button */}
@@ -734,11 +736,13 @@ const PlantaoHome = () => {
         <span className="hidden sm:inline">Sobre</span>
       </button>
 
-      {/* Background Effects */}
+      {/* Background Effects - Teams Home Image */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
-        style={{ backgroundImage: `url(${plantaoBg})` }}
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+        style={{ backgroundImage: `url(${teamsHomeBg})` }}
       />
+      {/* Dark gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
       <ScanLine />
       <CornerBrackets />
       
@@ -762,7 +766,8 @@ const PlantaoHome = () => {
             key="landing"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, y: -20 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.1 }}
             className="relative z-10 flex flex-col min-h-screen"
           >
             {/* Top HUD Bar */}
@@ -1012,13 +1017,21 @@ const PlantaoHome = () => {
           /* Auth Panel */
           <motion.div
             key="auth"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
             className="relative z-10 flex flex-col min-h-screen"
+            style={{
+              backgroundImage: `url(${loginBg})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
           >
             {/* Top Bar with Back Button */}
-            <header className="py-2 px-4 border-b border-primary/20">
+            {/* Dark overlay for better readability */}
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
+            <header className="relative z-10 py-2 px-4 border-b border-primary/30 bg-black/40 backdrop-blur-sm">
               <div className="container mx-auto flex items-center justify-between">
                 <Button
                   variant="ghost"
@@ -1039,11 +1052,11 @@ const PlantaoHome = () => {
             </header>
 
             {/* Main Content */}
-            <main className="flex-1 flex items-start justify-center px-4 pt-4 pb-2 overflow-y-auto">
+            <main className="relative z-10 flex-1 flex items-start justify-center px-4 pt-4 pb-2 overflow-y-auto">
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.15 }}
                 className="w-full max-w-md"
               >
 
@@ -1065,7 +1078,7 @@ const PlantaoHome = () => {
                   </motion.div>
                 )}
 
-                <Card className={`border-primary/20 bg-card/90 backdrop-blur-md shadow-2xl shadow-primary/10 ${showMasterLogin ? 'border-amber-500/30' : ''}`}>
+                <Card className={`border-primary/30 bg-card/95 backdrop-blur-lg shadow-2xl shadow-primary/20 ${showMasterLogin ? 'border-amber-500/40' : ''}`}>
                   <CardHeader className="text-center pb-3">
                     <CardTitle className={`text-lg font-display tracking-wide flex items-center justify-center gap-2 ${showMasterLogin ? 'text-amber-500' : ''}`}>
                       {showMasterLogin ? (
@@ -1633,6 +1646,7 @@ const PlantaoHome = () => {
             </main>
 
             {/* Footer */}
+            <div className="relative z-10">
             <footer className="py-3 text-center text-muted-foreground text-xs space-y-1">
               <p>
                 © <motion.span
@@ -1655,6 +1669,7 @@ const PlantaoHome = () => {
                 Sobre o Sistema
               </button>
             </footer>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
