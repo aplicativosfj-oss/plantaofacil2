@@ -2228,6 +2228,45 @@ export type Database = {
           },
         ]
       }
+      team_leadership: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          phone: string | null
+          position_type: string
+          team_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          phone?: string | null
+          position_type: string
+          team_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          phone?: string | null
+          position_type?: string
+          team_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       tenants: {
         Row: {
           created_at: string | null
