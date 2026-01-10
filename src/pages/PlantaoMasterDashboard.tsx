@@ -503,6 +503,23 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
   const handleDeleteAgent = async () => {
     if (!deletingAgent) return;
     try {
+      // Get master session token from sessionStorage
+      const storedMaster = sessionStorage.getItem('masterSession');
+      let masterToken = '';
+      if (storedMaster) {
+        try {
+          const parsed = JSON.parse(storedMaster);
+          masterToken = parsed.sessionToken || '';
+        } catch (e) {
+          console.error('Error parsing master session:', e);
+        }
+      }
+
+      if (!masterToken) {
+        toast.error('Sessão de master expirada. Faça login novamente.');
+        return;
+      }
+
       // Limpeza completa (inclui usuário de autenticação) pelo CPF
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/plantao-cleanup-agent`,
@@ -512,14 +529,19 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
             'Content-Type': 'application/json',
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            'x-master-token': masterToken,
           },
           body: JSON.stringify({ cpf: deletingAgent.cpf }),
         }
       );
 
       if (!response.ok) {
-        const text = await response.text().catch(() => '');
-        throw new Error(`cleanup_failed_${response.status}: ${text}`);
+        const data = await response.json().catch(() => ({}));
+        if (response.status === 401) {
+          toast.error('Sessão expirada. Faça login novamente.');
+          return;
+        }
+        throw new Error(data.error || `cleanup_failed_${response.status}`);
       }
 
       toast.success('Agente excluído com sucesso!');
@@ -617,10 +639,58 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
     setResettingPassword(true);
     
     try {
-      // Gerar nova senha (últimos 8 dígitos do CPF + 2 caracteres aleatórios)
-      const cleanCpf = showAgentPassword.cpf.replace(/\D/g, '');
-      const randomChars = Math.random().toString(36).substring(2, 4).toUpperCase();
-      const newPassword = cleanCpf.slice(-6) + randomChars;
+      // Get master session token from sessionStorage
+      const storedMaster = sessionStorage.getItem('masterSession');
+      let masterToken = '';
+      if (storedMaster) {
+        try {
+          const parsed = JSON.parse(storedMaster);
+          masterToken = parsed.sessionToken || '';
+        } catch (e) {
+          console.error('Error parsing master session:', e);
+        }
+      }
+
+      if (!masterToken) {
+        toast.error('Sessão de master expirada. Faça login novamente.');
+        setResettingPassword(false);
+        return;
+      }
+
+      // Generate a strong random password (12 chars with mixed case, numbers, special chars)
+      const generateStrongPassword = (): string => {
+        const lowercase = 'abcdefghijkmnopqrstuvwxyz';
+        const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+        const numbers = '23456789';
+        const special = '!@#$%&*';
+        
+        const allChars = lowercase + uppercase + numbers + special;
+        const randomValues = new Uint32Array(12);
+        crypto.getRandomValues(randomValues);
+        
+        // Ensure at least one of each type
+        let password = '';
+        password += lowercase[randomValues[0] % lowercase.length];
+        password += uppercase[randomValues[1] % uppercase.length];
+        password += numbers[randomValues[2] % numbers.length];
+        password += special[randomValues[3] % special.length];
+        
+        // Fill the rest randomly
+        for (let i = 4; i < 12; i++) {
+          password += allChars[randomValues[i] % allChars.length];
+        }
+        
+        // Shuffle the password
+        const shuffled = password.split('');
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = randomValues[i] % (i + 1);
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        
+        return shuffled.join('');
+      };
+
+      const newPassword = generateStrongPassword();
       
       // Chamar edge function para resetar senha
       const response = await fetch(
@@ -631,6 +701,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
             'Content-Type': 'application/json',
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            'x-master-token': masterToken,
           },
           body: JSON.stringify({ 
             cpf: showAgentPassword.cpf,
@@ -640,7 +711,12 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
       );
 
       if (!response.ok) {
-        throw new Error('Erro ao resetar senha');
+        const data = await response.json().catch(() => ({}));
+        if (response.status === 401) {
+          toast.error('Sessão expirada. Faça login novamente.');
+          return;
+        }
+        throw new Error(data.error || 'Erro ao resetar senha');
       }
 
       setAgentPasswordInfo({

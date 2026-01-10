@@ -258,9 +258,13 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     try {
       setIsLoading(true);
 
-      const { data, error } = await supabase.rpc('validate_master_credentials', {
+      // Use the new secure RPC function with rate limiting and session tokens
+      // Type assertion needed because the new function hasn't been reflected in types yet
+      const { data, error } = await (supabase.rpc as any)('validate_master_credentials_secure', {
         p_username: username,
-        p_password: password
+        p_password: password,
+        p_ip_address: null, // Server will get IP from request headers
+        p_user_agent: navigator.userAgent
       });
 
       if (error) {
@@ -272,19 +276,38 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
         return { error: 'Usuário não encontrado' };
       }
 
-      const credential = data[0];
+      const credential = data[0] as {
+        is_valid: boolean;
+        id: string | null;
+        username: string | null;
+        full_name: string | null;
+        session_token: string | null;
+        error_message: string | null;
+      };
       
-      if (!credential.is_valid) {
+      // Check for rate limiting error
+      if (credential.error_message) {
+        return { error: credential.error_message };
+      }
+      
+      if (!credential.is_valid || !credential.id) {
         return { error: 'Senha incorreta' };
       }
 
+      // Store both master info and session token
       const masterInfo: MasterInfo = {
         id: credential.id,
-        username: credential.username,
+        username: credential.username || '',
         full_name: credential.full_name
       };
 
-      sessionStorage.setItem('masterSession', JSON.stringify(masterInfo));
+      // Store session token separately (more secure than in sessionStorage with master info)
+      const masterSession = {
+        ...masterInfo,
+        sessionToken: credential.session_token
+      };
+
+      sessionStorage.setItem('masterSession', JSON.stringify(masterSession));
       setMaster(masterInfo);
       setRole('master');
 
@@ -444,6 +467,20 @@ export const PlantaoAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const signOut = useCallback(async () => {
     try {
       if (master) {
+        // Invalidate master session on server
+        const storedMaster = sessionStorage.getItem('masterSession');
+        if (storedMaster) {
+          try {
+            const parsed = JSON.parse(storedMaster);
+            if (parsed.sessionToken) {
+              await (supabase.rpc as any)('invalidate_master_session', {
+                p_token: parsed.sessionToken
+              });
+            }
+          } catch (e) {
+            console.error('Error invalidating session:', e);
+          }
+        }
         // Clear master session
         sessionStorage.removeItem('masterSession');
         setMaster(null);
