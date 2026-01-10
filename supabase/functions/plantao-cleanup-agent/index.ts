@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-master-token",
 };
 
 interface CleanupRequest {
@@ -24,9 +24,69 @@ serve(async (req: Request): Promise<Response> => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    // SECURITY: Validate master session token
+    const masterToken = req.headers.get("x-master-token");
+    
+    if (!masterToken) {
+      console.error("No master token provided");
+      return new Response(
+        JSON.stringify({ success: false, error: "Não autorizado - token de sessão ausente" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate the master session using the secure RPC function
+    const { data: sessionData, error: sessionError } = await admin
+      .rpc("validate_master_session", { p_token: masterToken });
+
+    if (sessionError || !sessionData || sessionData.length === 0 || !sessionData[0].is_valid) {
+      console.error("Invalid master session:", sessionError?.message || "Session validation failed");
+      return new Response(
+        JSON.stringify({ success: false, error: "Sessão de master inválida ou expirada" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const masterInfo = sessionData[0];
+
+    // Rate limiting check for this operation
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const rateLimitId = `edge:cleanup:${clientIp}`;
+    
+    const { data: rateLimitData } = await admin
+      .rpc("check_rate_limit", { 
+        p_identifier: rateLimitId, 
+        p_attempt_type: "edge_function",
+        p_ip_address: clientIp,
+        p_max_attempts: 5,
+        p_window_minutes: 10
+      });
+
+    if (rateLimitData && rateLimitData.length > 0 && !rateLimitData[0].is_allowed) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Muitas requisições. Tente novamente mais tarde." }),
+        { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const { cpf, cleanAll }: CleanupRequest = await req.json();
 
     const cleanupResults: string[] = [];
+
+    // Log the operation start
+    await admin.from("app_usage_logs").insert({
+      action_type: "cleanup_started",
+      action_details: { 
+        initiated_by: "master", 
+        master_id: masterInfo.master_id,
+        master_username: masterInfo.username,
+        clean_all: cleanAll || false,
+        target_cpf: cpf || null,
+        started_at: new Date().toISOString(),
+        ip_address: clientIp
+      },
+      ip_address: clientIp,
+    });
 
     if (cleanAll) {
       // Limpar TODOS os agentes e usuários do plantão
@@ -167,6 +227,14 @@ serve(async (req: Request): Promise<Response> => {
         }
       }
     }
+
+    // Record successful operation
+    await admin.rpc("record_login_attempt", {
+      p_identifier: rateLimitId,
+      p_attempt_type: "edge_function",
+      p_ip_address: clientIp,
+      p_was_successful: true
+    });
 
     console.log(`Limpeza concluída: ${cleanupResults.join(", ")}`);
 
