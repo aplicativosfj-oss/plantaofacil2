@@ -27,15 +27,6 @@ import PlantaoAboutDialog from '@/components/plantao/PlantaoAboutDialog';
 import ThemeSelector from '@/components/plantao/ThemeSelector';
 import StyledTeamButton from '@/components/plantao/StyledTeamButton';
 import AnimatedPlantaoLogo from '@/components/plantao/AnimatedPlantaoLogo';
-import {
-  HeroBackground,
-  FloatingElements,
-  PremiumTeamCard,
-  PremiumHeader,
-  BrandSection,
-  UnitSelector,
-  PremiumFooter,
-} from '@/components/plantao/landing';
 
 
 // Saved credentials type

@@ -6,74 +6,74 @@
 
 @layer base {
   :root {
-    /* PlantãoPro Premium Theme - Sophisticated Dark */
-    --background: 222 47% 5%;
-    --foreground: 210 40% 98%;
+    /* PlantãoPro Theme - Segurança Pública */
+    --background: 220 25% 6%;
+    --foreground: 210 20% 98%;
 
-    --card: 222 47% 7%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 25% 9%;
+    --card-foreground: 210 20% 98%;
 
-    --popover: 222 47% 8%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 25% 9%;
+    --popover-foreground: 210 20% 98%;
 
-    /* Primary: Electric Blue Premium */
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 5%;
+    /* Primary: Azul institucional */
+    --primary: 210 80% 45%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 30% 12%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 20% 14%;
+    --secondary-foreground: 210 20% 98%;
 
-    --muted: 222 30% 15%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 220 20% 18%;
+    --muted-foreground: 220 10% 60%;
 
-    /* Accent: Emerald Glow */
-    --accent: 160 84% 39%;
+    /* Accent: Verde institucional */
+    --accent: 152 60% 40%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Warning: Golden Amber */
-    --warning: 38 92% 50%;
+    /* Warning: Amarelo para alertas */
+    --warning: 45 93% 47%;
     --warning-foreground: 0 0% 10%;
 
-    /* Success: Bright Emerald */
-    --success: 160 84% 39%;
+    /* Success: Verde para confirmações */
+    --success: 152 60% 40%;
     --success-foreground: 0 0% 100%;
 
-    --border: 222 20% 18%;
-    --input: 222 20% 15%;
-    --ring: 217 91% 60%;
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 210 80% 45%;
 
-    --radius: 0.875rem;
+    --radius: 0.75rem;
 
-    /* Team Colors - Vibrant */
-    --team-alfa: 217 91% 60%;
-    --team-bravo: 38 92% 50%;
-    --team-charlie: 160 84% 39%;
-    --team-delta: 0 72% 51%;
+    /* Team Colors */
+    --team-alfa: 0 70% 50%;
+    --team-bravo: 210 80% 50%;
+    --team-charlie: 45 90% 50%;
+    --team-delta: 152 60% 45%;
 
-    /* Premium tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(230 70% 50%) 100%);
-    --gradient-dark: linear-gradient(180deg, hsl(222 47% 5%) 0%, hsl(222 47% 8%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(222 47% 8%) 0%, hsl(222 47% 6%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(222 47% 4% / 0.97) 0%, hsl(222 47% 6% / 0.85) 100%);
+    /* Custom tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(210 80% 45%) 0%, hsl(220 70% 35%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(220 25% 6%) 0%, hsl(220 25% 10%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(220 25% 10%) 0%, hsl(220 25% 8%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(220 30% 5% / 0.95) 0%, hsl(220 30% 5% / 0.7) 100%);
     
-    --shadow-glow: 0 0 80px hsl(217 91% 60% / 0.15);
-    --shadow-card: 0 25px 50px -12px hsl(0 0% 0% / 0.6);
-    --shadow-button: 0 10px 40px -5px hsl(217 91% 60% / 0.25);
+    --shadow-glow: 0 0 60px hsl(210 80% 45% / 0.2);
+    --shadow-card: 0 25px 50px -12px hsl(0 0% 0% / 0.5);
+    --shadow-button: 0 10px 30px -5px hsl(210 80% 45% / 0.3);
     
     --font-display: 'Bebas Neue', sans-serif;
     --font-body: 'Inter', sans-serif;
 
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 222 47% 5%;
-    --sidebar-accent: 222 30% 12%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 20% 18%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-background: 220 25% 8%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 210 80% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 20% 14%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 220 15% 20%;
+    --sidebar-ring: 210 80% 45%;
   }
 }
 
