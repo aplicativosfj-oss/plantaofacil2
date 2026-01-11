@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import plantaoBg from '@/assets/plantao-bg.png';
 import teamsHomeBg from '@/assets/teams-home-bg.png';
+import plantaoHomeBg from '@/assets/plantao-home-bg.jpeg';
 import PlantaoMusicPlayer from '@/components/plantao/PlantaoMusicPlayer';
 import loginBg from '@/assets/login-bg.png';
 import plantaoLogo from '@/assets/plantao-pro-logo-new.png';
@@ -713,22 +714,22 @@ const PlantaoHome = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-slate-900 transition-none">
-      {/* Fallback text: garante visibilidade mínima mesmo se estilos/fontes falharem */}
-      <noscript>
-        <div style={{ color: 'white', padding: '20px' }}>PlantãoPRO - JavaScript desativado</div>
-      </noscript>
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 transition-none">
       <PlantaoAboutDialog isOpen={showAbout} onClose={() => setShowAbout(false)} />
       <PlantaoMusicPlayer />
 
       {/* Background Effects (somente quando efeitos estiverem habilitados) */}
       {effectsEnabled && (
         <>
-          {/* FORÇA BRUTA: removido fundo em imagem para evitar travamentos em alguns aparelhos */}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/60 to-background" />
+          {/* New Home Background Image */}
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: `url(${plantaoHomeBg})` }}
+          />
+          {/* Dark gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/60" />
           <ScanLine />
           <CornerBrackets />
-
 
           {/* Grid overlay */}
           <div

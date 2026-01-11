@@ -131,38 +131,37 @@
     <div id="root"></div>
     
     <script>
-      // App version bump: evita telas quebradas por cache antigo.
-      // IMPORTANTE: alguns navegadores (in-app/privativo) podem limpar storage a cada navegação.
-      // Para não entrar em loop, aqui NÃO recarregamos automaticamente.
+      // App version bump: força limpar cache/SW quando mudar versão (remove restos de splash antigo)
       (function () {
         var APP_VERSION = '2026-01-09-2';
         try {
           var prev = localStorage.getItem('__app_version');
           if (prev !== APP_VERSION) {
-            try {
-              localStorage.setItem('__app_version', APP_VERSION);
-            } catch (e) {
-              // sem storage: não faz nada
-              return;
-            }
-
-            // Melhor esforço: tenta limpar SW/caches em background, sem forçar reload.
-            if ('serviceWorker' in navigator) {
-              navigator.serviceWorker.getRegistrations()
-                .then(function (regs) { return Promise.all(regs.map(function (r) { return r.unregister(); })); })
-                .catch(function () {});
-            }
-            if ('caches' in window) {
-              caches.keys()
-                .then(function (keys) { return Promise.all(keys.map(function (k) { return caches.delete(k); })); })
-                .catch(function () {});
+            localStorage.setItem('__app_version', APP_VERSION);
+            if ('serviceWorker' in navigator || 'caches' in window) {
+              Promise.resolve()
+                .then(function () {
+                  if (!('serviceWorker' in navigator)) return;
+                  return navigator.serviceWorker.getRegistrations().then(function (regs) {
+                    return Promise.all(regs.map(function (r) { return r.unregister(); }));
+                  });
+                })
+                .then(function () {
+                  if (!('caches' in window)) return;
+                  return caches.keys().then(function (keys) {
+                    return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+                  });
+                })
+                .finally(function () {
+                  // Recarrega uma vez para pegar os arquivos novos
+                  window.location.reload();
+                });
             }
           }
         } catch (e) {}
       })();
 
-      // Remove initial loader APENAS quando o React montar.
-      // Se o JS falhar por algum motivo, o loader permanece (melhor que tela preta).
+      // Remove initial loader faster
       var loaderRemoved = false;
       function removeLoader() {
         if (loaderRemoved) return;
@@ -170,19 +169,23 @@
         var loader = document.getElementById('initial-loader');
         if (loader) {
           loader.style.opacity = '0';
-          loader.style.transition = 'opacity 0.2s';
+          loader.style.transition = 'opacity 0.15s';
           setTimeout(function () {
             loader.remove();
-          }, 200);
+          }, 150);
         }
       }
-      window.__removeInitialLoader = removeLoader;
-      // Fallback: se o app montar mas não chamar, remove depois de 6s.
-      setTimeout(removeLoader, 6000);
+      // Remove on DOMContentLoaded (faster than load)
+      document.addEventListener('DOMContentLoaded', removeLoader);
+      // Fallback for load event
+      window.addEventListener('load', removeLoader);
 
-      // Service worker registration removido daqui.
-      // O VitePWA plugin cuida disso automaticamente quando necessário.
-      // Registro manual causava conflitos e bloqueios em alguns navegadores.
+      // Register service worker early
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js').catch(function () {});
+        });
+      }
     </script>
     
     <script type="module" src="/src/main.tsx"></script>

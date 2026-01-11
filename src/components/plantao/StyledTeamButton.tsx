@@ -235,7 +235,7 @@ const StyledTeamButton = ({
     <div className="relative">
       <motion.button
         ref={buttonRef}
-        initial={false}
+        initial={{ opacity: 0, y: 12, scale: 0.95 }}
         animate={{ 
           opacity: 1, 
           y: 0,
@@ -243,6 +243,7 @@ const StyledTeamButton = ({
           x: isBlockedClicked ? [0, -4, 4, -4, 4, 0] : 0,
         }}
         transition={{ 
+          delay: 0.15 + index * 0.08,
           type: 'spring',
           stiffness: 400,
           damping: 25,

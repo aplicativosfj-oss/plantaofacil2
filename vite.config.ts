@@ -14,8 +14,6 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Evita chunk manual para charts (recharts/d3) pois pode causar
-          // problemas de ordem de inicialização em alguns browsers/builds.
           if (id.includes('node_modules')) {
             if (id.includes('react-dom')) return 'vendor-react-dom';
             if (id.includes('react-router')) return 'vendor-router';
@@ -24,6 +22,7 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('framer-motion')) return 'vendor-motion';
             if (id.includes('@tanstack')) return 'vendor-query';
             if (id.includes('date-fns')) return 'vendor-date';
+            if (id.includes('recharts') || id.includes('d3')) return 'vendor-charts';
             if (id.includes('lucide')) return 'vendor-icons';
             if (id.includes('@supabase')) return 'vendor-supabase';
           }
@@ -40,7 +39,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "pwa-*.png", "audio/*"],
+      includeAssets: ["favicon.ico", "pwa-*.png", "audio/*", "videos/*"],
       manifest: {
         name: "Plantão PRO - Gestão de Escalas",
         short_name: "Plantão PRO",
@@ -161,6 +160,17 @@ export default defineConfig(({ mode }) => ({
             }
           },
           {
+            urlPattern: /\.(?:mp4|webm)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "video-cache",
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 7
+              }
+            }
+          },
+          {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: "StaleWhileRevalidate",
             options: {
@@ -195,18 +205,8 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    // Prebundle do recharts + lodash deep-imports (evita erro "lodash/get ... no default export")
-    include: [
-      'react',
-      'react-dom',
-      'react-router-dom',
-      '@tanstack/react-query',
-      'recharts',
-      'lodash/get',
-      'lodash/isNil',
-      'lodash/isNumber',
-      'lodash/isString',
-    ],
+    include: ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query'],
+    exclude: ['recharts']
   },
   esbuild: {
     drop: mode === 'production' ? ['console', 'debugger'] : [],
