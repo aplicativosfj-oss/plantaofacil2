@@ -79,7 +79,7 @@ const validateCPF = (cpf: string): boolean => {
 
 const UNITS = [
   { id: 'cs-feijo', name: 'CS Feijó', active: true },
-  { id: 'cs-tarauaca', name: 'CS Tarauacá', active: true },
+  { id: 'cs-brasileia', name: 'CS Brasiléia', active: true },
   { id: 'cs-cruzeiro', name: 'CS Cruzeiro do Sul', active: true },
   { id: 'cs-sena', name: 'CS Sena Madureira', active: true },
   { id: 'cs-rio-branco', name: 'CS Rio Branco', active: true },
