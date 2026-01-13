@@ -1061,7 +1061,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
 
       {/* Edit Leadership Dialog */}
       <Dialog open={!!editingLeadership} onOpenChange={(open) => !open && setEditingLeadership(null)}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserCog className="w-5 h-5 text-primary" />
@@ -1128,7 +1128,7 @@ const PlantaoMasterDashboard = forwardRef<HTMLDivElement>((_, ref) => {
 
       {/* Edit Team Leadership Dialog */}
       <Dialog open={!!editingTeamLeadership} onOpenChange={(open) => !open && setEditingTeamLeadership(null)}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-primary" />
